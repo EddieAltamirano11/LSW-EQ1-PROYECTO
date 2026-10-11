@@ -13,7 +13,7 @@
 2. **Durán Ochoa Luis Carlos** (23400508)
 3. **Díaz Rodríguez Fernando** (23400506)
 4. **Espinoza Barajas Jesús** (23400509)
-5. **Martínez Carlos**
+5. **Martínez Orozco Carlos** (23400577)
 6. **Núñez Carrillo José Tadeo** (23400520)
 7. **Rendón Valenzuela Karime** (23400525)
 
