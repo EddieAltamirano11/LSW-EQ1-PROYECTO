@@ -420,6 +420,13 @@ export const createStrategiesBatch = async (items, dbTarget = 'mongodb') => {
   return await repo.createBatch(items);
 };
 
+export const updateStrategy = async (id, updates, dbTarget = 'mongodb') => {
+  const repo = getHedgingRepo(dbTarget);
+  const updated = await repo.update(id, updates);
+  if (!updated) throw boom.notFound(`Estrategia '${id}' no encontrada.`);
+  return updated;
+};
+
 export const updateStrategyStatus = async (id, status, dbTarget = 'mongodb') => {
   const repo = getHedgingRepo(dbTarget);
   const updated = await repo.update(id, { status });

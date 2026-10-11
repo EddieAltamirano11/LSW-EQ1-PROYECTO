@@ -82,3 +82,50 @@ export const createCollarSpread = async (req, res, next) => {
     next(error);
   }
 };
+
+// Actualizar parámetros estructurales de la estrategia
+export const updateStrategy = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const updated = await HedgingService.updateStrategy(id, req.body, req.dbTarget);
+    res.status(200).json({
+      message: 'Estrategia de cobertura actualizada exitosamente.',
+      data: updated,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Transición de estado de ciclo de vida (ACTIVE, CLOSED, EXPIRED)
+export const updateStrategyStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    if (!status) {
+      throw boom.badRequest('El campo status es requerido.');
+    }
+    const updated = await HedgingService.updateStrategyStatus(id, status.toUpperCase(), req.dbTarget);
+    res.status(200).json({
+      message: 'Estado de la estrategia actualizado exitosamente.',
+      data: updated,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Eliminación lógica de la estrategia
+export const deleteStrategy = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const deleted = await HedgingService.deleteStrategy(id, req.dbTarget);
+    res.status(200).json({
+      message: 'Estrategia de cobertura eliminada lógicamente.',
+      data: deleted,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
