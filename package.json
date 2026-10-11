@@ -1,0 +1,41 @@
+{
+  "name": "app-rest-hedging-u2act2",
+  "version": "1.0.0",
+  "description": "API RESTful con persistencia dual (MongoDB Atlas y Supabase) e integracion con Alpaca para gestion de coberturas cuantitativas (F0 y F2)",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js",
+    "test": "node --test"
+  },
+  "keywords": [
+    "rest",
+    "express",
+    "mongodb",
+    "supabase",
+    "alpaca",
+    "black-scholes",
+    "protective-put",
+    "collar-spread",
+    "openspec"
+  ],
+  "author": "Equipo 1 - Los Eddies (IT Tepic)",
+  "license": "ISC",
+  "dependencies": {
+    "@hapi/boom": "^10.0.1",
+    "@scalar/express-api-reference": "^0.4.150",
+    "@supabase/supabase-js": "^2.48.1",
+    "axios": "^1.7.9",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.10.1",
+    "morgan": "^1.10.0",
+    "yamljs": "^0.3.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}

@@ -1,0 +1,484 @@
+openapi: 3.0.3
+info:
+  title: API REST Coberturas Cuantitativas de Opciones (Protective Put & Collar)
+  version: 1.0.0
+  description: >
+    API RESTful con soporte de persistencia políglota dinámica (MongoDB Atlas y Supabase PostgreSQL),
+    módulo cuantitativo F0 (Black-Scholes, Griegas, Newton-Raphson), módulo de coberturas F2 Parte B
+    e integración de datos bursátiles con Alpaca Markets.
+  contact:
+    name: Equipo 1 - Los Eddies (Altamirano Plantillas Eddie David)
+    email: ealtamirano@ittepic.edu.mx
+servers:
+  - url: http://localhost:3050/api/v1
+    description: Servidor Local de Desarrollo
+
+paths:
+  /auth/login:
+    post:
+      summary: Inicio de sesión del inversor y selección de motor de persistencia
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password, databaseTarget]
+              properties:
+                username: { type: string, example: eddie_investor }
+                password: { type: string, example: SecurePass123! }
+                databaseTarget: { type: string, enum: [mongodb, supabase], example: mongodb }
+      responses:
+        '200':
+          description: Autenticación exitosa y token JWT emitido
+        '400':
+          description: Datos inválidos
+        '401':
+          description: Credenciales no autorizadas
+
+  /underlyings:
+    get:
+      summary: Listar catálogo de activos subyacentes
+      parameters:
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase], default: mongodb }
+      responses:
+        '200':
+          description: Lista de acciones y ETFs negociables
+    post:
+      summary: Crear un activo subyacente individual
+      parameters:
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase] }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnderlyingInput'
+      responses:
+        '201':
+          description: Subyacente registrado
+        '409':
+          description: Ticker duplicado
+
+  /underlyings/batch:
+    post:
+      summary: Crear múltiples subyacentes en bloque (arreglo de objetos)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/UnderlyingInput'
+      responses:
+        '201':
+          description: Lote de subyacentes creado
+
+  /underlyings/symbol/{symbol}:
+    get:
+      summary: Consultar subyacente por Ticker bursátil
+      parameters:
+        - in: path
+          name: symbol
+          required: true
+          schema: { type: string, example: AAPL }
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase] }
+      responses:
+        '200':
+          description: Detalle del activo subyacente
+        '404':
+          description: Subyacente no encontrado
+
+  /underlyings/{id}:
+    get:
+      summary: Consultar subyacente por ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Subyacente encontrado
+        '404':
+          description: No encontrado
+    put:
+      summary: Actualizar cotización spot o datos del subyacente
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                spotPrice: { type: number, example: 230.15 }
+                volatility: { type: number, example: 0.23 }
+      responses:
+        '200':
+          description: Subyacente actualizado
+    delete:
+      summary: Borrado lógico de un activo subyacente
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Subyacente eliminado lógicamente
+
+  /hedging-strategies:
+    get:
+      summary: Listar estrategias de cobertura registradas
+      parameters:
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase] }
+      responses:
+        '200':
+          description: Lista de coberturas
+
+  /hedging-strategies/protective-put:
+    post:
+      summary: Estructurar y emitir cobertura Protective Put (F2 Parte B)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [symbol, spotPrice, sharesCount, putStrike, putPremium]
+              properties:
+                portfolioId: { type: string, example: PORT-ALPHA-01 }
+                symbol: { type: string, example: AAPL }
+                spotPrice: { type: number, example: 228.50 }
+                sharesCount: { type: integer, example: 100 }
+                putStrike: { type: number, example: 220.00 }
+                putPremium: { type: number, example: 4.20 }
+                expirationDate: { type: string, format: date-time, example: '2026-10-16T00:00:00Z' }
+      responses:
+        '201':
+          description: Cobertura Protective Put emitida con suelo blindado
+
+  /hedging-strategies/collar-spread:
+    post:
+      summary: Estructurar y emitir cobertura Zero-Cost Collar (F2 Parte B)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [symbol, spotPrice, sharesCount, putStrike, callStrike]
+              properties:
+                portfolioId: { type: string, example: PORT-ALPHA-01 }
+                symbol: { type: string, example: SPY }
+                spotPrice: { type: number, example: 565.00 }
+                sharesCount: { type: integer, example: 100 }
+                putStrike: { type: number, example: 550.00 }
+                callStrike: { type: number, example: 580.00 }
+                putPremium: { type: number, example: 6.50 }
+                callPremium: { type: number, example: 6.60 }
+      responses:
+        '201':
+          description: Cobertura Collar Spread creada con túnel de costo cero
+
+  /hedging-strategies/{id}:
+    get:
+      summary: Consultar estrategia completa por ID con patas y métricas
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Estrategia encontrada
+    delete:
+      summary: Cerrar o eliminar estrategia de cobertura
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Estrategia cerrada
+
+  /hedging-strategies/{id}/legs:
+    get:
+      summary: Consultar subdocumento legs (todas las patas de la estrategia)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Arreglo de patas derivadas
+    post:
+      summary: Agregar una pata individual a la estrategia
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LegInput'
+      responses:
+        '201':
+          description: Pata agregada
+
+  /hedging-strategies/{id}/legs/batch:
+    post:
+      summary: Agregar un lote de patas a la estrategia (arreglo de objetos)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/LegInput'
+      responses:
+        '201':
+          description: Lote de patas agregado
+    put:
+      summary: Actualizar lote de patas simultáneamente
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                required: [legId]
+                properties:
+                  legId: { type: string }
+                  delta: { type: number }
+                  entryPrice: { type: number }
+      responses:
+        '200':
+          description: Lote de patas actualizado
+    delete:
+      summary: Eliminar múltiples patas por arreglo de IDs
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [legIds]
+              properties:
+                legIds:
+                  type: array
+                  items: { type: string }
+      responses:
+        '200':
+          description: Patas eliminadas
+
+  /hedging-strategies/{id}/legs/{legId}:
+    get:
+      summary: Consultar una pata específica por ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: legId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Detalle de la pata
+    put:
+      summary: Actualizar una pata específica
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: legId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                strike: { type: number }
+                entryPrice: { type: number }
+                delta: { type: number }
+      responses:
+        '200':
+          description: Pata actualizada
+    delete:
+      summary: Eliminar una pata individual
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: legId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Pata eliminada
+
+  /hedging-strategies/{id}/payoff-matrix:
+    get:
+      summary: Generar matriz discreta de curvas de Payoff P&L para graficación interactiva en PWA
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: steps
+          schema: { type: integer, default: 25 }
+      responses:
+        '200':
+          description: Puntos vectoriales simulados de P&L
+
+  /quant/black-scholes:
+    post:
+      summary: Valuación analítica Black-Scholes y cálculo de 5 Griegas (F0)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [spotPrice, strikePrice, timeToExpirationYears, optionType]
+              properties:
+                spotPrice: { type: number, example: 565.0 }
+                strikePrice: { type: number, example: 550.0 }
+                timeToExpirationYears: { type: number, example: 0.08 }
+                volatility: { type: number, example: 0.15 }
+                riskFreeRate: { type: number, example: 0.045 }
+                optionType: { type: string, enum: [CALL, PUT], example: PUT }
+      responses:
+        '200':
+          description: Precio teórico y telemetría de Griegas
+
+  /quant/implied-volatility:
+    post:
+      summary: Cálculo iterativo de Volatilidad Implícita con Newton-Raphson (F0)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [marketPrice, spotPrice, strikePrice, timeToExpirationYears, optionType]
+              properties:
+                marketPrice: { type: number, example: 6.50 }
+                spotPrice: { type: number, example: 565.0 }
+                strikePrice: { type: number, example: 550.0 }
+                timeToExpirationYears: { type: number, example: 0.08 }
+                optionType: { type: string, enum: [CALL, PUT], example: PUT }
+      responses:
+        '200':
+          description: Volatilidad implícita calculada
+
+  /broker/quote/{symbol}:
+    get:
+      summary: Consultar cotización viva en tiempo real desde Alpaca Markets
+      parameters:
+        - in: path
+          name: symbol
+          required: true
+          schema: { type: string, example: AAPL }
+      responses:
+        '200':
+          description: Cotización viva (bid, ask, lastPrice)
+
+  /broker/options-chain/{symbol}:
+    get:
+      summary: Consultar cadena de opciones viva (Option Chain) para calibración de coberturas
+      parameters:
+        - in: path
+          name: symbol
+          required: true
+          schema: { type: string, example: SPY }
+        - in: query
+          name: expiration
+          schema: { type: string, example: '2026-10-16' }
+      responses:
+        '200':
+          description: Cadena de contratos Call y Put
+
+  /broker/sync-underlying/{symbol}:
+    post:
+      summary: Sincronizar y actualizar precio spot del subyacente en BD con datos del Broker
+      parameters:
+        - in: path
+          name: symbol
+          required: true
+          schema: { type: string, example: AAPL }
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase] }
+      responses:
+        '200':
+          description: Subyacente sincronizado en la base de datos seleccionada
+
+components:
+  schemas:
+    UnderlyingInput:
+      type: object
+      required: [symbol, companyName, spotPrice]
+      properties:
+        symbol: { type: string, example: NVDA }
+        companyName: { type: string, example: NVIDIA Corporation }
+        spotPrice: { type: number, example: 125.80 }
+        volatility: { type: number, example: 0.45 }
+    LegInput:
+      type: object
+      required: [legRole, assetType, quantity, entryPrice]
+      properties:
+        legRole: { type: string, enum: [UNDERLYING, HEDGE_FLOOR, FINANCE_CEILING] }
+        assetType: { type: string, enum: [EQUITY, OPTION] }
+        optionType: { type: string, enum: [CALL, PUT, null] }
+        strike: { type: number, example: 580.0 }
+        quantity: { type: integer, example: 1 }
+        entryPrice: { type: number, example: 6.60 }
+
