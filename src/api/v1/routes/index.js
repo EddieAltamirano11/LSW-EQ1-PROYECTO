@@ -3,6 +3,7 @@ import config from '../../../config/config.js';
 import authRoutes from './auth.routes.js';
 import underlyingRoutes from './underlying.routes.js';
 import hedgingRoutes from './hedging.routes.js';
+import strategyRoutes from './strategy.routes.js';
 
 const routerAPI = (app) => {
   const router = Router();
@@ -13,6 +14,7 @@ const routerAPI = (app) => {
   router.use('/underlyings', underlyingRoutes);
   router.use('/hedging', hedgingRoutes);
   router.use('/hedging-strategies', hedgingRoutes);
+  router.use('/strategies', strategyRoutes);
 
   // Health check modular
   router.get('/health', (req, res) => {
