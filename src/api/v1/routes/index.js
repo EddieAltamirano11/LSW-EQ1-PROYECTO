@@ -1,10 +1,15 @@
 import { Router } from 'express';
 import config from '../../../config/config.js';
+import authRoutes from './auth.routes.js';
+import underlyingRoutes from './underlying.routes.js';
 
 const routerAPI = (app) => {
   const router = Router();
 
   app.use(config.API_URL, router);
+
+  router.use('/auth', authRoutes);
+  router.use('/underlyings', underlyingRoutes);
 
   // Health check modular
   router.get('/health', (req, res) => {

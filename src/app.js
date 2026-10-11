@@ -8,6 +8,8 @@ import { apiReference } from '@scalar/express-api-reference';
 
 import config from './config/config.js';
 import routerAPI from './api/v1/routes/index.js';
+import { authMiddleware } from './middlewares/auth.middleware.js';
+import { databaseContextMiddleware } from './middlewares/databaseContext.middleware.js';
 import { errorHandler } from './middlewares/errorHandler.middleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -21,6 +23,10 @@ app.use(cors({ origin: '*' }));
 app.use(morgan('dev'));
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: false }));
+
+// Inyección de contexto de persistencia y autenticación
+app.use(authMiddleware);
+app.use(databaseContextMiddleware);
 
 // Carga y publicación del contrato OpenSpec
 const specPath = path.join(__dirname, '../spec/openspec.yaml');
@@ -50,7 +56,7 @@ app.get(config.API_URL, (req, res) => {
     course: 'Laboratorio de Servicios Web — IT Tepic',
     team: 'Equipo 1 - Los Eddies',
     author: 'Equipo 1 - Los Eddies (IT Tepic)',
-    activeDatabase: req.headers['x-database-selection'] || 'mongodb',
+    activeDatabase: req.dbTarget || 'mongodb',
     openSpecDocs: `http://${config.HOST}:${config.PORT}${config.API_URL}/docs`,
     openSpecJson: `http://${config.HOST}:${config.PORT}${config.API_URL}/spec.json`,
     status: 'ONLINE',
