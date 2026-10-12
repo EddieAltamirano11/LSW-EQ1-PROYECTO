@@ -1,7 +1,11 @@
 import { Router } from 'express';
 import * as StrategyController from '../controllers/strategy.controller.js';
+import legRoutes from './leg.routes.js';
 
 const router = Router();
+
+// Subdocumento de piernas financieras embebidas
+router.use('/:id/legs', legRoutes);
 
 // Consulta y listado general de estrategias
 router.get('/', StrategyController.getAllStrategies);

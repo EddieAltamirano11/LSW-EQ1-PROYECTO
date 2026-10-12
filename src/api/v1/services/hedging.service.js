@@ -499,6 +499,37 @@ export const updateLegsBatch = async (strategyId, updatesArray, dbTarget = 'mong
   return result;
 };
 
+export const updateLegRatio = async (strategyId, legId, ratioData, dbTarget = 'mongodb') => {
+  const repo = getHedgingRepo(dbTarget);
+  const updates = {};
+  if (ratioData.ratio !== undefined) updates.ratio = Number(ratioData.ratio);
+  if (ratioData.quantity !== undefined) updates.quantity = Number(ratioData.quantity);
+  const leg = await repo.updateLeg(strategyId, legId, updates);
+  if (!leg) throw boom.notFound(`Pata '${legId}' no encontrada en la estrategia '${strategyId}'.`);
+  return leg;
+};
+
+export const reorderLegs = async (strategyId, orderedLegIds = [], dbTarget = 'mongodb') => {
+  const repo = getHedgingRepo(dbTarget);
+  const currentLegs = await repo.getAllLegs(strategyId);
+  if (!currentLegs) throw boom.notFound(`Estrategia '${strategyId}' no encontrada.`);
+
+  const legMap = new Map(currentLegs.map((l) => [l.legId, l]));
+  const reordered = [];
+  for (const id of orderedLegIds) {
+    if (legMap.has(id)) {
+      reordered.push(legMap.get(id));
+      legMap.delete(id);
+    }
+  }
+  for (const remaining of legMap.values()) {
+    reordered.push(remaining);
+  }
+
+  await repo.update(strategyId, { legs: reordered });
+  return reordered;
+};
+
 export const deleteSingleLeg = async (strategyId, legId, dbTarget = 'mongodb') => {
   const repo = getHedgingRepo(dbTarget);
   const result = await repo.deleteLeg(strategyId, legId);
