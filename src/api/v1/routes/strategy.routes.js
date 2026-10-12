@@ -1,7 +1,17 @@
 import { Router } from 'express';
 import * as StrategyController from '../controllers/strategy.controller.js';
+import * as AnalyticsController from '../controllers/analytics.controller.js';
+import legRoutes from './leg.routes.js';
 
 const router = Router();
+
+// Subdocumento de piernas financieras embebidas
+router.use('/:id/legs', legRoutes);
+
+// Métricas cuantitativas y analítica de sensibilidad
+router.get('/:id/financial-metrics', AnalyticsController.getStrategyMetrics);
+router.post('/:id/calculate-greeks', AnalyticsController.calculateGreeks);
+router.post('/:id/simulate-f0-f2', AnalyticsController.simulateF0F2);
 
 // Consulta y listado general de estrategias
 router.get('/', StrategyController.getAllStrategies);
