@@ -11,4 +11,9 @@ router.get('/quote/:symbol', BrokerController.getQuote);
 router.get('/options-chain/:symbol', BrokerController.getOptionsChain);
 router.get('/positions', BrokerController.getPositions);
 
+// Operaciones de órdenes bursátiles
+router.get('/orders', BrokerController.getOrders);
+router.post('/orders', BrokerController.createOrder);
+router.delete('/orders/:id', BrokerController.cancelOrder);
+
 export default router;

@@ -32,6 +32,9 @@ router.put('/:id', StrategyController.updateStrategy);
 router.patch('/:id/status', StrategyController.updateStrategyStatus);
 router.put('/:id/status', StrategyController.updateStrategyStatus);
 
+// Sincronización de precio subyacente con broker
+router.post('/:id/sync-spot', StrategyController.syncStrategySpot);
+
 // Eliminación lógica de la estrategia
 router.delete('/:id', StrategyController.deleteStrategy);
 

@@ -42,3 +42,36 @@ export const getPositions = async (req, res, next) => {
     next(error);
   }
 };
+
+// Historial y listado de órdenes bursátiles
+export const getOrders = async (req, res, next) => {
+  try {
+    const { status = 'all' } = req.query;
+    const orders = await BrokerService.getBrokerOrders(status);
+    res.status(200).json(orders);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Emisión y ejecución de orden bursátil (mercado/límite)
+export const createOrder = async (req, res, next) => {
+  try {
+    const result = await BrokerService.createBrokerOrder(req.body);
+    res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Cancelación de orden bursátil
+export const cancelOrder = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await BrokerService.cancelBrokerOrder(id);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
