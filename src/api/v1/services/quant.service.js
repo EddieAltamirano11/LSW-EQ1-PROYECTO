@@ -152,3 +152,157 @@ export const calculateImpliedVolatility = ({
   };
 };
 
+// Cálculo agregado de Griegas de portafolio para una estrategia completa
+export const calculateStrategyGreeks = (strategy) => {
+  const S = Number(strategy.underlying?.spotPriceAtEntry || 100);
+  const shares = Number(strategy.underlying?.sharesCount || 100);
+  const legs = strategy.legs || [];
+
+  let totalDelta = 0;
+  let totalGamma = 0;
+  let totalVega = 0;
+  let totalTheta = 0;
+  let totalRho = 0;
+
+  const legBreakdown = [];
+
+  for (const leg of legs) {
+    if (leg.assetType === 'EQUITY' || leg.legRole === 'UNDERLYING') {
+      const equityDelta = 1.0;
+      totalDelta += equityDelta;
+      legBreakdown.push({
+        legId: leg.legId,
+        role: leg.legRole || 'UNDERLYING',
+        assetType: 'EQUITY',
+        greeks: { delta: equityDelta, gamma: 0, vega: 0, theta: 0, rho: 0 },
+      });
+    } else {
+      const type = (leg.optionType || (leg.legRole === 'HEDGE_FLOOR' ? 'PUT' : 'CALL')).toUpperCase();
+      const strike = Number(leg.strike || S);
+      const isShort = leg.legRole === 'FINANCE_CEILING' || leg.side === 'SELL' || leg.side === 'SHORT';
+      const multiplier = isShort ? -1 : 1;
+
+      const bs = calculateBlackScholes({
+        spotPrice: S,
+        strikePrice: strike,
+        timeToExpirationYears: 0.1,
+        volatility: 0.25,
+        optionType: type,
+      });
+
+      const legGreeks = {
+        delta: Number((bs.greeks.delta * multiplier).toFixed(4)),
+        gamma: Number((bs.greeks.gamma * multiplier).toFixed(6)),
+        vega: Number((bs.greeks.vega * multiplier).toFixed(4)),
+        theta: Number((bs.greeks.theta * multiplier).toFixed(4)),
+        rho: Number((bs.greeks.rho * multiplier).toFixed(4)),
+      };
+
+      totalDelta += legGreeks.delta;
+      totalGamma += legGreeks.gamma;
+      totalVega += legGreeks.vega;
+      totalTheta += legGreeks.theta;
+      totalRho += legGreeks.rho;
+
+      legBreakdown.push({
+        legId: leg.legId,
+        role: leg.legRole,
+        assetType: 'OPTION',
+        optionType: type,
+        strike,
+        side: isShort ? 'SHORT' : 'LONG',
+        greeks: legGreeks,
+      });
+    }
+  }
+
+  return {
+    strategyId: strategy._id || strategy.id,
+    spotPrice: S,
+    sharesCount: shares,
+    aggregateGreeks: {
+      netDelta: Number(totalDelta.toFixed(4)),
+      netGamma: Number(totalGamma.toFixed(6)),
+      netVega: Number(totalVega.toFixed(4)),
+      netTheta: Number(totalTheta.toFixed(4)),
+      netRho: Number(totalRho.toFixed(4)),
+    },
+    legs: legBreakdown,
+    evaluatedAt: new Date().toISOString(),
+  };
+};
+
+// Simulación cuantitativa de cobertura con prima neta F0 y precio futuro F2
+export const simulateF0F2Hedging = (strategy, { futureSpotF2, daysElapsed = 30 } = {}) => {
+  const F0 = Number(strategy.underlying?.spotPriceAtEntry || 100);
+  const F2 = Number(futureSpotF2 !== undefined ? futureSpotF2 : F0);
+  const shares = Number(strategy.underlying?.sharesCount || 100);
+
+  const putLeg = (strategy.legs || []).find((l) => l.legRole === 'HEDGE_FLOOR' || l.role === 'LONG_PUT');
+  const callLeg = (strategy.legs || []).find((l) => l.legRole === 'FINANCE_CEILING' || l.role === 'SHORT_CALL');
+
+  const putStrike = putLeg ? Number(putLeg.strike) : F0 * 0.95;
+  const putPremium = putLeg ? Number(putLeg.entryPrice || putLeg.premium || 2.5) : 0;
+
+  const callStrike = callLeg ? Number(callLeg.strike) : F0 * 1.05;
+  const callPremium = callLeg ? Number(callLeg.entryPrice || callLeg.premium || 2.8) : 0;
+
+  const netPremiumDebitCredit = (callPremium - putPremium) * shares;
+
+  // Rendimiento de la acción pura (sin cobertura)
+  const unhedgedStockPL = (F2 - F0) * shares;
+  const unhedgedReturnPct = Number((((F2 - F0) / F0) * 100).toFixed(2));
+
+  // Ejercicio de piernas de opciones
+  const putIntrinsic = Math.max(0, putStrike - F2);
+  const putPayoff = (putIntrinsic - putPremium) * shares;
+
+  const callIntrinsic = Math.max(0, F2 - callStrike);
+  const callPayoff = (callPremium - callIntrinsic) * shares;
+
+  // Payoff consolidado de la estrategia
+  const strategyTotalPL = unhedgedStockPL + (putIntrinsic * shares) - (callIntrinsic * shares) + netPremiumDebitCredit;
+  const strategyReturnPct = Number(((strategyTotalPL / (F0 * shares)) * 100).toFixed(2));
+
+  const hedgeBenefitUSD = Number((strategyTotalPL - unhedgedStockPL).toFixed(2));
+
+  return {
+    strategyId: strategy._id || strategy.id,
+    simulationParameters: {
+      initialSpotF0: F0,
+      futureSpotF2: F2,
+      priceChangePct: Number((((F2 - F0) / F0) * 100).toFixed(2)),
+      sharesCount: shares,
+      daysElapsed,
+    },
+    optionsStructure: {
+      putFloorStrike: putStrike,
+      putPremium,
+      callCeilingStrike: callStrike,
+      callPremium,
+      netPremiumCashflowUSD: Number(netPremiumDebitCredit.toFixed(2)),
+    },
+    comparativePayoff: {
+      unhedgedPortfolio: {
+        totalPLUSD: Number(unhedgedStockPL.toFixed(2)),
+        returnPercent: unhedgedReturnPct,
+      },
+      hedgedStrategy: {
+        totalPLUSD: Number(strategyTotalPL.toFixed(2)),
+        returnPercent: strategyReturnPct,
+        putPayoffUSD: Number(putPayoff.toFixed(2)),
+        callPayoffUSD: Number(callPayoff.toFixed(2)),
+      },
+      protectionEffectivenessUSD: hedgeBenefitUSD,
+      status:
+        F2 < putStrike
+          ? 'COBERTURA_ACTIVADA_PISO_PROTECTOR'
+          : F2 > callStrike
+          ? 'TECHO_ALCANZADO_GANANCIA_TOPADA'
+          : 'ZONA_NEUTRAL_SANO_RENDIMIENTO',
+    },
+    simulatedAt: new Date().toISOString(),
+  };
+};
+
+

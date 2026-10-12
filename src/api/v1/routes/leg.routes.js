@@ -24,4 +24,7 @@ router.put('/:legId', LegController.updateSingleLeg);
 // Ajuste de ponderación y ratio de contratos
 router.patch('/:legId/ratio', LegController.updateLegRatio);
 
+// Eliminación atómica de pierna en arreglo embebido
+router.delete('/:legId', LegController.deleteSingleLeg);
+
 export default router;
