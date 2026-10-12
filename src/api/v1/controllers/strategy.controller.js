@@ -1,4 +1,5 @@
 import * as HedgingService from '../services/hedging.service.js';
+import * as BrokerService from '../services/broker.service.js';
 import { getHedgingRepo } from '../repositories/hedging.repository.js';
 import boom from '@hapi/boom';
 
@@ -128,4 +129,36 @@ export const deleteStrategy = async (req, res, next) => {
     next(error);
   }
 };
+
+// Sincronización de precio subyacente de la estrategia con cotización viva del broker
+export const syncStrategySpot = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const repo = getHedgingRepo(req.dbTarget);
+    const strategy = await repo.getById(id);
+    if (!strategy) {
+      throw boom.notFound(`Estrategia '${id}' no encontrada.`);
+    }
+
+    const symbol = strategy.underlying?.symbol || 'NVDA';
+    const quote = await BrokerService.getBrokerQuote(symbol);
+
+    const baseUnderlying = strategy.underlying.toObject ? strategy.underlying.toObject() : strategy.underlying;
+    const updatedUnderlying = {
+      ...baseUnderlying,
+      spotPriceAtEntry: quote.lastPrice,
+      lastSyncQuote: quote,
+      syncedAt: new Date().toISOString(),
+    };
+
+    const updated = await repo.update(id, { underlying: updatedUnderlying });
+    res.status(200).json({
+      message: `Precio subyacente de la estrategia sincronizado exitosamente con el broker (${symbol} @ $${quote.lastPrice}).`,
+      data: updated,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 
