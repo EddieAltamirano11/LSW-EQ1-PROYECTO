@@ -106,3 +106,18 @@ export const reorderLegs = async (req, res, next) => {
     next(error);
   }
 };
+
+// Eliminación atómica de pierna en arreglo embebido
+export const deleteSingleLeg = async (req, res, next) => {
+  try {
+    const { id, legId } = req.params;
+    const deleted = await HedgingService.deleteSingleLeg(id, legId, req.dbTarget);
+    res.status(200).json({
+      message: 'Pierna financiera eliminada atómicamente de la estrategia.',
+      data: deleted,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
