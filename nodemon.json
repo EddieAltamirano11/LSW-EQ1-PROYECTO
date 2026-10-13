@@ -1,0 +1,5 @@
+{
+  "watch": ["src", "spec"],
+  "ext": "js,mjs,json,yaml"
+}
+

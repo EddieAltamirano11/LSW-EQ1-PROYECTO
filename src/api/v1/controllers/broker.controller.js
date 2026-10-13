@@ -75,3 +75,15 @@ export const cancelOrder = async (req, res, next) => {
   }
 };
 
+// Sincronizar y actualizar precio spot del subyacente en BD con datos del Broker
+export const syncUnderlying = async (req, res, next) => {
+  try {
+    const { symbol } = req.params;
+    const result = await BrokerService.syncUnderlyingFromBroker(symbol, req.dbTarget);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+

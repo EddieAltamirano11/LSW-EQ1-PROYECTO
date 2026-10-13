@@ -9,7 +9,10 @@ export class HedgingMongoRepository {
   }
 
   async getById(id) {
-    return await HedgingStrategy.findOne({ _id: id, deletedAt: null });
+    return await HedgingStrategy.findOne({
+      $or: [{ _id: id }, { portfolioId: id }],
+      deletedAt: null,
+    }).sort({ createdAt: -1 });
   }
 
   async create(data) {
@@ -28,7 +31,7 @@ export class HedgingMongoRepository {
 
   async update(id, updates) {
     return await HedgingStrategy.findOneAndUpdate(
-      { _id: id, deletedAt: null },
+      { $or: [{ _id: id }, { portfolioId: id }], deletedAt: null },
       { $set: updates },
       { new: true, runValidators: true }
     );
@@ -36,7 +39,7 @@ export class HedgingMongoRepository {
 
   async delete(id) {
     return await HedgingStrategy.findOneAndUpdate(
-      { _id: id, deletedAt: null },
+      { $or: [{ _id: id }, { portfolioId: id }], deletedAt: null },
       { $set: { deletedAt: new Date(), status: 'CLOSED' } },
       { new: true }
     );

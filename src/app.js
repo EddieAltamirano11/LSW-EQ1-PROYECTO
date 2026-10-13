@@ -3,6 +3,7 @@ import morgan from 'morgan';
 import cors from 'cors';
 import yaml from 'yamljs';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { apiReference } from '@scalar/express-api-reference';
 
@@ -27,14 +28,17 @@ app.use(express.urlencoded({ extended: false }));
 // Inyección de contexto de persistencia y autenticación
 app.use(authMiddleware);
 app.use(databaseContextMiddleware);
-
-// Carga y publicación del contrato OpenSpec
+// Carga y publicación dinámica del contrato OpenSpec
 const specPath = path.join(__dirname, '../spec/openspec.yaml');
-const openapiSpec = yaml.load(specPath);
 
 // Endpoint 2: Especificación OpenAPI / OpenSpec en JSON crudo
 app.get(`${config.API_URL}/spec.json`, (req, res) => {
-  res.status(200).json(openapiSpec);
+  try {
+    const dynamicSpec = yaml.load(specPath);
+    res.status(200).json(dynamicSpec);
+  } catch (err) {
+    res.status(500).json({ error: 'Error cargando la especificación OpenSpec', details: err.message });
+  }
 });
 
 // Visor interactivo moderno OpenSpec (Scalar API Reference)
@@ -42,7 +46,7 @@ app.use(
   `${config.API_URL}/docs`,
   apiReference({
     spec: {
-      content: openapiSpec,
+      url: `${config.API_URL}/spec.json`,
     },
     theme: 'purple',
     pageTitle: 'API REST Coberturas Financieras — OpenSpec',

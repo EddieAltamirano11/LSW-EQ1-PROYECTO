@@ -10,6 +10,7 @@ const REALISTIC_MARKET_SNAPSHOTS = {
   SPY: { companyName: 'SPDR S&P 500 ETF Trust', spotPrice: 565.15, volatility: 0.142, bid: 565.10, ask: 565.20 },
   NVDA: { companyName: 'NVIDIA Corporation', spotPrice: 125.80, volatility: 0.450, bid: 125.75, ask: 125.85 },
   MSFT: { companyName: 'Microsoft Corporation', spotPrice: 428.30, volatility: 0.185, bid: 428.25, ask: 428.35 },
+  GOOGL: { companyName: 'Alphabet Inc.', spotPrice: 165.40, volatility: 0.240, bid: 165.35, ask: 165.45 },
 };
 
 export const getBrokerQuote = async (symbol) => {
@@ -40,6 +41,7 @@ export const getBrokerQuote = async (symbol) => {
 
         return {
           symbol: ticker,
+          companyName: REALISTIC_MARKET_SNAPSHOTS[ticker]?.companyName || `${ticker} Inc.`,
           lastPrice: Number(effectiveLastPrice.toFixed(2)),
           bid: Number(effectiveBid.toFixed(2)),
           ask: Number(effectiveAsk.toFixed(2)),
@@ -146,7 +148,8 @@ export const syncUnderlyingFromBroker = async (symbol, dbTarget = 'mongodb') => 
     });
   } else {
     // Si ya existe, actualizamos su precio spot
-    existing = await repo.update(existing.id, {
+    const id = existing.id || existing._id;
+    existing = await repo.update(id, {
       spotPrice: quote.lastPrice,
     });
   }

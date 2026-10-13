@@ -16,4 +16,7 @@ router.get('/orders', BrokerController.getOrders);
 router.post('/orders', BrokerController.createOrder);
 router.delete('/orders/:id', BrokerController.cancelOrder);
 
+// Sincronización de precio spot del subyacente en BD con datos del Broker
+router.post('/sync-underlying/:symbol', BrokerController.syncUnderlying);
+
 export default router;

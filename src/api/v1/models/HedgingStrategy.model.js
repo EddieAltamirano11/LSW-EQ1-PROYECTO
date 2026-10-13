@@ -76,9 +76,9 @@ hedgingStrategySchema.index({ 'underlying.symbol': 1 });
 
 hedgingStrategySchema.set('toJSON', {
   transform: (_doc, ret) => {
-    ret.id = ret._id;
+    const id = ret._id;
     delete ret._id;
-    return ret;
+    return { id, ...ret };
   },
 });
 

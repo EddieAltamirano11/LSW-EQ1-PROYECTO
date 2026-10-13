@@ -4,8 +4,8 @@ info:
   version: 1.0.0
   description: >
     API RESTful con soporte de persistencia políglota dinámica (MongoDB Atlas y Supabase PostgreSQL),
-    módulo cuantitativo F0 (Black-Scholes, Griegas, Newton-Raphson), módulo de coberturas F2 Parte B
-    e integración de datos bursátiles con Alpaca Markets.
+    módulo cuantitativo F0 (Black-Scholes analítico, 5 Griegas, Newton-Raphson), módulo de coberturas
+    F2 Parte B (Protective Put y Zero-Cost Collar con subdocumentos) e integración bursátil en tiempo real con Alpaca Markets.
   contact:
     name: Equipo 1 - Los Eddies (Altamirano Plantillas Eddie David)
     email: ealtamirano@ittepic.edu.mx
@@ -13,9 +13,50 @@ servers:
   - url: http://localhost:3050/api/v1
     description: Servidor Local de Desarrollo
 
+tags:
+  - name: Core
+    description: Verificación de estado del servidor y especificación de contratos
+  - name: Autenticación
+    description: Gestión de sesiones JWT y contexto de persistencia políglota
+  - name: Subyacentes
+    description: Catálogo y mantenimiento de activos subyacentes negociables
+  - name: Coberturas
+    description: Emisión, calibración algorítmica y gestión de estrategias Protective Put y Collar Spread
+  - name: Subdocumentos
+    description: Mutaciones atómicas sobre activos subyacentes embebidos y patas financieras (legs)
+  - name: Métricas & Analítica
+    description: Cálculo de sensibilidades griegas agregadas y matriz de pagos (Payoff Matrix)
+  - name: Cuantitativo F0
+    description: Motores cuantitativos analíticos de Black-Scholes y Newton-Raphson
+  - name: Broker Alpaca
+    description: Conexión con Alpaca Markets, feed IEX, cadena de opciones y sincronización spot
+
 paths:
+  # ==========================================================
+  # 1. CORE & METADATOS
+  # ==========================================================
+  /:
+    get:
+      tags: [Core]
+      summary: Inspección de estado raíz, telemetría institucional y base de datos activa
+      responses:
+        '200':
+          description: Telemetría y enlaces de documentación del microservicio
+
+  /spec.json:
+    get:
+      tags: [Core]
+      summary: Especificación OpenAPI / OpenSpec cruda en formato JSON
+      responses:
+        '200':
+          description: Documento OpenAPI 3.0 en JSON
+
+  # ==========================================================
+  # 2. AUTENTICACIÓN & SESIÓN
+  # ==========================================================
   /auth/login:
     post:
+      tags: [Autenticación]
       summary: Inicio de sesión del inversor y selección de motor de persistencia
       requestBody:
         required: true
@@ -31,14 +72,24 @@ paths:
       responses:
         '200':
           description: Autenticación exitosa y token JWT emitido
-        '400':
-          description: Datos inválidos
         '401':
           description: Credenciales no autorizadas
 
+  /auth/session:
+    get:
+      tags: [Autenticación]
+      summary: Inspeccionar sesión y claims del token JWT activo
+      responses:
+        '200':
+          description: Datos de sesión decodificados del usuario autenticado
+
+  # ==========================================================
+  # 3. SUBYACENTES
+  # ==========================================================
   /underlyings:
     get:
-      summary: Listar catálogo de activos subyacentes
+      tags: [Subyacentes]
+      summary: Listar catálogo completo de activos subyacentes
       parameters:
         - in: header
           name: x-database-selection
@@ -47,7 +98,8 @@ paths:
         '200':
           description: Lista de acciones y ETFs negociables
     post:
-      summary: Crear un activo subyacente individual
+      tags: [Subyacentes]
+      summary: Registrar un activo subyacente individual
       parameters:
         - in: header
           name: x-database-selection
@@ -60,13 +112,16 @@ paths:
               $ref: '#/components/schemas/UnderlyingInput'
       responses:
         '201':
-          description: Subyacente registrado
-        '409':
-          description: Ticker duplicado
+          description: Subyacente registrado con éxito
 
   /underlyings/batch:
     post:
-      summary: Crear múltiples subyacentes en bloque (arreglo de objetos)
+      tags: [Subyacentes]
+      summary: Registrar múltiples subyacentes en lote masivo
+      parameters:
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase] }
       requestBody:
         required: true
         content:
@@ -77,11 +132,12 @@ paths:
                 $ref: '#/components/schemas/UnderlyingInput'
       responses:
         '201':
-          description: Lote de subyacentes creado
+          description: Colección de subyacentes insertada
 
   /underlyings/symbol/{symbol}:
     get:
-      summary: Consultar subyacente por Ticker bursátil
+      tags: [Subyacentes]
+      summary: Consultar activo subyacente por Ticker bursátil
       parameters:
         - in: path
           name: symbol
@@ -92,30 +148,38 @@ paths:
           schema: { type: string, enum: [mongodb, supabase] }
       responses:
         '200':
-          description: Detalle del activo subyacente
+          description: Detalle del subyacente
         '404':
           description: Subyacente no encontrado
 
   /underlyings/{id}:
     get:
-      summary: Consultar subyacente por ID
+      tags: [Subyacentes]
+      summary: Consultar subyacente por identificador primario
       parameters:
         - in: path
           name: id
           required: true
           schema: { type: string }
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase] }
       responses:
         '200':
           description: Subyacente encontrado
         '404':
           description: No encontrado
     put:
-      summary: Actualizar cotización spot o datos del subyacente
+      tags: [Subyacentes]
+      summary: Actualizar precio spot o volatilidad del subyacente
       parameters:
         - in: path
           name: id
           required: true
           schema: { type: string }
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase] }
       requestBody:
         required: true
         content:
@@ -129,30 +193,95 @@ paths:
         '200':
           description: Subyacente actualizado
     delete:
-      summary: Borrado lógico de un activo subyacente
+      tags: [Subyacentes]
+      summary: Borrado lógico o físico del subyacente
       parameters:
         - in: path
           name: id
           required: true
           schema: { type: string }
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase] }
       responses:
         '200':
-          description: Subyacente eliminado lógicamente
+          description: Subyacente eliminado
 
-  /hedging-strategies:
+  # ==========================================================
+  # 4. ESTRATEGIAS DE COBERTURA
+  # ==========================================================
+  /hedging:
     get:
-      summary: Listar estrategias de cobertura registradas
+      tags: [Coberturas]
+      summary: Listar todas las estrategias de cobertura registradas
       parameters:
         - in: header
           name: x-database-selection
           schema: { type: string, enum: [mongodb, supabase] }
       responses:
         '200':
-          description: Lista de coberturas
+          description: Lista de estrategias de cobertura activas
 
-  /hedging-strategies/protective-put:
+  /hedging/recommend-collar/{symbol}:
+    get:
+      tags: [Coberturas]
+      summary: Recomendar algorítmicamente parámetros para un Collar Spread
+      parameters:
+        - in: path
+          name: symbol
+          required: true
+          schema: { type: string, example: AAPL }
+      responses:
+        '200':
+          description: Parámetros sugeridos de suelo y techo financiero
+
+  /hedging/auto-collar:
     post:
+      tags: [Coberturas]
+      summary: Calibrar y emitir automáticamente una cobertura Zero-Cost Collar
+      parameters:
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase] }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [symbol, sharesCount]
+              properties:
+                symbol: { type: string, example: AAPL }
+                sharesCount: { type: integer, example: 100 }
+                protectionPct: { type: number, example: 0.05 }
+      responses:
+        '201':
+          description: Cobertura Collar calibrada y persistida
+
+  /hedging/auto-collar/{symbol}:
+    post:
+      tags: [Coberturas]
+      summary: Calibrar y emitir automáticamente un Collar Spread por símbolo en URL
+      parameters:
+        - in: path
+          name: symbol
+          required: true
+          schema: { type: string, example: NVDA }
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase] }
+      responses:
+        '201':
+          description: Cobertura Collar emitida automáticamente
+
+  /hedging/protective-put:
+    post:
+      tags: [Coberturas]
       summary: Estructurar y emitir cobertura Protective Put (F2 Parte B)
+      parameters:
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase] }
       requestBody:
         required: true
         content:
@@ -172,9 +301,14 @@ paths:
         '201':
           description: Cobertura Protective Put emitida con suelo blindado
 
-  /hedging-strategies/collar-spread:
+  /hedging/collar-spread:
     post:
+      tags: [Coberturas]
       summary: Estructurar y emitir cobertura Zero-Cost Collar (F2 Parte B)
+      parameters:
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase] }
       requestBody:
         required: true
         content:
@@ -195,46 +329,153 @@ paths:
         '201':
           description: Cobertura Collar Spread creada con túnel de costo cero
 
-  /hedging-strategies/{id}:
+  /hedging/batch:
+    post:
+      tags: [Coberturas]
+      summary: Creación masiva por lote de estrategias de cobertura
+      parameters:
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase] }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                required: [symbol, strategyType]
+                properties:
+                  symbol: { type: string, example: AAPL }
+                  strategyType: { type: string, enum: [PROTECTIVE_PUT, COLLAR_SPREAD] }
+      responses:
+        '201':
+          description: Lote de coberturas emitido
+
+  /hedging/{id}:
     get:
+      tags: [Coberturas]
       summary: Consultar estrategia completa por ID con patas y métricas
       parameters:
         - in: path
           name: id
           required: true
           schema: { type: string }
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase] }
       responses:
         '200':
           description: Estrategia encontrada
     delete:
+      tags: [Coberturas]
       summary: Cerrar o eliminar estrategia de cobertura
       parameters:
         - in: path
           name: id
           required: true
           schema: { type: string }
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase] }
       responses:
         '200':
           description: Estrategia cerrada
 
-  /hedging-strategies/{id}/legs:
-    get:
-      summary: Consultar subdocumento legs (todas las patas de la estrategia)
+  /hedging/{id}/status:
+    put:
+      tags: [Coberturas]
+      summary: Actualizar estado operativo de la estrategia (ACTIVE, EXPIRED, CLOSED)
       parameters:
         - in: path
           name: id
           required: true
           schema: { type: string }
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase] }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [ACTIVE, EXPIRED, CLOSED], example: CLOSED }
       responses:
         '200':
-          description: Arreglo de patas derivadas
-    post:
-      summary: Agregar una pata individual a la estrategia
+          description: Estado actualizado exitosamente
+
+  # ==========================================================
+  # 5. SUBDOCUMENTOS EMBEBIDOS (UNDERLYING & LEGS)
+  # ==========================================================
+  /hedging/{id}/underlying:
+    get:
+      tags: [Subdocumentos]
+      summary: Consultar subdocumento embebido del activo subyacente
       parameters:
         - in: path
           name: id
           required: true
           schema: { type: string }
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase] }
+      responses:
+        '200':
+          description: Datos del activo subyacente embebido
+    put:
+      tags: [Subdocumentos]
+      summary: Actualizar cotización spot del subdocumento subyacente embebido
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase] }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [spotPrice]
+              properties:
+                spotPrice: { type: number, example: 231.50 }
+      responses:
+        '200':
+          description: Subdocumento underlying actualizado
+
+  /hedging/{id}/legs:
+    get:
+      tags: [Subdocumentos]
+      summary: Consultar todas las patas de opciones derivadas (subdocumento legs)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase] }
+      responses:
+        '200':
+          description: Arreglo de patas derivadas embebidas
+    post:
+      tags: [Subdocumentos]
+      summary: Agregar una nueva pata individual a la estrategia
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase] }
       requestBody:
         required: true
         content:
@@ -243,16 +484,20 @@ paths:
               $ref: '#/components/schemas/LegInput'
       responses:
         '201':
-          description: Pata agregada
+          description: Pata agregada exitosamente al subdocumento
 
-  /hedging-strategies/{id}/legs/batch:
+  /hedging/{id}/legs/batch:
     post:
-      summary: Agregar un lote de patas a la estrategia (arreglo de objetos)
+      tags: [Subdocumentos]
+      summary: Agregar un lote masivo de patas a la estrategia
       parameters:
         - in: path
           name: id
           required: true
           schema: { type: string }
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase] }
       requestBody:
         required: true
         content:
@@ -263,14 +508,18 @@ paths:
                 $ref: '#/components/schemas/LegInput'
       responses:
         '201':
-          description: Lote de patas agregado
+          description: Lote de patas agregado exitosamente
     put:
-      summary: Actualizar lote de patas simultáneamente
+      tags: [Subdocumentos]
+      summary: Actualizar lote masivo de patas simultáneamente
       parameters:
         - in: path
           name: id
           required: true
           schema: { type: string }
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase] }
       requestBody:
         required: true
         content:
@@ -288,12 +537,16 @@ paths:
         '200':
           description: Lote de patas actualizado
     delete:
-      summary: Eliminar múltiples patas por arreglo de IDs
+      tags: [Subdocumentos]
+      summary: Eliminar múltiples patas financieras en bloque
       parameters:
         - in: path
           name: id
           required: true
           schema: { type: string }
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase] }
       requestBody:
         required: true
         content:
@@ -307,11 +560,12 @@ paths:
                   items: { type: string }
       responses:
         '200':
-          description: Patas eliminadas
+          description: Patas eliminadas en bloque
 
-  /hedging-strategies/{id}/legs/{legId}:
+  /hedging/{id}/legs/{legId}:
     get:
-      summary: Consultar una pata específica por ID
+      tags: [Subdocumentos]
+      summary: Consultar una pata de opción específica por ID
       parameters:
         - in: path
           name: id
@@ -321,11 +575,15 @@ paths:
           name: legId
           required: true
           schema: { type: string }
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase] }
       responses:
         '200':
-          description: Detalle de la pata
+          description: Detalle de la pata encontrada
     put:
-      summary: Actualizar una pata específica
+      tags: [Subdocumentos]
+      summary: Actualizar una pata de opción específica
       parameters:
         - in: path
           name: id
@@ -335,6 +593,9 @@ paths:
           name: legId
           required: true
           schema: { type: string }
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase] }
       requestBody:
         required: true
         content:
@@ -349,7 +610,8 @@ paths:
         '200':
           description: Pata actualizada
     delete:
-      summary: Eliminar una pata individual
+      tags: [Subdocumentos]
+      summary: Eliminar una pata de opción individual del arreglo
       parameters:
         - in: path
           name: id
@@ -359,13 +621,52 @@ paths:
           name: legId
           required: true
           schema: { type: string }
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase] }
       responses:
         '200':
-          description: Pata eliminada
+          description: Pata eliminada individualmente
 
-  /hedging-strategies/{id}/payoff-matrix:
+  # ==========================================================
+  # 6. MÉTRICAS FINANCIERAS & MATRIZ DE PAGOS
+  # ==========================================================
+  /hedging/{id}/financial-metrics:
     get:
-      summary: Generar matriz discreta de curvas de Payoff P&L para graficación interactiva en PWA
+      tags: [Métricas & Analítica]
+      summary: Consultar métricas financieras y letras griegas agregadas
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase] }
+      responses:
+        '200':
+          description: Métricas financieras agregadas (Costo neto, Delta, Max Profit/Loss)
+
+  /hedging/{id}/financial-metrics/recalculate:
+    put:
+      tags: [Métricas & Analítica]
+      summary: Recalcular y persistir métricas cuantitativas y griegas agregadas
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase] }
+      responses:
+        '200':
+          description: Métricas recalculadas y actualizadas
+
+  /hedging/{id}/payoff-matrix:
+    get:
+      tags: [Métricas & Analítica]
+      summary: Generar matriz discreta de curvas de Payoff P&L para graficación interactiva
       parameters:
         - in: path
           name: id
@@ -374,12 +675,19 @@ paths:
         - in: query
           name: steps
           schema: { type: integer, default: 25 }
+        - in: header
+          name: x-database-selection
+          schema: { type: string, enum: [mongodb, supabase] }
       responses:
         '200':
-          description: Puntos vectoriales simulados de P&L
+          description: Puntos vectoriales simulados de P&L al vencimiento
 
+  # ==========================================================
+  # 7. MOTOR CUANTITATIVO F0
+  # ==========================================================
   /quant/black-scholes:
     post:
+      tags: [Cuantitativo F0]
       summary: Valuación analítica Black-Scholes y cálculo de 5 Griegas (F0)
       requestBody:
         required: true
@@ -397,10 +705,11 @@ paths:
                 optionType: { type: string, enum: [CALL, PUT], example: PUT }
       responses:
         '200':
-          description: Precio teórico y telemetría de Griegas
+          description: Precio teórico y telemetría analítica de Griegas
 
   /quant/implied-volatility:
     post:
+      tags: [Cuantitativo F0]
       summary: Cálculo iterativo de Volatilidad Implícita con Newton-Raphson (F0)
       requestBody:
         required: true
@@ -417,10 +726,75 @@ paths:
                 optionType: { type: string, enum: [CALL, PUT], example: PUT }
       responses:
         '200':
-          description: Volatilidad implícita calculada
+          description: Volatilidad implícita calculada con convergencia
+
+  # ==========================================================
+  # 8. BROKER BURSÁTIL: ALPACA MARKETS
+  # ==========================================================
+  /broker/account:
+    get:
+      tags: [Broker Alpaca]
+      summary: Consultar balance, capital y poder de compra del broker Alpaca
+      responses:
+        '200':
+          description: Estado financiero de cuenta bursátil de Paper Trading
+
+  /broker/positions:
+    get:
+      tags: [Broker Alpaca]
+      summary: Consultar posiciones vivas abiertas en el broker
+      responses:
+        '200':
+          description: Cartera de acciones y contratos abiertos en Alpaca
+
+  /broker/orders:
+    get:
+      tags: [Broker Alpaca]
+      summary: Listar órdenes bursátiles ejecutadas o pendientes
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, default: all }
+      responses:
+        '200':
+          description: Historial de órdenes bursátiles
+    post:
+      tags: [Broker Alpaca]
+      summary: Emitir una nueva orden bursátil (mercado/límite) en Alpaca
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [symbol, qty, side, type, timeInForce]
+              properties:
+                symbol: { type: string, example: AAPL }
+                qty: { type: integer, example: 10 }
+                side: { type: string, enum: [buy, sell], example: buy }
+                type: { type: string, enum: [market, limit], example: market }
+                timeInForce: { type: string, enum: [day, gtc], example: day }
+                limitPrice: { type: number, example: 228.00 }
+      responses:
+        '201':
+          description: Orden emitida y enviada a la rueda bursátil
+
+  /broker/orders/{id}:
+    delete:
+      tags: [Broker Alpaca]
+      summary: Cancelar una orden bursátil abierta en Alpaca
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Orden cancelada exitosamente
 
   /broker/quote/{symbol}:
     get:
+      tags: [Broker Alpaca]
       summary: Consultar cotización viva en tiempo real desde Alpaca Markets
       parameters:
         - in: path
@@ -433,6 +807,7 @@ paths:
 
   /broker/options-chain/{symbol}:
     get:
+      tags: [Broker Alpaca]
       summary: Consultar cadena de opciones viva (Option Chain) para calibración de coberturas
       parameters:
         - in: path
@@ -448,15 +823,16 @@ paths:
 
   /broker/sync-underlying/{symbol}:
     post:
+      tags: [Broker Alpaca]
       summary: Sincronizar y actualizar precio spot del subyacente en BD con datos del Broker
       parameters:
         - in: path
           name: symbol
           required: true
-          schema: { type: string, example: AAPL }
+          schema: { type: string, example: GOOGL }
         - in: header
           name: x-database-selection
-          schema: { type: string, enum: [mongodb, supabase] }
+          schema: { type: string, enum: [mongodb, supabase], default: mongodb }
       responses:
         '200':
           description: Subyacente sincronizado en la base de datos seleccionada
@@ -481,4 +857,3 @@ components:
         strike: { type: number, example: 580.0 }
         quantity: { type: integer, example: 1 }
         entryPrice: { type: number, example: 6.60 }
-

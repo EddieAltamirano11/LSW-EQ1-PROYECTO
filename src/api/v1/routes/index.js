@@ -5,6 +5,7 @@ import underlyingRoutes from './underlying.routes.js';
 import hedgingRoutes from './hedging.routes.js';
 import strategyRoutes from './strategy.routes.js';
 import analyticsRoutes from './analytics.routes.js';
+import quantRoutes from './quant.routes.js';
 import brokerRoutes from './broker.routes.js';
 import marketRoutes from './market.routes.js';
 import docsRoutes from './docs.routes.js';
@@ -21,6 +22,7 @@ const routerAPI = (app) => {
   router.use('/hedging-strategies', hedgingRoutes);
   router.use('/strategies', strategyRoutes);
   router.use('/analytics', analyticsRoutes);
+  router.use('/quant', quantRoutes);
   router.use('/broker', brokerRoutes);
   router.use('/market', marketRoutes);
   router.use('/docs', docsRoutes);
