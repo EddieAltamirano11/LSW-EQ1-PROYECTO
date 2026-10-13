@@ -10,12 +10,12 @@
 ## 👥 Integrantes del Equipo
 
 1. **Altamirano Plantillas Eddie David** (23400498)
-2. **Durán Ochoa Luis Carlos** (23400508)
-3. **Díaz Rodríguez Fernando** (23400506)
-4. **Espinoza Barajas Jesús** (23400509)
+2. **Durán Ocampo Luis Carlos** (23400531)
+3. **Díaz Rodríguez Fernando** (23400530)
+4. **Espinoza Benitez Jesús** (23400536)
 5. **Martínez Orozco Carlos** (23400577)
-6. **Núñez Carrillo José Tadeo** (23400520)
-7. **Rendón Valenzuela Karime** (23400525)
+6. **Nuñez Carvajal José Tadeo** (23400585)
+7. **Rendón Vázquez Karime Lizbeth** (23400608)
 
 ---
 
