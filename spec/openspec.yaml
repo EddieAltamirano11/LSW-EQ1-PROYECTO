@@ -1,11 +1,12 @@
 openapi: 3.0.3
 info:
   title: API REST Coberturas Cuantitativas de Opciones (Protective Put & Collar)
-  version: 1.0.0
+  version: 1.1.0
   description: >
     API RESTful con soporte de persistencia políglota dinámica (MongoDB Atlas y Supabase PostgreSQL),
     módulo cuantitativo F0 (Black-Scholes analítico, 5 Griegas, Newton-Raphson), módulo de coberturas
-    F2 Parte B (Protective Put y Zero-Cost Collar con subdocumentos) e integración bursátil en tiempo real con Alpaca Markets.
+    F2 Parte B (Protective Put y Zero-Cost Collar con subdocumentos) e integración bursátil multi-broker
+    en tiempo real con Webull OpenAPI y Alpaca Markets.
   contact:
     name: Equipo 1 - Los Eddies (Altamirano Plantillas Eddie David)
     email: ealtamirano@ittepic.edu.mx
@@ -28,8 +29,8 @@ tags:
     description: Cálculo de sensibilidades griegas agregadas y matriz de pagos (Payoff Matrix)
   - name: Cuantitativo F0
     description: Motores cuantitativos analíticos de Black-Scholes y Newton-Raphson
-  - name: Broker Alpaca
-    description: Conexión con Alpaca Markets, feed IEX, cadena de opciones y sincronización spot
+  - name: Brokers Bursátiles
+    description: Conexión multi-broker en tiempo real con Webull OpenAPI y Alpaca Markets (Paper Trading, feeds de cotización, cadena de opciones y enrutamiento de órdenes)
 
 paths:
   # ==========================================================
@@ -291,6 +292,7 @@ paths:
               required: [symbol, spotPrice, sharesCount, putStrike, putPremium]
               properties:
                 portfolioId: { type: string, example: PORT-ALPHA-01 }
+                broker: { type: string, enum: [ALPACA, WEBULL, IBKR, SIMULATED], default: WEBULL, example: WEBULL }
                 symbol: { type: string, example: AAPL }
                 spotPrice: { type: number, example: 228.50 }
                 sharesCount: { type: integer, example: 100 }
@@ -318,6 +320,7 @@ paths:
               required: [symbol, spotPrice, sharesCount, putStrike, callStrike]
               properties:
                 portfolioId: { type: string, example: PORT-ALPHA-01 }
+                broker: { type: string, enum: [ALPACA, WEBULL, IBKR, SIMULATED], default: WEBULL, example: WEBULL }
                 symbol: { type: string, example: SPY }
                 spotPrice: { type: number, example: 565.00 }
                 sharesCount: { type: integer, example: 100 }
@@ -729,85 +732,118 @@ paths:
           description: Volatilidad implícita calculada con convergencia
 
   # ==========================================================
-  # 8. BROKER BURSÁTIL: ALPACA MARKETS
+  # 8. BROKERS BURSÁTILES: WEBULL OPENAPI & ALPACA MARKETS
   # ==========================================================
   /broker/account:
     get:
-      tags: [Broker Alpaca]
-      summary: Consultar balance, capital y poder de compra del broker Alpaca
+      tags: [Brokers Bursátiles]
+      summary: Consultar balance, capital y poder de compra del broker activo (Webull o Alpaca)
+      parameters:
+        - in: header
+          name: x-broker-selection
+          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+          description: Selección del broker para la consulta (por defecto WEBULL)
+        - in: query
+          name: broker
+          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+          description: Selección alternativa de broker por parámetro query
       responses:
         '200':
           description: Estado financiero de cuenta bursátil de Paper Trading
 
   /broker/positions:
     get:
-      tags: [Broker Alpaca]
-      summary: Consultar posiciones vivas abiertas en el broker
+      tags: [Brokers Bursátiles]
+      summary: Consultar posiciones vivas abiertas en el broker activo
+      parameters:
+        - in: header
+          name: x-broker-selection
+          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+        - in: query
+          name: broker
+          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
       responses:
         '200':
-          description: Cartera de acciones y contratos abiertos en Alpaca
+          description: Cartera de acciones y contratos abiertos en el broker
 
   /broker/orders:
     get:
-      tags: [Broker Alpaca]
-      summary: Listar órdenes bursátiles ejecutadas o pendientes
+      tags: [Brokers Bursátiles]
+      summary: Listar órdenes bursátiles ejecutadas o pendientes en el broker
       parameters:
         - in: query
           name: status
           schema: { type: string, default: all }
+        - in: header
+          name: x-broker-selection
+          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+        - in: query
+          name: broker
+          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
       responses:
         '200':
           description: Historial de órdenes bursátiles
     post:
-      tags: [Broker Alpaca]
-      summary: Emitir una nueva orden bursátil (mercado/límite) en Alpaca
+      tags: [Brokers Bursátiles]
+      summary: Emitir una nueva orden bursátil (mercado/límite) en Webull o Alpaca
+      parameters:
+        - in: header
+          name: x-broker-selection
+          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+        - in: query
+          name: broker
+          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [symbol, qty, side, type, timeInForce]
-              properties:
-                symbol: { type: string, example: AAPL }
-                qty: { type: integer, example: 10 }
-                side: { type: string, enum: [buy, sell], example: buy }
-                type: { type: string, enum: [market, limit], example: market }
-                timeInForce: { type: string, enum: [day, gtc], example: day }
-                limitPrice: { type: number, example: 228.00 }
+              $ref: '#/components/schemas/BrokerOrderInput'
       responses:
         '201':
-          description: Orden emitida y enviada a la rueda bursátil
+          description: Orden emitida y enviada a la rueda bursátil del broker
 
   /broker/orders/{id}:
     delete:
-      tags: [Broker Alpaca]
-      summary: Cancelar una orden bursátil abierta en Alpaca
+      tags: [Brokers Bursátiles]
+      summary: Cancelar una orden bursátil abierta en el broker
       parameters:
         - in: path
           name: id
           required: true
           schema: { type: string }
+        - in: header
+          name: x-broker-selection
+          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+        - in: query
+          name: broker
+          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
       responses:
         '200':
           description: Orden cancelada exitosamente
 
   /broker/quote/{symbol}:
     get:
-      tags: [Broker Alpaca]
-      summary: Consultar cotización viva en tiempo real desde Alpaca Markets
+      tags: [Brokers Bursátiles]
+      summary: Consultar cotización viva en tiempo real desde Webull o Alpaca
       parameters:
         - in: path
           name: symbol
           required: true
           schema: { type: string, example: AAPL }
+        - in: header
+          name: x-broker-selection
+          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+        - in: query
+          name: broker
+          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
       responses:
         '200':
           description: Cotización viva (bid, ask, lastPrice)
 
   /broker/options-chain/{symbol}:
     get:
-      tags: [Broker Alpaca]
+      tags: [Brokers Bursátiles]
       summary: Consultar cadena de opciones viva (Option Chain) para calibración de coberturas
       parameters:
         - in: path
@@ -817,13 +853,19 @@ paths:
         - in: query
           name: expiration
           schema: { type: string, example: '2026-10-16' }
+        - in: header
+          name: x-broker-selection
+          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+        - in: query
+          name: broker
+          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
       responses:
         '200':
           description: Cadena de contratos Call y Put
 
   /broker/sync-underlying/{symbol}:
     post:
-      tags: [Broker Alpaca]
+      tags: [Brokers Bursátiles]
       summary: Sincronizar y actualizar precio spot del subyacente en BD con datos del Broker
       parameters:
         - in: path
@@ -833,9 +875,15 @@ paths:
         - in: header
           name: x-database-selection
           schema: { type: string, enum: [mongodb, supabase], default: mongodb }
+        - in: header
+          name: x-broker-selection
+          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+        - in: query
+          name: broker
+          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
       responses:
         '200':
-          description: Subyacente sincronizado en la base de datos seleccionada
+          description: Subyacente sincronizado en la base de datos seleccionada con el broker activo
 
 components:
   securitySchemes:
@@ -1007,6 +1055,7 @@ components:
       type: object
       required: [symbol, qty, side, type, timeInForce]
       properties:
+        broker: { type: string, enum: [WEBULL, ALPACA], default: WEBULL, example: WEBULL }
         symbol: { type: string, example: AAPL }
         qty: { type: integer, example: 10 }
         side: { type: string, enum: [buy, sell], example: buy }
@@ -1017,6 +1066,7 @@ components:
     BrokerOrderOutput:
       type: object
       properties:
+        broker: { type: string, enum: [WEBULL, ALPACA], example: WEBULL }
         orderId: { type: string, example: '904837cc-ae9b-4b1a-8c02-5aed3245b3d7' }
         clientOrderId: { type: string, example: 'ORD-982173' }
         symbol: { type: string, example: AAPL }

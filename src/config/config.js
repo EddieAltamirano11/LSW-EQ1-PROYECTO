@@ -16,11 +16,21 @@ const config = {
   SUPABASE_URL: process.env.SUPABASE_URL || '',
   SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || '',
   
+  // Broker Configuration & Selection
+  DEFAULT_BROKER: (process.env.DEFAULT_BROKER || 'WEBULL').toUpperCase(),
+
   // Broker Alpaca
   ALPACA_API_KEY_ID: process.env.ALPACA_API_KEY_ID || '',
   ALPACA_API_SECRET_KEY: process.env.ALPACA_API_SECRET_KEY || '',
   ALPACA_BASE_URL: process.env.ALPACA_BASE_URL || 'https://paper-api.alpaca.markets',
   ALPACA_DATA_URL: process.env.ALPACA_DATA_URL || 'https://data.alpaca.markets/v2',
+
+  // Broker Webull OpenAPI
+  WEBULL_APP_KEY: process.env.WEBULL_APP_KEY || '',
+  WEBULL_APP_SECRET: process.env.WEBULL_APP_SECRET || '',
+  WEBULL_ACCOUNT_ID: process.env.WEBULL_ACCOUNT_ID || '',
+  WEBULL_BASE_URL: process.env.WEBULL_BASE_URL || 'https://api.webull.com/openapi',
 };
 
 export default config;
+
