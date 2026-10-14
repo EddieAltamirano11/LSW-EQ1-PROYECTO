@@ -71,6 +71,7 @@ export const createProtectivePut = async (payload, dbTarget = 'mongodb') => {
   const strategyDoc = {
     id: `STRAT-PP-${symbol.toUpperCase()}-${randomUUID().slice(0, 4)}`,
     portfolioId,
+    broker: (payload.broker || 'ALPACA').toUpperCase(),
     strategyType: 'PROTECTIVE_PUT',
     status: 'ACTIVE',
     underlying: {
@@ -180,6 +181,7 @@ export const createCollarSpread = async (payload, dbTarget = 'mongodb') => {
   const strategyDoc = {
     id: `STRAT-COLLAR-${symbol.toUpperCase()}-${randomUUID().slice(0, 4)}`,
     portfolioId,
+    broker: (payload.broker || 'ALPACA').toUpperCase(),
     strategyType: 'COLLAR',
     status: 'ACTIVE',
     underlying: {

@@ -8,6 +8,7 @@ const mapFromSupabase = (row) => {
   return {
     id: row.id,
     portfolioId: row.portfolio_id,
+    broker: row.broker || row.financial_metrics?.broker || 'ALPACA',
     underlyingId: row.underlying_id,
     strategyType: row.strategy_type,
     status: row.status,
