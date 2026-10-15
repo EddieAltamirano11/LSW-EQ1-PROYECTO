@@ -445,7 +445,41 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
     const executionErrors = [];
 
     if (targetBroker === 'WEBULL') {
-      // 1. Pata Call Financiador + Acciones (Webull requiere combo COVERED_STOCK para aceptar Short Call fuera de horario)
+      // 1. Pata Acciones Subyacentes (Compra en Webull OpenAPI)
+      if (buyUnderlying !== false) {
+        try {
+          const stockOrder = await createBrokerOrder({
+            broker: 'WEBULL',
+            symbol: ticker,
+            instrumentType: 'EQUITY',
+            qty: sharesCount,
+            side: 'buy',
+            type: 'limit',
+            limitPrice: spotPrice,
+            timeInForce: 'gtc',
+          }, 'WEBULL');
+
+          executedOrders.push({
+            legRole: 'UNDERLYING',
+            legType: 'EQUITY',
+            action: 'BUY',
+            symbol: ticker,
+            quantity: sharesCount,
+            limitPrice: spotPrice,
+            orderId: stockOrder.order?.id || stockOrder.id,
+            status: stockOrder.order?.status || 'submitted',
+            details: stockOrder,
+          });
+        } catch (err) {
+          executionErrors.push({
+            legRole: 'UNDERLYING',
+            legType: 'EQUITY',
+            error: err.message,
+          });
+        }
+      }
+
+      // 2. Pata Call Financiador (Short Call en Webull OpenAPI)
       try {
         const callOrder = await createBrokerOrder({
           broker: 'WEBULL',
@@ -465,19 +499,6 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
         }, 'WEBULL');
 
         const callOrderId = callOrder.order?.id || callOrder.id;
-
-        // Pata Acciones (adquiridas y vinculadas en el combo COVERED_STOCK de Webull)
-        executedOrders.push({
-          legRole: 'UNDERLYING',
-          legType: 'EQUITY',
-          action: 'BUY',
-          symbol: ticker,
-          quantity: sharesCount,
-          limitPrice: spotPrice,
-          orderId: callOrderId,
-          status: callOrder.order?.status || 'submitted',
-          details: callOrder,
-        });
 
         // Pata Opción Call Financiador
         executedOrders.push({
