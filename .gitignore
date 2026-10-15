@@ -4,4 +4,4 @@ dist/
 *.log
 .DS_Store
 *webull_session.json
-
+did.bin
