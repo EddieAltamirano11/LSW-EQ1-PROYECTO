@@ -223,18 +223,40 @@ paths:
         '200':
           description: Lista de estrategias de cobertura activas
 
-  /hedging/recommend-collar/{symbol}:
+  /hedging/recommend-option/{symbol}:
     get:
       tags: [Coberturas]
-      summary: Recomendar algorítmicamente parámetros para un Collar Spread
+      summary: Recomendar algorítmicamente la opción óptima (PUT o CALL) según Black-Scholes y mercado real
       parameters:
         - in: path
           name: symbol
           required: true
-          schema: { type: string, example: AAPL }
+          schema: { type: string, example: NVDA }
+          description: Símbolo del activo subyacente
+        - in: query
+          name: type
+          required: true
+          schema: { type: string, enum: [PUT, CALL], default: PUT }
+          description: Tipo de opción a recomendar (PUT para cobertura de piso o CALL para techo de financiamiento)
+        - in: header
+          name: x-broker-selection
+          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+          description: Broker bursátil para consultar cotizaciones y cadena de opciones real (WEBULL o ALPACA)
+        - in: query
+          name: broker
+          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+          description: Broker bursátil alternativo por query param
+        - in: query
+          name: expiration
+          schema: { type: string, example: '2026-10-16' }
+          description: Fecha de vencimiento de las opciones
+        - in: query
+          name: moneyness
+          schema: { type: string, enum: [OTM, ATM, ITM], default: OTM }
+          description: Grado de moneyness deseado (por defecto OTM)
       responses:
         '200':
-          description: Parámetros sugeridos de suelo y techo financiero
+          description: Contrato de opción óptimo recomendado con griegas calculadas y justificación analítica
 
   /hedging/auto-collar:
     post:
@@ -244,6 +266,17 @@ paths:
         - in: header
           name: x-database-selection
           schema: { type: string, enum: [mongodb, supabase] }
+        - in: header
+          name: x-broker-selection
+          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+          description: Broker bursátil para consultar cotizaciones y primas (WEBULL o ALPACA)
+        - in: query
+          name: broker
+          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+        - in: query
+          name: executeOrders
+          schema: { type: boolean, default: false, example: true }
+          description: Si es true, emite automáticamente las órdenes bursátiles de las opciones al broker seleccionado (Webull o Alpaca)
       requestBody:
         required: true
         content:
@@ -252,12 +285,15 @@ paths:
               type: object
               required: [symbol, sharesCount]
               properties:
+                broker: { type: string, enum: [WEBULL, ALPACA], default: WEBULL, example: WEBULL }
                 symbol: { type: string, example: AAPL }
                 sharesCount: { type: integer, example: 100 }
                 protectionPct: { type: number, example: 0.05 }
+                expirationDate: { type: string, example: '2026-10-16' }
+                executeOrders: { type: boolean, default: false, example: true, description: 'Si es true, emite las órdenes bursátiles de las opciones al broker (Webull o Alpaca) de inmediato para que se reflejen en la terminal' }
       responses:
         '201':
-          description: Cobertura Collar calibrada y persistida
+          description: Cobertura Collar calibrada, persistida y opcionalmente emitida al broker
 
   /hedging/auto-collar/{symbol}:
     post:
@@ -271,9 +307,30 @@ paths:
         - in: header
           name: x-database-selection
           schema: { type: string, enum: [mongodb, supabase] }
+        - in: header
+          name: x-broker-selection
+          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+        - in: query
+          name: broker
+          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+        - in: query
+          name: executeOrders
+          schema: { type: boolean, default: false, example: true }
+          description: Si es true, emite automáticamente las órdenes bursátiles al broker seleccionado
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sharesCount: { type: integer, default: 100, example: 100, description: Cantidad de acciones a cubrir (por defecto 100, 1 contrato) }
+                expirationDate: { type: string, example: '2026-10-16', description: Fecha de vencimiento de las opciones }
+                broker: { type: string, enum: [WEBULL, ALPACA], default: WEBULL, example: WEBULL }
+                executeOrders: { type: boolean, default: false, example: true, description: 'Si es true, emite las órdenes bursátiles al broker de inmediato' }
       responses:
         '201':
-          description: Cobertura Collar emitida automáticamente
+          description: Cobertura Collar emitida automáticamente y opcionalmente enviada al broker
 
   /hedging/protective-put:
     post:
@@ -1053,14 +1110,18 @@ components:
 
     BrokerOrderInput:
       type: object
-      required: [symbol, qty, side, type, timeInForce]
+      required: [symbol, qty, side, type]
       properties:
         broker: { type: string, enum: [WEBULL, ALPACA], default: WEBULL, example: WEBULL }
         symbol: { type: string, example: AAPL }
+        instrumentType: { type: string, enum: [EQUITY, OPTION], default: EQUITY, example: OPTION }
+        optionType: { type: string, enum: [CALL, PUT], description: Requerido si instrumentType es OPTION, example: CALL }
+        strikePrice: { type: number, description: Precio de ejercicio para opciones, example: 235.00 }
+        expirationDate: { type: string, description: Fecha de vencimiento para opciones (YYYY-MM-DD), example: '2026-10-16' }
         qty: { type: integer, example: 10 }
         side: { type: string, enum: [buy, sell], example: buy }
-        type: { type: string, enum: [market, limit], example: market }
-        timeInForce: { type: string, enum: [day, gtc], example: day }
+        type: { type: string, enum: [market, limit], default: limit, example: limit }
+        timeInForce: { type: string, enum: [day, gtc], default: gtc, example: gtc }
         limitPrice: { type: number, example: 228.00 }
 
     BrokerOrderOutput:

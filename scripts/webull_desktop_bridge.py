@@ -9,7 +9,7 @@ import logging
 logging.basicConfig(level=logging.CRITICAL)
 logging.disable(logging.CRITICAL)
 
-# Cargar variables de entorno manualmente desde .env si existe
+# Cargar variables de entorno manualmente desde .env 
 dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
 if os.path.exists(dotenv_path):
     with open(dotenv_path, 'r', encoding='utf-8') as f:
@@ -164,9 +164,9 @@ def cmd_place_order(args):
             "order_type": order_type,
             "limit_price": price,
             "quantity": str(qty),
-            "support_trading_session": "N",
+            "support_trading_session": "CORE",
             "side": action,
-            "time_in_force": "DAY",
+            "time_in_force": "GTC",
             "entrust_type": "QTY"
         }
     ]
@@ -267,6 +267,79 @@ def cmd_place_option(args):
             return
     except Exception as e:
         err_msg = str(e)
+        if 'CAVERED_CALL_STOCK_NO_ENOUGH' in err_msg and action == 'SELL' and option_type == 'CALL':
+            try:
+                stock_quote_price = getattr(args, 'stock_price', 0.0)
+                if not stock_quote_price or stock_quote_price <= 0:
+                    try:
+                        q_res = tc.trade_instrument.get_instrument_quote('US', symbol)
+                        if q_res.status_code == 200:
+                            stock_quote_price = float(q_res.json().get('price', 220.0))
+                        else:
+                            stock_quote_price = 220.0
+                    except Exception:
+                        stock_quote_price = 220.0
+
+                covered_payload = [
+                    {
+                        "client_order_id": client_order_id,
+                        "combo_type": "NORMAL",
+                        "order_type": order_type,
+                        "quantity": str(qty),
+                        "limit_price": str(stock_quote_price),
+                        "option_strategy": "COVERED_STOCK",
+                        "side": "BUY",
+                        "time_in_force": "GTC",
+                        "entrust_type": "QTY",
+                        "legs": [
+                            {
+                                "side": "BUY",
+                                "quantity": str(qty * 100),
+                                "symbol": symbol,
+                                "instrument_type": "EQUITY",
+                                "market": "US"
+                            },
+                            {
+                                "side": "SELL",
+                                "quantity": str(qty),
+                                "symbol": symbol,
+                                "strike_price": strike_price,
+                                "option_expire_date": expire_date,
+                                "instrument_type": "OPTION",
+                                "option_type": "CALL",
+                                "market": "US"
+                            }
+                        ]
+                    }
+                ]
+                res2 = tc.order_v2.place_option(acc_id, covered_payload)
+                if res2.status_code == 200:
+                    res_data = res2.json()
+                    order_id = res_data.get('order_id') or res_data.get('combo_order_id')
+                    print(json.dumps({
+                        'success': True,
+                        'mode': 'LIVE_OPENAPI_OPTION',
+                        'clientOrderId': client_order_id,
+                        'result': res_data,
+                        'order': {
+                            'id': order_id,
+                            'symbol': symbol,
+                            'instrumentType': 'OPTION',
+                            'optionType': option_type,
+                            'strikePrice': float(strike_price),
+                            'expirationDate': expire_date,
+                            'qty': qty,
+                            'side': action,
+                            'price': float(price),
+                            'status': 'submitted',
+                            'clientOrderId': client_order_id,
+                            'strategy': 'COVERED_STOCK'
+                        }
+                    }))
+                    return
+            except Exception as e2:
+                err_msg = str(e2)
+
         try:
             prev = tc.order_v2.preview_option(acc_id, option_payload)
             prev_data = prev.json() if prev.status_code == 200 else {}
@@ -338,6 +411,7 @@ def main():
     p_opt.add_argument('--qty', type=int, default=1)
     p_opt.add_argument('--action', default='BUY')
     p_opt.add_argument('--price', type=float, default=5.0)
+    p_opt.add_argument('--stock_price', type=float, default=0.0)
     p_opt.add_argument('--type', default='LIMIT')
 
     # cancel_order

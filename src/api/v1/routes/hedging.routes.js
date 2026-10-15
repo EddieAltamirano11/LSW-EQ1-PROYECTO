@@ -5,6 +5,8 @@ const router = Router();
 
 // === ESTRATEGIAS PRINCIPALES Y OPTIMIZACIÓN AUTOMÁTICA ===
 router.get('/', HedgingController.listStrategies);
+router.get('/recommend-option/:symbol', HedgingController.recommendOption);
+router.get('/recommend-option/:symbol/:type', HedgingController.recommendOption);
 router.get('/recommend-collar/:symbol', HedgingController.recommendCollar);
 router.post('/auto-collar', HedgingController.autoCalibrateCollar);
 router.post('/auto-collar/:symbol', HedgingController.autoCalibrateCollar);

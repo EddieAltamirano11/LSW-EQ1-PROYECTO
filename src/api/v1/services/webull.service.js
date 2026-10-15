@@ -303,6 +303,7 @@ export const createWebullOrder = async (orderPayload) => {
     const optType = (optionType || option_type || 'CALL').toUpperCase();
     const strike = strikePrice || strike_price || 230.0;
     const expDate = expirationDate || expire_date || '2026-10-16';
+    const stockPrice = orderPayload.stockPrice || orderPayload.spotPrice || 221.30;
 
     const bridgeRes = runBridge('place_option', [
       '--symbol', symbol.toUpperCase(),
@@ -313,6 +314,7 @@ export const createWebullOrder = async (orderPayload) => {
       '--action', side.toUpperCase(),
       '--type', type.toUpperCase(),
       '--price', String(effectivePrice),
+      '--stock_price', String(stockPrice),
     ]);
 
     if (bridgeRes && bridgeRes.success) {
@@ -363,7 +365,7 @@ export const createWebullOrder = async (orderPayload) => {
     const o = bridgeRes.order || {};
     const stockOrder = {
       broker: 'WEBULL',
-      id: bridgeRes.clientOrderId ? `WB-${bridgeRes.clientOrderId.slice(0, 10)}` : `WB-${Date.now()}`,
+      id: bridgeRes.result?.order_id || (bridgeRes.clientOrderId ? `WB-${bridgeRes.clientOrderId.slice(0, 10)}` : `WB-${Date.now()}`),
       clientOrderId: bridgeRes.clientOrderId || `WB-CLI-${Date.now()}`,
       symbol: symbol.toUpperCase(),
       instrumentType: 'EQUITY',

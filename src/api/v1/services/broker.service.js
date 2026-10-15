@@ -291,24 +291,25 @@ export const createBrokerOrder = async (orderPayload, broker = 'WEBULL') => {
   }
 
   // Flujo Alpaca
-  const { symbol, qty = 1, side = 'buy', type = 'limit', limit_price, limitPrice, time_in_force = 'day', timeInForce = 'day' } = orderPayload;
+  const targetSymbol = (orderPayload.contractSymbol || orderPayload.symbol || '').toUpperCase();
+  const { qty = 1, side = 'buy', type = 'limit', limit_price, limitPrice, price, time_in_force = 'day', timeInForce = 'day' } = orderPayload;
 
-  if (!symbol) {
-    throw boom.badRequest('El campo symbol es obligatorio para emitir la orden al broker.');
+  if (!targetSymbol) {
+    throw boom.badRequest('El campo symbol o contractSymbol es obligatorio para emitir la orden al broker.');
   }
 
   if (isAlpacaConfigured()) {
     try {
       const payload = {
-        symbol: symbol.toUpperCase(),
+        symbol: targetSymbol,
         qty: Number(qty),
         side: side.toLowerCase(),
         type: type.toLowerCase(),
         time_in_force: (timeInForce || time_in_force).toLowerCase(),
       };
-      const price = limitPrice || limit_price;
-      if (price) {
-        payload.limit_price = String(price);
+      const effectivePrice = limitPrice || limit_price || price;
+      if (effectivePrice && type.toLowerCase() === 'limit') {
+        payload.limit_price = String(effectivePrice);
       }
 
       const resp = await axios.post(`${config.ALPACA_BASE_URL}/v2/orders`, payload, {

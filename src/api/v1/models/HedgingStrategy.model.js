@@ -10,6 +10,7 @@ const legSchema = new mongoose.Schema(
     },
     assetType: { type: String, required: true, enum: ['EQUITY', 'OPTION'] },
     contractSymbol: { type: String, default: null },
+    brokerOrderId: { type: String, default: null },
     optionType: { type: String, enum: ['CALL', 'PUT', null], default: null },
     strike: { type: Number, default: null },
     expirationDate: { type: Date, default: null },

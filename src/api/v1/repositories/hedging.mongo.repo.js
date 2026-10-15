@@ -74,7 +74,17 @@ export class HedgingMongoRepository {
     const strat = await this.getById(strategyId);
     if (!strat) return null;
     const legId = legData.legId || `LEG-${randomUUID().slice(0, 6)}`;
-    strat.legs.push({ ...legData, legId });
+    const normalized = {
+      assetType: legData.assetType || (legData.optionType ? 'OPTION' : 'EQUITY'),
+      legRole: ['UNDERLYING', 'HEDGE_FLOOR', 'FINANCE_CEILING', 'STOCK', 'LONG_PUT', 'SHORT_CALL'].includes(legData.legRole)
+        ? legData.legRole
+        : (legData.optionType === 'PUT' ? 'HEDGE_FLOOR' : (legData.optionType === 'CALL' ? 'FINANCE_CEILING' : 'UNDERLYING')),
+      quantity: Number(legData.quantity || legData.contracts || legData.sharesCount || 1),
+      entryPrice: Number(legData.entryPrice ?? legData.premium ?? legData.price ?? 0),
+      ...legData,
+      legId,
+    };
+    strat.legs.push(normalized);
     await strat.save();
     return strat.legs.find((l) => l.legId === legId);
   }
@@ -83,6 +93,12 @@ export class HedgingMongoRepository {
     const strat = await this.getById(strategyId);
     if (!strat) return null;
     const prepared = legsArray.map((l) => ({
+      assetType: l.assetType || (l.optionType ? 'OPTION' : 'EQUITY'),
+      legRole: ['UNDERLYING', 'HEDGE_FLOOR', 'FINANCE_CEILING', 'STOCK', 'LONG_PUT', 'SHORT_CALL'].includes(l.legRole)
+        ? l.legRole
+        : (l.optionType === 'PUT' ? 'HEDGE_FLOOR' : (l.optionType === 'CALL' ? 'FINANCE_CEILING' : 'UNDERLYING')),
+      quantity: Number(l.quantity || l.contracts || l.sharesCount || 1),
+      entryPrice: Number(l.entryPrice ?? l.premium ?? l.price ?? 0),
       ...l,
       legId: l.legId || `LEG-${randomUUID().slice(0, 6)}`,
     }));

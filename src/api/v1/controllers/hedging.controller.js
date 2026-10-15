@@ -47,9 +47,15 @@ export const createCollarSpread = async (req, res, next) => {
 export const autoCalibrateCollar = async (req, res, next) => {
   try {
     const symbol = req.params.symbol || req.body.symbol;
+    const broker = req.body?.broker || req.query?.broker || req.broker;
+    const executeOrdersRaw = req.body?.executeOrders ?? req.query?.executeOrders ?? req.body?.executeOnBroker ?? false;
+    const executeOrders = executeOrdersRaw === true || executeOrdersRaw === 'true' || executeOrdersRaw === 1;
+
     const result = await HedgingService.autoCalibrateAndCreateCollar({
       ...req.body,
       symbol,
+      broker,
+      executeOrders,
     }, req.dbTarget);
     res.status(201).json(result);
   } catch (error) {
@@ -57,20 +63,30 @@ export const autoCalibrateCollar = async (req, res, next) => {
   }
 };
 
-export const recommendCollar = async (req, res, next) => {
+export const recommendOption = async (req, res, next) => {
   try {
     const symbol = req.params.symbol || req.query.symbol;
-    const result = await HedgingService.autoCalibrateAndCreateCollar({
+    const type = req.query.type || req.params.type || req.body?.type || 'PUT';
+    const broker = req.body?.broker || req.query?.broker || req.broker;
+    const expirationDate = req.query.expiration || req.query.expirationDate || '2026-10-16';
+    const moneyness = req.query.moneyness || 'OTM';
+    const volatility = req.query.volatility ? Number(req.query.volatility) : undefined;
+
+    const result = await HedgingService.recommendOption({
       symbol,
-      sharesCount: req.query.sharesCount ? Number(req.query.sharesCount) : 10,
-      expirationDate: req.query.expiration || '2026-10-16',
-      autoPersist: false,
-    }, req.dbTarget);
+      type,
+      broker,
+      expirationDate,
+      moneyness,
+      volatility,
+    });
     res.status(200).json(result);
   } catch (error) {
     next(error);
   }
 };
+
+export const recommendCollar = recommendOption;
 
 export const createStrategiesBatch = async (req, res, next) => {
   try {

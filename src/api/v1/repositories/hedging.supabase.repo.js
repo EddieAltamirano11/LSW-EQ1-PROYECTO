@@ -52,19 +52,28 @@ export class HedgingSupabaseRepository {
       uId = uData?.id || '59bda817-45ca-4d52-a93f-16edc675f2ef';
     }
 
-    const row = {
+    const brokerValue = item.broker || 'WEBULL';
+    const baseRow = {
       id,
       portfolio_id: (item.portfolioId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.portfolioId)) ? item.portfolioId : 'c0000000-0000-0000-0000-000000000001',
       underlying_id: uId,
       strategy_type: item.strategyType || 'COLLAR',
-      shares_count: item.underlying?.sharesCount || 10,
+      shares_count: item.underlying?.sharesCount || 100,
       legs_config: item.legs || [],
-      financial_metrics: item.financialMetrics || {},
+      financial_metrics: {
+        ...(item.financialMetrics || {}),
+        broker: brokerValue,
+      },
       status: item.status || 'ACTIVE',
     };
-    const { data, error } = await client.from('tbl_hedging_strategies').insert([row]).select().single();
-    if (error) throw error;
-    return mapFromSupabase(data);
+
+    // Intenta insertar con la columna física 'broker'; si la columna aún no existe en PostgreSQL, inserta con fallback a JSONB
+    let res = await client.from('tbl_hedging_strategies').insert([{ ...baseRow, broker: brokerValue }]).select().single();
+    if (res.error && res.error.message && res.error.message.includes('broker')) {
+      res = await client.from('tbl_hedging_strategies').insert([baseRow]).select().single();
+    }
+    if (res.error) throw res.error;
+    return mapFromSupabase(res.data);
   }
 
   async createBatch(items) {

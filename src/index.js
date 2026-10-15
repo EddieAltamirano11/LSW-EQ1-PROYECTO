@@ -7,7 +7,6 @@ const startServer = async () => {
   console.log('===============================================================');
   console.log('   INICIANDO SERVIDOR RESTful API — COBERTURAS FINANCIERAS     ');
   console.log('   Laboratorio de Servicios Web — Equipo 1 (Los Eddies)       ');
-  console.log('   TecNM IT Tepic — Ingeniería en Sistemas Computacionales    ');
   console.log('===============================================================');
 
   // 1. Conexión asíncrona a MongoDB Atlas
