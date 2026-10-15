@@ -1,0 +1,487 @@
+### ==============================================================================
+### TEST SUITE COMPLETA REST CLIENT — FIC ENGINE & HEDGING STRATEGIES
+### Compatible con la extensión "REST Client" de Visual Studio Code (humao.rest-client)
+### Soporte Multi-Broker (Webull OpenAPI & Alpaca Markets) + Dual DB (MongoDB & Supabase)
+### Total: 44+ Endpoints REST Verificados
+### ==============================================================================
+
+@baseUrl = http://localhost:3050/api/v1
+@symbol = NVDA
+@symbolAlpaca = AAPL
+@expiration = 2026-10-16
+
+### ==============================================================================
+### SECCIÓN 0: SALUD, DOCUMENTACIÓN Y OPENAPI 3.1.0
+### ==============================================================================
+
+### 0.1 Raíz de la API y Metadatos del Sistema
+GET {{baseUrl}}
+Content-Type: application/json
+
+### 0.2 Health Check del Servidor y Estado de Servicios
+GET {{baseUrl}}/health
+Content-Type: application/json
+
+### 0.3 Especificación Cruda OpenAPI 3.1.0 (JSON)
+GET {{baseUrl}}/spec.json
+Content-Type: application/json
+
+### 0.4 Documentación Interactiva Scalar (HTML)
+GET {{baseUrl}}/docs
+Accept: text/html
+
+### ==============================================================================
+### SECCIÓN 1: AUTENTICACIÓN Y SESIONES JWT (MONGODB & SUPABASE)
+### ==============================================================================
+
+### 1.1 Registro de Inversionista en MongoDB Atlas
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "username": "investor_qa_01",
+  "email": "investor01@ficengine.com",
+  "password": "SecurePassword2026!",
+  "role": "INVESTOR",
+  "databaseTarget": "mongodb"
+}
+
+### 1.2 Login de Inversionista en MONGODB ATLAS
+# @name loginMongo
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "investor_qa_01",
+  "password": "SecurePassword2026!",
+  "databaseTarget": "mongodb"
+}
+
+### Variable de Token JWT MongoDB
+@tokenMongo = {{loginMongo.response.body.token}}
+
+### 1.3 Login de Inversionista en SUPABASE POSTGRESQL
+# @name loginSupabase
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "investor_qa_01",
+  "password": "SecurePassword2026!",
+  "databaseTarget": "supabase"
+}
+
+### Variable de Token JWT Supabase
+@tokenSupabase = {{loginSupabase.response.body.token}}
+
+### 1.4 Validar Sesión Activa del Inversionista
+GET {{baseUrl}}/auth/session
+Authorization: Bearer {{tokenMongo}}
+
+### 1.5 Cierre de Sesión (Logout)
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{tokenMongo}}
+
+### ==============================================================================
+### SECCIÓN 2: ACTIVOS SUBYACENTES (UNDERLYINGS) — POLÍGLOTA
+### ==============================================================================
+
+### 2.1 Listar Subyacentes en MONGODB ATLAS
+GET {{baseUrl}}/underlyings
+x-database-selection: mongodb
+
+### 2.2 Listar Subyacentes en SUPABASE POSTGRESQL
+GET {{baseUrl}}/underlyings
+x-database-selection: supabase
+
+### 2.3 Consultar Subyacente por Ticker (NVDA en MongoDB)
+GET {{baseUrl}}/underlyings/symbol/NVDA
+x-database-selection: mongodb
+
+### 2.4 Consultar Subyacente por Ticker (AAPL en Supabase)
+GET {{baseUrl}}/underlyings/symbol/AAPL
+x-database-selection: supabase
+
+### 2.5 Crear Subyacente Individual en MongoDB Atlas
+POST {{baseUrl}}/underlyings
+Content-Type: application/json
+x-database-selection: mongodb
+
+{
+  "symbol": "TSLA",
+  "companyName": "Tesla Inc.",
+  "spotPrice": 360.25,
+  "volatility": 0.520
+}
+
+### 2.6 Crear Subyacentes en Lote (Batch Array) en MongoDB
+POST {{baseUrl}}/underlyings/batch
+Content-Type: application/json
+x-database-selection: mongodb
+
+[
+  {
+    "symbol": "AMD",
+    "companyName": "Advanced Micro Devices Inc.",
+    "spotPrice": 165.40,
+    "volatility": 0.440
+  },
+  {
+    "symbol": "QCOM",
+    "companyName": "Qualcomm Inc.",
+    "spotPrice": 172.10,
+    "volatility": 0.285
+  }
+]
+
+### 2.7 Actualizar Cotización Spot y Volatilidad de un Subyacente
+PUT {{baseUrl}}/underlyings/symbol/TSLA
+Content-Type: application/json
+x-database-selection: mongodb
+
+{
+  "spotPrice": 368.50,
+  "volatility": 0.495
+}
+
+### 2.8 Eliminar Subyacente de la Base de Datos
+DELETE {{baseUrl}}/underlyings/symbol/TSLA
+x-database-selection: mongodb
+
+### ==============================================================================
+### SECCIÓN 3: MOTOR CUANTITATIVO F0 (BLACK-SCHOLES & GRIEGAS)
+### ==============================================================================
+
+### 3.1 Valuación Analítica Black-Scholes y 5 Griegas (F0)
+POST {{baseUrl}}/quant/black-scholes
+Content-Type: application/json
+
+{
+  "spotPrice": 221.30,
+  "strikePrice": 200.00,
+  "timeToExpirationYears": 0.08,
+  "volatility": 0.48,
+  "riskFreeRate": 0.045,
+  "optionType": "PUT"
+}
+
+### 3.2 Volatilidad Implícita con Newton-Raphson (F0)
+POST {{baseUrl}}/quant/implied-volatility
+Content-Type: application/json
+
+{
+  "marketPrice": 2.54,
+  "spotPrice": 221.30,
+  "strikePrice": 200.00,
+  "timeToExpirationYears": 0.08,
+  "riskFreeRate": 0.045,
+  "optionType": "PUT"
+}
+
+### ==============================================================================
+### SECCIÓN 4: RECOMENDACIÓN Y ESTRUCTURACIÓN DE COBERTURAS (HEDGING)
+### ==============================================================================
+
+### 4.1 Recomendar Opción PUT Protectora Óptima (F0) en Webull
+GET {{baseUrl}}/hedging/recommend-option/NVDA?type=PUT&broker=WEBULL&moneyness=OTM
+
+### 4.2 Recomendar Opción CALL Financiadora Óptima (F0) en Webull
+GET {{baseUrl}}/hedging/recommend-option/NVDA?type=CALL&broker=WEBULL&moneyness=OTM
+
+### 4.3 Recomendar Opción PUT Protectora Óptima en Alpaca
+GET {{baseUrl}}/hedging/recommend-option/AAPL?type=PUT&broker=ALPACA&moneyness=OTM
+
+### 4.4 Recomendar Opción CALL Financiadora Óptima en Alpaca
+GET {{baseUrl}}/hedging/recommend-option/AAPL?type=CALL&broker=ALPACA&moneyness=OTM
+
+### 4.5 Estructurar y Crear Cobertura Protective Put en MongoDB
+POST {{baseUrl}}/hedging/protective-put
+Content-Type: application/json
+x-database-selection: mongodb
+
+{
+  "portfolioId": "PORT-DEMO-01",
+  "broker": "WEBULL",
+  "symbol": "NVDA",
+  "spotPrice": 221.30,
+  "sharesCount": 100,
+  "putStrike": 200.00,
+  "putPremium": 2.54,
+  "expirationDate": "2026-10-16T00:00:00.000Z"
+}
+
+### 4.6 Estructurar y Crear Zero-Cost Collar Spread en MongoDB
+# @name createCollarMongo
+POST {{baseUrl}}/hedging/collar-spread
+Content-Type: application/json
+x-database-selection: mongodb
+
+{
+  "portfolioId": "PORT-COLLAR-01",
+  "broker": "WEBULL",
+  "symbol": "NVDA",
+  "spotPrice": 221.30,
+  "sharesCount": 100,
+  "putStrike": 210.00,
+  "callStrike": 230.00,
+  "putPremium": 2.17,
+  "callPremium": 2.38,
+  "expirationDate": "2026-10-16T00:00:00.000Z"
+}
+
+### Variable de ID de Estrategia Creada
+@strategyIdMongo = {{createCollarMongo.response.body.data.id}}
+
+### 4.7 Estructurar y Crear Zero-Cost Collar Spread en Supabase
+# @name createCollarSupabase
+POST {{baseUrl}}/hedging/collar-spread
+Content-Type: application/json
+x-database-selection: supabase
+
+{
+  "portfolioId": "PORT-COLLAR-02",
+  "broker": "ALPACA",
+  "symbol": "AAPL",
+  "spotPrice": 343.85,
+  "sharesCount": 100,
+  "putStrike": 310.00,
+  "callStrike": 360.00,
+  "putPremium": 2.25,
+  "callPremium": 3.00,
+  "expirationDate": "2026-10-16T00:00:00.000Z"
+}
+
+### Variable de ID de Estrategia Supabase
+@strategyIdSupabase = {{createCollarSupabase.response.body.data.id}}
+
+### 4.8 Auto-Collar Autónomo Todo-en-Uno (Webull - Modo Simulado)
+POST {{baseUrl}}/hedging/auto-collar
+Content-Type: application/json
+x-database-selection: mongodb
+x-broker-selection: WEBULL
+
+{
+  "symbol": "NVDA",
+  "sharesCount": 100,
+  "broker": "WEBULL",
+  "executeOrders": false
+}
+
+### 4.9 Auto-Collar Autónomo Todo-en-Uno (Webull - Emisión Real en Firme)
+POST {{baseUrl}}/hedging/auto-collar
+Content-Type: application/json
+x-database-selection: mongodb
+x-broker-selection: WEBULL
+
+{
+  "symbol": "NVDA",
+  "sharesCount": 100,
+  "broker": "WEBULL",
+  "executeOrders": true
+}
+
+### 4.10 Auto-Collar Autónomo Todo-en-Uno (Alpaca - Emisión Real en Firme)
+POST {{baseUrl}}/hedging/auto-collar
+Content-Type: application/json
+x-database-selection: supabase
+x-broker-selection: ALPACA
+
+{
+  "symbol": "AAPL",
+  "sharesCount": 100,
+  "broker": "ALPACA",
+  "executeOrders": true
+}
+
+### 4.11 Listar Estrategias de Cobertura en MONGODB ATLAS
+GET {{baseUrl}}/hedging/strategies
+x-database-selection: mongodb
+
+### 4.12 Listar Estrategias de Cobertura en SUPABASE POSTGRESQL
+GET {{baseUrl}}/hedging/strategies
+x-database-selection: supabase
+
+### 4.13 Consultar Estrategia por ID en MongoDB
+GET {{baseUrl}}/hedging/strategies/{{strategyIdMongo}}
+x-database-selection: mongodb
+
+### 4.14 Actualizar Estado del Ciclo de Vida de una Estrategia
+PUT {{baseUrl}}/hedging/strategies/{{strategyIdMongo}}/status
+Content-Type: application/json
+x-database-selection: mongodb
+
+{
+  "status": "CLOSED"
+}
+
+### 4.15 Eliminar Estrategia por ID
+DELETE {{baseUrl}}/hedging/strategies/{{strategyIdMongo}}
+x-database-selection: mongodb
+
+### ==============================================================================
+### SECCIÓN 5: OPERACIONES CON SUBDOCUMENTOS (LEGS, UNDERLYING, METRICS & PAYOFF)
+### ==============================================================================
+
+### 5.1 Consultar Subdocumento Underlying de una Estrategia
+GET {{baseUrl}}/hedging-strategies/{{strategyIdSupabase}}/underlying
+x-database-selection: supabase
+
+### 5.2 Actualizar Subdocumento Underlying
+PUT {{baseUrl}}/hedging-strategies/{{strategyIdSupabase}}/underlying
+Content-Type: application/json
+x-database-selection: supabase
+
+{
+  "spotPriceAtEntry": 346.50,
+  "sharesCount": 100
+}
+
+### 5.3 Listar Todas las Patas (Legs) de una Estrategia
+GET {{baseUrl}}/hedging-strategies/{{strategyIdSupabase}}/legs
+x-database-selection: supabase
+
+### 5.4 Consultar Pata Individual por legId
+GET {{baseUrl}}/hedging-strategies/{{strategyIdSupabase}}/legs/LEG-AAPL-STOCK
+x-database-selection: supabase
+
+### 5.5 Agregar una Nueva Pata (POST Subdocumento)
+POST {{baseUrl}}/hedging-strategies/{{strategyIdSupabase}}/legs
+Content-Type: application/json
+x-database-selection: supabase
+
+{
+  "legId": "LEG-AAPL-ADDITIONAL-CALL",
+  "legRole": "FINANCE_CEILING",
+  "assetType": "OPTION",
+  "contractSymbol": "AAPL261016C00380000",
+  "optionType": "CALL",
+  "strike": 380.00,
+  "quantity": 1,
+  "entryPrice": 2.68,
+  "delta": 0.22
+}
+
+### 5.6 Actualizar Pata Individual (PUT Subdocumento)
+PUT {{baseUrl}}/hedging-strategies/{{strategyIdSupabase}}/legs/LEG-AAPL-ADDITIONAL-CALL
+Content-Type: application/json
+x-database-selection: supabase
+
+{
+  "entryPrice": 2.75,
+  "delta": 0.24
+}
+
+### 5.7 Eliminar Pata Individual (DELETE Subdocumento)
+DELETE {{baseUrl}}/hedging-strategies/{{strategyIdSupabase}}/legs/LEG-AAPL-ADDITIONAL-CALL
+x-database-selection: supabase
+
+### 5.8 Consultar Subdocumento de Métricas Financieras
+GET {{baseUrl}}/hedging-strategies/{{strategyIdSupabase}}/financial-metrics
+x-database-selection: supabase
+
+### 5.9 Recalcular Métricas Financieras con Nuevo Precio Spot
+PUT {{baseUrl}}/hedging-strategies/{{strategyIdSupabase}}/financial-metrics/recalculate
+Content-Type: application/json
+x-database-selection: supabase
+
+{
+  "currentSpotPrice": 350.00
+}
+
+### 5.10 Generar Matriz Discreta de Payoff (P&L) de 25 Puntos para Gráfica
+GET {{baseUrl}}/hedging-strategies/{{strategyIdSupabase}}/payoff-matrix?steps=25&rangePct=0.20
+x-database-selection: supabase
+
+### ==============================================================================
+### SECCIÓN 6: INTEGRACIÓN MULTI-BROKER (WEBULL OPENAPI & ALPACA MARKETS)
+### ==============================================================================
+
+### 6.1 Consultar Cuenta de Inversión en WEBULL OPENAPI (DEV4Q8EB)
+GET {{baseUrl}}/broker/account
+x-broker-selection: WEBULL
+
+### 6.2 Consultar Cuenta de Inversión en ALPACA MARKETS (Paper Trading)
+GET {{baseUrl}}/broker/account
+x-broker-selection: ALPACA
+
+### 6.3 Cotización Spot L1 en Tiempo Real de Webull (NVDA)
+GET {{baseUrl}}/broker/quote/NVDA
+x-broker-selection: WEBULL
+
+### 6.4 Cotización Spot L1 en Tiempo Real de Alpaca (AAPL)
+GET {{baseUrl}}/broker/quote/AAPL
+x-broker-selection: ALPACA
+
+### 6.5 Cadena de Opciones en Tiempo Real de Webull (NVDA)
+GET {{baseUrl}}/broker/options-chain/NVDA?expiration=2026-10-16
+x-broker-selection: WEBULL
+
+### 6.6 Cadena de Opciones en Tiempo Real de Alpaca (AAPL)
+GET {{baseUrl}}/broker/options-chain/AAPL?expiration=2026-10-16
+x-broker-selection: ALPACA
+
+### 6.7 Posiciones Abiertas en Cartera de Webull
+GET {{baseUrl}}/broker/positions
+x-broker-selection: WEBULL
+
+### 6.8 Posiciones Abiertas en Cartera de Alpaca
+GET {{baseUrl}}/broker/positions
+x-broker-selection: ALPACA
+
+### 6.9 Emitir Orden Bursátil Simple en Webull (Compra de 100 Acciones NVDA)
+# @name orderWebull
+POST {{baseUrl}}/broker/orders
+Content-Type: application/json
+x-broker-selection: WEBULL
+
+{
+  "symbol": "NVDA",
+  "qty": 100,
+  "side": "buy",
+  "type": "limit",
+  "limitPrice": 221.30,
+  "timeInForce": "day"
+}
+
+### Variable de ID de Orden Webull
+@webullOrderId = {{orderWebull.response.body.order.id}}
+
+### 6.10 Emitir Orden Bursátil Simple en Alpaca (Compra de 100 Acciones AAPL)
+# @name orderAlpaca
+POST {{baseUrl}}/broker/orders
+Content-Type: application/json
+x-broker-selection: ALPACA
+
+{
+  "symbol": "AAPL",
+  "qty": 100,
+  "side": "buy",
+  "type": "limit",
+  "limitPrice": 343.85,
+  "timeInForce": "day"
+}
+
+### Variable de ID de Orden Alpaca
+@alpacaOrderId = {{orderAlpaca.response.body.order.id}}
+
+### 6.11 Listar Órdenes en Webull
+GET {{baseUrl}}/broker/orders
+x-broker-selection: WEBULL
+
+### 6.12 Listar Órdenes en Alpaca
+GET {{baseUrl}}/broker/orders
+x-broker-selection: ALPACA
+
+### 6.13 Cancelar Orden Bursátil en Webull
+DELETE {{baseUrl}}/broker/orders/{{webullOrderId}}
+x-broker-selection: WEBULL
+
+### 6.14 Cancelar Orden Bursátil en Alpaca
+DELETE {{baseUrl}}/broker/orders/{{alpacaOrderId}}
+x-broker-selection: ALPACA
+
+### 6.15 Sincronizar Cotización de Broker hacia la Base de Datos
+POST {{baseUrl}}/broker/sync-underlying/NVDA
+x-broker-selection: WEBULL
+x-database-selection: mongodb
+
