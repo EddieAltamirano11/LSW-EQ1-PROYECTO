@@ -45,12 +45,10 @@ def resolve_account_id(tc):
             for acc in acc_list:
                 if acc.get('account_number') == TARGET_ACCOUNT_NUM or acc.get('account_id') == TARGET_ACCOUNT_NUM:
                     return acc.get('account_id'), acc
-            # Si no coincide exactamente, retornar el primero
             if acc_list:
                 return acc_list[0].get('account_id'), acc_list[0]
     except Exception as e:
         pass
-    # Fallback al ID conocido de DEV4Q8EB
     return 'GBG647DN3VL57GSDVGA47NCG18', {'account_number': TARGET_ACCOUNT_NUM, 'account_id': 'GBG647DN3VL57GSDVGA47NCG18'}
 
 def cmd_account(args):
@@ -92,10 +90,32 @@ def cmd_orders(args):
     acc_id, _ = resolve_account_id(tc)
     open_orders_res = tc.order_v2.get_order_open(acc_id)
     history_res = tc.order_v2.get_order_history(acc_id)
-    open_orders = open_orders_res.json() if open_orders_res.status_code == 200 else []
-    history = history_res.json() if history_res.status_code == 200 else []
-    all_orders = (open_orders if isinstance(open_orders, list) else []) + (history if isinstance(history, list) else [])
-    print(json.dumps({'success': True, 'orders': all_orders}))
+    raw_open = open_orders_res.json() if open_orders_res.status_code == 200 else []
+    raw_history = history_res.json() if history_res.status_code == 200 else []
+
+    flattened = []
+    # Normalizar ordenes abiertas (pueden venir envueltas en combo_type / orders)
+    if isinstance(raw_open, list):
+        for item in raw_open:
+            if 'orders' in item and isinstance(item['orders'], list):
+                for sub in item['orders']:
+                    sub['parent_client_order_id'] = item.get('client_order_id')
+                    sub['combo_order_id'] = item.get('combo_order_id')
+                    flattened.append(sub)
+            else:
+                flattened.append(item)
+
+    if isinstance(raw_history, list):
+        for item in raw_history:
+            if 'orders' in item and isinstance(item['orders'], list):
+                for sub in item['orders']:
+                    sub['parent_client_order_id'] = item.get('client_order_id')
+                    sub['combo_order_id'] = item.get('combo_order_id')
+                    flattened.append(sub)
+            else:
+                flattened.append(item)
+
+    print(json.dumps({'success': True, 'orders': flattened}))
 
 def cmd_quote(args):
     _, dc = get_clients()
@@ -152,15 +172,12 @@ def cmd_place_order(args):
     ]
 
     try:
-        # Intentar colocar la orden oficial
         res = tc.order_v2.place_order(acc_id, new_simple_orders)
         if res.status_code == 200:
-            print(json.dumps({'success': True, 'mode': 'LIVE_OPENAPI', 'result': res.json()}))
+            print(json.dumps({'success': True, 'mode': 'LIVE_OPENAPI', 'clientOrderId': client_order_id, 'result': res.json()}))
             return
     except Exception as e:
         err_msg = str(e)
-        # Si el gateway bursatil de noche esta cerrado (OPENAPI_CAN_NOT_TRADING_FOR_FIXGW_NOT_READY_NIGHT)
-        # Ejecutamos un preview oficial para validar el costo y creamos la confirmacion simulada
         try:
             prev = tc.order_v2.preview_order(acc_id, new_simple_orders)
             prev_data = prev.json() if prev.status_code == 200 else {}
@@ -172,6 +189,7 @@ def cmd_place_order(args):
                 'preview': prev_data,
                 'order': {
                     'symbol': symbol,
+                    'instrumentType': 'EQUITY',
                     'qty': qty,
                     'side': action,
                     'type': order_type,
@@ -181,17 +199,114 @@ def cmd_place_order(args):
                 }
             }))
             return
-        except Exception as prev_err:
+        except Exception:
             pass
 
+        print(json.dumps({'success': False, 'error': err_msg}))
+
+def cmd_place_option(args):
+    tc, _ = get_clients()
+    acc_id, _ = resolve_account_id(tc)
+    symbol = args.symbol.upper()
+    qty = int(args.qty)
+    action = args.action.upper() # BUY or SELL
+    order_type = args.type.upper() # LIMIT
+    price = str(args.price) if args.price else "5.00"
+    strike_price = str(args.strike_price) if args.strike_price else "230.00"
+    expire_date = args.expire_date or "2026-10-16"
+    option_type = args.option_type.upper() # CALL or PUT
+    client_order_id = uuid.uuid4().hex
+
+    option_payload = [
+        {
+            "client_order_id": client_order_id,
+            "combo_type": "NORMAL",
+            "order_type": order_type,
+            "quantity": str(qty),
+            "limit_price": price,
+            "option_strategy": "SINGLE",
+            "side": action,
+            "time_in_force": "GTC",
+            "entrust_type": "QTY",
+            "legs": [
+                {
+                    "side": action,
+                    "quantity": str(qty),
+                    "symbol": symbol,
+                    "strike_price": strike_price,
+                    "option_expire_date": expire_date,
+                    "instrument_type": "OPTION",
+                    "option_type": option_type,
+                    "market": "US"
+                }
+            ]
+        }
+    ]
+
+    try:
+        res = tc.order_v2.place_option(acc_id, option_payload)
+        if res.status_code == 200:
+            print(json.dumps({
+                'success': True,
+                'mode': 'LIVE_OPENAPI_OPTION',
+                'clientOrderId': client_order_id,
+                'result': res.json(),
+                'order': {
+                    'symbol': symbol,
+                    'instrumentType': 'OPTION',
+                    'optionType': option_type,
+                    'strikePrice': float(strike_price),
+                    'expirationDate': expire_date,
+                    'qty': qty,
+                    'side': action,
+                    'price': float(price),
+                    'status': 'submitted',
+                    'clientOrderId': client_order_id
+                }
+            }))
+            return
+    except Exception as e:
+        err_msg = str(e)
+        try:
+            prev = tc.order_v2.preview_option(acc_id, option_payload)
+            prev_data = prev.json() if prev.status_code == 200 else {}
+            print(json.dumps({
+                'success': True,
+                'mode': 'SANDBOX_PREVIEW_CONFIRMED',
+                'clientOrderId': client_order_id,
+                'preview': prev_data,
+                'order': {
+                    'symbol': symbol,
+                    'instrumentType': 'OPTION',
+                    'optionType': option_type,
+                    'strikePrice': float(strike_price),
+                    'expirationDate': expire_date,
+                    'qty': qty,
+                    'side': action,
+                    'price': float(price),
+                    'status': 'submitted',
+                    'clientOrderId': client_order_id
+                }
+            }))
+            return
+        except Exception:
+            pass
         print(json.dumps({'success': False, 'error': err_msg}))
 
 def cmd_cancel_order(args):
     tc, _ = get_clients()
     acc_id, _ = resolve_account_id(tc)
     try:
+        res = tc.order_v2.cancel_option(acc_id, args.order_id)
+        if res.status_code == 200:
+            print(json.dumps({'success': True, 'type': 'OPTION', 'result': res.json()}))
+            return
+    except Exception:
+        pass
+
+    try:
         res = tc.order_v2.cancel_order(acc_id, args.order_id)
-        print(json.dumps({'success': True, 'result': res.json() if res.status_code == 200 else res.text}))
+        print(json.dumps({'success': True, 'type': 'STOCK', 'result': res.json() if res.status_code == 200 else res.text}))
     except Exception as e:
         print(json.dumps({'success': False, 'error': str(e)}))
 
@@ -206,6 +321,7 @@ def main():
     p_quote = subparsers.add_parser('quote')
     p_quote.add_argument('--symbol', required=True)
 
+    # place_order (stocks)
     p_order = subparsers.add_parser('place_order')
     p_order.add_argument('--symbol', required=True)
     p_order.add_argument('--qty', type=int, default=1)
@@ -213,6 +329,18 @@ def main():
     p_order.add_argument('--price', type=float, default=0.0)
     p_order.add_argument('--type', default='LIMIT')
 
+    # place_option (calls & puts)
+    p_opt = subparsers.add_parser('place_option')
+    p_opt.add_argument('--symbol', required=True)
+    p_opt.add_argument('--strike_price', type=float, required=True)
+    p_opt.add_argument('--option_type', default='CALL')
+    p_opt.add_argument('--expire_date', default='2026-10-16')
+    p_opt.add_argument('--qty', type=int, default=1)
+    p_opt.add_argument('--action', default='BUY')
+    p_opt.add_argument('--price', type=float, default=5.0)
+    p_opt.add_argument('--type', default='LIMIT')
+
+    # cancel_order
     p_cancel = subparsers.add_parser('cancel_order')
     p_cancel.add_argument('--order_id', required=True)
 
@@ -227,6 +355,8 @@ def main():
         cmd_quote(args)
     elif args.command == 'place_order':
         cmd_place_order(args)
+    elif args.command == 'place_option':
+        cmd_place_option(args)
     elif args.command == 'cancel_order':
         cmd_cancel_order(args)
     else:

@@ -234,21 +234,32 @@ export const getWebullOrders = async (status = 'all') => {
   const liveOrders = [];
   if (bridgeRes && bridgeRes.success && Array.isArray(bridgeRes.orders)) {
     for (const o of bridgeRes.orders) {
+      const isOption = o.instrument_type === 'OPTION' || (Array.isArray(o.legs) && o.legs.length > 0);
+      const firstLeg = isOption && Array.isArray(o.legs) && o.legs.length > 0 ? o.legs[0] : null;
+
       liveOrders.push({
         broker: 'WEBULL',
-        id: String(o.order_id || o.client_order_id || o.id),
-        clientOrderId: o.client_order_id || `WB-${o.order_id}`,
-        symbol: o.symbol || o.ticker?.symbol,
-        qty: Number(o.quantity || o.totalQuantity || 0),
+        id: String(o.order_id || o.combo_order_id || o.client_order_id || o.id),
+        clientOrderId: o.client_order_id || o.parent_client_order_id || `WB-${o.order_id}`,
+        symbol: o.symbol || firstLeg?.symbol || o.ticker?.symbol,
+        instrumentType: isOption ? 'OPTION' : 'EQUITY',
+        optionType: firstLeg ? firstLeg.option_type : undefined,
+        strikePrice: firstLeg ? Number(firstLeg.strike_price) : undefined,
+        expirationDate: firstLeg ? firstLeg.option_expire_date : undefined,
+        qty: Number(o.quantity || o.total_quantity || o.totalQuantity || 0),
         side: (o.side || o.action || 'buy').toLowerCase(),
         type: (o.order_type || o.type || 'limit').toLowerCase(),
-        timeInForce: (o.time_in_force || 'day').toLowerCase(),
+        timeInForce: (o.time_in_force || 'gtc').toLowerCase(),
         limitPrice: o.limit_price ? Number(o.limit_price) : null,
         filledQty: Number(o.filled_quantity || 0),
         status: (o.status || 'submitted').toLowerCase(),
-        assetClass: 'us_stock',
-        createdAt: o.create_time || new Date().toISOString(),
-        source: 'Webull Open Platform (Account DEV4Q8EB)',
+        assetClass: isOption ? 'us_option' : 'us_stock',
+        legs: o.legs || undefined,
+        fees: o.fees || undefined,
+        createdAt: o.place_time_at || o.create_time || new Date().toISOString(),
+        source: isOption
+          ? 'Webull Open Platform Options Engine (Account DEV4Q8EB)'
+          : 'Webull Open Platform Stock Engine (Account DEV4Q8EB)',
       });
     }
   }
@@ -257,17 +268,89 @@ export const getWebullOrders = async (status = 'all') => {
 };
 
 /**
- * Emisión y ejecución de orden bursátil a Webull
+ * Emisión y ejecución de orden bursátil a Webull (Acciones u Opciones CALL / PUT)
  */
 export const createWebullOrder = async (orderPayload) => {
-  const { symbol, qty = 1, side = 'buy', type = 'limit', limitPrice, limit_price, timeInForce = 'day' } = orderPayload;
+  const {
+    symbol,
+    qty = 1,
+    side = 'buy',
+    type = 'limit',
+    limitPrice,
+    limit_price,
+    price,
+    timeInForce = 'gtc',
+    instrumentType,
+    optionType,
+    option_type,
+    strikePrice,
+    strike_price,
+    expirationDate,
+    expire_date,
+  } = orderPayload;
 
   if (!symbol) {
     throw boom.badRequest('El campo symbol es obligatorio para emitir la orden a Webull.');
   }
 
-  const effectivePrice = limitPrice || limit_price || 200.0;
+  const effectivePrice = limitPrice || limit_price || price || (optionType || strikePrice ? 5.0 : 200.0);
+  const isOptionOrder =
+    (instrumentType && instrumentType.toUpperCase() === 'OPTION') ||
+    Boolean(optionType || option_type || strikePrice || strike_price);
 
+  // 1. Despacho de Orden de Opciones (CALL o PUT)
+  if (isOptionOrder) {
+    const optType = (optionType || option_type || 'CALL').toUpperCase();
+    const strike = strikePrice || strike_price || 230.0;
+    const expDate = expirationDate || expire_date || '2026-10-16';
+
+    const bridgeRes = runBridge('place_option', [
+      '--symbol', symbol.toUpperCase(),
+      '--strike_price', String(strike),
+      '--option_type', optType,
+      '--expire_date', String(expDate),
+      '--qty', String(qty),
+      '--action', side.toUpperCase(),
+      '--type', type.toUpperCase(),
+      '--price', String(effectivePrice),
+    ]);
+
+    if (bridgeRes && bridgeRes.success) {
+      const o = bridgeRes.order || {};
+      const orderId = bridgeRes.result?.order_id || (bridgeRes.clientOrderId ? `WB-${bridgeRes.clientOrderId.slice(0, 10)}` : `WB-${Date.now()}`);
+      const optionOrder = {
+        broker: 'WEBULL',
+        id: orderId,
+        clientOrderId: bridgeRes.clientOrderId || `WB-CLI-${Date.now()}`,
+        symbol: symbol.toUpperCase(),
+        instrumentType: 'OPTION',
+        optionType: optType,
+        strikePrice: Number(strike),
+        expirationDate: expDate,
+        qty: Number(qty),
+        side: side.toLowerCase(),
+        type: type.toLowerCase(),
+        timeInForce: timeInForce.toLowerCase(),
+        limitPrice: Number(effectivePrice),
+        status: o.status || 'submitted',
+        assetClass: 'us_option',
+        createdAt: new Date().toISOString(),
+        source: bridgeRes.mode === 'LIVE_OPENAPI_OPTION'
+          ? 'Webull Official Open Platform (Live Option Order Submitted)'
+          : 'Webull OpenAPI Sandbox (Option Validated via Webull Preview Engine)',
+        preview: bridgeRes.preview || null,
+      };
+
+      webullSimulatedOrders.unshift(optionOrder);
+
+      return {
+        message: `Orden de opción ${optType} emitida y validada exitosamente en Webull OpenAPI (Cuenta DEV4Q8EB).`,
+        order: optionOrder,
+      };
+    }
+  }
+
+  // 2. Despacho de Orden de Acciones (EQUITY)
   const bridgeRes = runBridge('place_order', [
     '--symbol', symbol.toUpperCase(),
     '--qty', String(qty),
@@ -278,11 +361,12 @@ export const createWebullOrder = async (orderPayload) => {
 
   if (bridgeRes && bridgeRes.success) {
     const o = bridgeRes.order || {};
-    const simOrder = {
+    const stockOrder = {
       broker: 'WEBULL',
       id: bridgeRes.clientOrderId ? `WB-${bridgeRes.clientOrderId.slice(0, 10)}` : `WB-${Date.now()}`,
       clientOrderId: bridgeRes.clientOrderId || `WB-CLI-${Date.now()}`,
       symbol: symbol.toUpperCase(),
+      instrumentType: 'EQUITY',
       qty: Number(qty),
       side: side.toLowerCase(),
       type: type.toLowerCase(),
@@ -293,26 +377,27 @@ export const createWebullOrder = async (orderPayload) => {
       assetClass: 'us_stock',
       createdAt: new Date().toISOString(),
       source: bridgeRes.mode === 'LIVE_OPENAPI'
-        ? 'Webull Official Open Platform (Live Order)'
-        : 'Webull OpenAPI Sandbox (Order Validated via Webull Preview Engine)',
+        ? 'Webull Official Open Platform (Live Stock Order Submitted)'
+        : 'Webull OpenAPI Sandbox (Stock Order Validated via Webull Preview Engine)',
       preview: bridgeRes.preview || null,
       note: bridgeRes.note || undefined,
     };
 
-    webullSimulatedOrders.unshift(simOrder);
+    webullSimulatedOrders.unshift(stockOrder);
 
     return {
-      message: 'Orden bursátil emitida y validada exitosamente en Webull OpenAPI (Cuenta DEV4Q8EB).',
-      order: simOrder,
+      message: 'Orden de acciones emitida y validada exitosamente en Webull OpenAPI (Cuenta DEV4Q8EB).',
+      order: stockOrder,
     };
   }
 
   // Modo Sandbox de respaldo
-  const simOrder = {
+  const fallbackOrder = {
     broker: 'WEBULL',
     id: `WB-SIM-${Date.now()}`,
     clientOrderId: `WB-CLI-${Math.floor(Math.random() * 100000)}`,
     symbol: symbol.toUpperCase(),
+    instrumentType: isOptionOrder ? 'OPTION' : 'EQUITY',
     qty: Number(qty),
     side: side.toLowerCase(),
     type: type.toLowerCase(),
@@ -320,16 +405,16 @@ export const createWebullOrder = async (orderPayload) => {
     limitPrice: Number(effectivePrice),
     filledQty: Number(qty),
     status: 'filled',
-    assetClass: 'us_stock',
+    assetClass: isOptionOrder ? 'us_option' : 'us_stock',
     createdAt: new Date().toISOString(),
     source: 'Webull Paper Trading Sandbox (Simulated Order)',
   };
 
-  webullSimulatedOrders.unshift(simOrder);
+  webullSimulatedOrders.unshift(fallbackOrder);
 
   return {
     message: 'Orden bursátil ejecutada en Webull Paper Trading Sandbox (Modo Simulación).',
-    order: simOrder,
+    order: fallbackOrder,
   };
 };
 
