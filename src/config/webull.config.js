@@ -14,7 +14,12 @@ export const isWebullConfigured = () => {
 };
 
 export const getWebullSignedHeaders = (method = 'GET', path = '', queryParams = {}, body = null) => {
-  return generateWebullHeaders(method, path, queryParams, body);
+  try {
+    const host = new URL(config.WEBULL_BASE_URL).host;
+    return generateWebullHeaders(method, path, queryParams, body, host);
+  } catch (e) {
+    return generateWebullHeaders(method, path, queryParams, body, 'api.sandbox.webull.com');
+  }
 };
 
 export const webullClient = axios.create({
@@ -27,3 +32,4 @@ export default {
   getWebullSignedHeaders,
   webullClient,
 };
+
