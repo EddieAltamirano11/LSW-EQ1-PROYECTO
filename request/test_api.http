@@ -485,3 +485,106 @@ POST {{baseUrl}}/broker/sync-underlying/NVDA
 x-broker-selection: WEBULL
 x-database-selection: mongodb
 
+
+
+### ==============================================================================
+### SECCIÓN 7: INTERACTIVE BROKERS (TWS API SOCKET - PUERTO 7497)
+### Cuenta Paper: DUR303142
+### ==============================================================================
+
+### 7.1 Consultar Cuenta y Balance en Interactive Brokers
+GET {{baseUrl}}/broker/account
+x-broker-selection: IBKR
+
+### 7.2 Cotización Spot en Tiempo Real de AAPL en IBKR
+GET {{baseUrl}}/broker/quote/AAPL
+x-broker-selection: IBKR
+
+### 7.3 Cadena de Opciones en Interactive Brokers
+GET {{baseUrl}}/broker/options-chain/AAPL?expiration=2026-10-16
+x-broker-selection: IBKR
+
+### 7.4 Consultar Posiciones Abiertas en IBKR
+GET {{baseUrl}}/broker/positions
+x-broker-selection: IBKR
+
+### 7.5 Consultar Órdenes en Interactive Brokers
+GET {{baseUrl}}/broker/orders
+x-broker-selection: IBKR
+
+### 7.6 Recomendar Put Protector Óptimo (F0) en IBKR
+GET {{baseUrl}}/hedging/recommend-option/AAPL?type=PUT&broker=IBKR&moneyness=OTM
+x-broker-selection: IBKR
+
+### 7.7 Recomendar Call Financiador Óptimo (F0) en IBKR
+GET {{baseUrl}}/hedging/recommend-option/AAPL?type=CALL&broker=IBKR&moneyness=OTM
+x-broker-selection: IBKR
+
+### 7.8 Emitir Orden de Compra de 100 Acciones en IBKR
+POST {{baseUrl}}/broker/orders
+Content-Type: application/json
+x-broker-selection: IBKR
+
+{
+  "symbol": "AAPL",
+  "qty": 100,
+  "side": "buy",
+  "type": "limit",
+  "limitPrice": 345.00,
+  "timeInForce": "day",
+  "instrumentType": "EQUITY"
+}
+
+### 7.9 Emitir Orden de Compra de Put Protector en IBKR
+POST {{baseUrl}}/broker/orders
+Content-Type: application/json
+x-broker-selection: IBKR
+
+{
+  "symbol": "AAPL",
+  "contractSymbol": "AAPL261016P00310000",
+  "instrumentType": "OPTION",
+  "optionType": "PUT",
+  "strikePrice": 310,
+  "expirationDate": "2026-10-16",
+  "qty": 1,
+  "side": "buy",
+  "type": "limit",
+  "limitPrice": 2.15,
+  "timeInForce": "gtc"
+}
+
+### 7.10 Emitir Orden de Venta de Short Call (Covered Call) en IBKR
+POST {{baseUrl}}/broker/orders
+Content-Type: application/json
+x-broker-selection: IBKR
+
+{
+  "symbol": "AAPL",
+  "contractSymbol": "AAPL261016C00380000",
+  "instrumentType": "OPTION",
+  "optionType": "CALL",
+  "strikePrice": 380,
+  "stockPrice": 347.73,
+  "expirationDate": "2026-10-16",
+  "qty": 1,
+  "side": "sell",
+  "type": "limit",
+  "limitPrice": 2.50,
+  "timeInForce": "gtc"
+}
+
+### 7.11 Auto-Collar Algorítmico Zero-Cost en Interactive Brokers
+POST {{baseUrl}}/hedging/auto-collar
+Content-Type: application/json
+x-broker-selection: IBKR
+x-database-selection: supabase
+
+{
+  "symbol": "AAPL",
+  "sharesCount": 100,
+  "portfolioId": "PORT-AUTO-IBKR",
+  "broker": "IBKR",
+  "expirationDate": "2026-10-16",
+  "executeOrders": true
+}

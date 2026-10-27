@@ -6,11 +6,20 @@ info:
     API RESTful con soporte de persistencia políglota dinámica (MongoDB Atlas y Supabase PostgreSQL),
     módulo cuantitativo F0 (Black-Scholes analítico, 5 Griegas, Newton-Raphson), módulo de coberturas
     F2 Parte B (Protective Put y Zero-Cost Collar con subdocumentos) e integración bursátil multi-broker
-    en tiempo real con Webull OpenAPI y Alpaca Markets.
+    en tiempo real con Webull OpenAPI, Alpaca Markets e Interactive Brokers (TWS Socket).
+
+    REGLA DE SINCRONIZACIÓN CONTINUA DE CLIENTES (POSTMAN / OPENSPEC):
+    Ante cualquier adición, modificación o recalibración en los contratos de la API (rutas, parámetros,
+    encabezados o modelos de carga útil), es OBLIGATORIO regenerar y sincronizar simultáneamente el archivo
+    de colección de pruebas exportable para Postman (LSW_Cloudflare_Postman_Collection.json)
+    a través del script automatizado scripts/build_full_postman_collection.py, garantizando paridad total
+    entre la especificación OpenSpec, el código ejecutable y las pruebas de los clientes.
   contact:
     name: Equipo 1 - Los Eddies (Altamirano Plantillas Eddie David)
     email: ealtamirano@ittepic.edu.mx
 servers:
+  - url: https://consist-overall-leaders-supplement.trycloudflare.com/api/v1
+    description: Túnel Cloudflare Público (Acceso Remoto para Postman y Evaluadores)
   - url: http://localhost:3050/api/v1
     description: Servidor Local de Desarrollo
 
@@ -30,7 +39,7 @@ tags:
   - name: Cuantitativo F0
     description: Motores cuantitativos analíticos de Black-Scholes y Newton-Raphson
   - name: Brokers Bursátiles
-    description: Conexión multi-broker en tiempo real con Webull OpenAPI y Alpaca Markets (Paper Trading, feeds de cotización, cadena de opciones y enrutamiento de órdenes)
+    description: Conexión multi-broker en tiempo real con Webull OpenAPI, Alpaca Markets e Interactive Brokers (TWS Socket) (Paper Trading, feeds de cotización, cadena de opciones y enrutamiento de órdenes)
 
 paths:
   # ==========================================================
@@ -240,11 +249,11 @@ paths:
           description: Tipo de opción a recomendar (PUT para cobertura de piso o CALL para techo de financiamiento)
         - in: header
           name: x-broker-selection
-          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
-          description: Broker bursátil para consultar cotizaciones y cadena de opciones real (WEBULL o ALPACA)
+          schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
+          description: Broker bursátil para consultar cotizaciones y cadena de opciones real (WEBULL, ALPACA o IBKR)
         - in: query
           name: broker
-          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+          schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
           description: Broker bursátil alternativo por query param
         - in: query
           name: expiration
@@ -268,11 +277,11 @@ paths:
           schema: { type: string, enum: [mongodb, supabase] }
         - in: header
           name: x-broker-selection
-          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
-          description: Broker bursátil para consultar cotizaciones y primas (WEBULL o ALPACA)
+          schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
+          description: Broker bursátil para consultar cotizaciones y primas (WEBULL, ALPACA o IBKR)
         - in: query
           name: broker
-          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+          schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
         - in: query
           name: executeOrders
           schema: { type: boolean, default: false, example: true }
@@ -285,7 +294,7 @@ paths:
               type: object
               required: [symbol, sharesCount]
               properties:
-                broker: { type: string, enum: [WEBULL, ALPACA], default: WEBULL, example: WEBULL }
+                broker: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL, example: WEBULL }
                 symbol: { type: string, example: AAPL }
                 sharesCount: { type: integer, example: 100 }
                 protectionPct: { type: number, example: 0.05 }
@@ -309,10 +318,10 @@ paths:
           schema: { type: string, enum: [mongodb, supabase] }
         - in: header
           name: x-broker-selection
-          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+          schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
         - in: query
           name: broker
-          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+          schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
         - in: query
           name: executeOrders
           schema: { type: boolean, default: false, example: true }
@@ -326,7 +335,7 @@ paths:
               properties:
                 sharesCount: { type: integer, default: 100, example: 100, description: Cantidad de acciones a cubrir (por defecto 100, 1 contrato) }
                 expirationDate: { type: string, example: '2026-10-16', description: Fecha de vencimiento de las opciones }
-                broker: { type: string, enum: [WEBULL, ALPACA], default: WEBULL, example: WEBULL }
+                broker: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL, example: WEBULL }
                 executeOrders: { type: boolean, default: false, example: true, description: 'Si es true, emite las órdenes bursátiles al broker de inmediato' }
       responses:
         '201':
@@ -798,11 +807,11 @@ paths:
       parameters:
         - in: header
           name: x-broker-selection
-          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+          schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
           description: Selección del broker para la consulta (por defecto WEBULL)
         - in: query
           name: broker
-          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+          schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
           description: Selección alternativa de broker por parámetro query
       responses:
         '200':
@@ -815,10 +824,10 @@ paths:
       parameters:
         - in: header
           name: x-broker-selection
-          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+          schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
         - in: query
           name: broker
-          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+          schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
       responses:
         '200':
           description: Cartera de acciones y contratos abiertos en el broker
@@ -833,10 +842,10 @@ paths:
           schema: { type: string, default: all }
         - in: header
           name: x-broker-selection
-          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+          schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
         - in: query
           name: broker
-          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+          schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
       responses:
         '200':
           description: Historial de órdenes bursátiles
@@ -846,10 +855,10 @@ paths:
       parameters:
         - in: header
           name: x-broker-selection
-          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+          schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
         - in: query
           name: broker
-          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+          schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
       requestBody:
         required: true
         content:
@@ -871,10 +880,10 @@ paths:
           schema: { type: string }
         - in: header
           name: x-broker-selection
-          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+          schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
         - in: query
           name: broker
-          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+          schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
       responses:
         '200':
           description: Orden cancelada exitosamente
@@ -890,10 +899,10 @@ paths:
           schema: { type: string, example: AAPL }
         - in: header
           name: x-broker-selection
-          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+          schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
         - in: query
           name: broker
-          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+          schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
       responses:
         '200':
           description: Cotización viva (bid, ask, lastPrice)
@@ -912,10 +921,10 @@ paths:
           schema: { type: string, example: '2026-10-16' }
         - in: header
           name: x-broker-selection
-          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+          schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
         - in: query
           name: broker
-          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+          schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
       responses:
         '200':
           description: Cadena de contratos Call y Put
@@ -934,10 +943,10 @@ paths:
           schema: { type: string, enum: [mongodb, supabase], default: mongodb }
         - in: header
           name: x-broker-selection
-          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+          schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
         - in: query
           name: broker
-          schema: { type: string, enum: [WEBULL, ALPACA], default: WEBULL }
+          schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
       responses:
         '200':
           description: Subyacente sincronizado en la base de datos seleccionada con el broker activo
@@ -1112,7 +1121,7 @@ components:
       type: object
       required: [symbol, qty, side, type]
       properties:
-        broker: { type: string, enum: [WEBULL, ALPACA], default: WEBULL, example: WEBULL }
+        broker: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL, example: WEBULL }
         symbol: { type: string, example: AAPL }
         instrumentType: { type: string, enum: [EQUITY, OPTION], default: EQUITY, example: OPTION }
         optionType: { type: string, enum: [CALL, PUT], description: Requerido si instrumentType es OPTION, example: CALL }
@@ -1127,7 +1136,7 @@ components:
     BrokerOrderOutput:
       type: object
       properties:
-        broker: { type: string, enum: [WEBULL, ALPACA], example: WEBULL }
+        broker: { type: string, enum: [WEBULL, ALPACA, IBKR], example: WEBULL }
         orderId: { type: string, example: '904837cc-ae9b-4b1a-8c02-5aed3245b3d7' }
         clientOrderId: { type: string, example: 'ORD-982173' }
         symbol: { type: string, example: AAPL }
