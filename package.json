@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
-    "test": "node --test"
+    "test": "node --test",
+    "tunnel": "..\\tools\\cloudflared.exe tunnel --url http://localhost:3050"
   },
   "keywords": [
     "rest",

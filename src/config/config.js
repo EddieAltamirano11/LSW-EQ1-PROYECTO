@@ -30,7 +30,12 @@ const config = {
   WEBULL_APP_SECRET: process.env.WEBULL_APP_SECRET || '',
   WEBULL_ACCOUNT_ID: process.env.WEBULL_ACCOUNT_ID || '',
   WEBULL_BASE_URL: process.env.WEBULL_BASE_URL || 'https://api.webull.com/openapi',
+
+  // Broker Interactive Brokers (TWS Socket)
+  IBKR_ACCOUNT_ID: process.env.IBKR_ACCOUNT_ID || 'DUR303142',
+  IBKR_TWS_HOST: process.env.IBKR_TWS_HOST || '127.0.0.1',
+  IBKR_TWS_PORT: Number(process.env.IBKR_TWS_PORT || 7497),
+  IBKR_CLIENT_ID: Number(process.env.IBKR_CLIENT_ID || 25),
 };
 
 export default config;
-

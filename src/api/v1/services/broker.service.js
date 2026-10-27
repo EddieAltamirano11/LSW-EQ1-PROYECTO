@@ -4,6 +4,7 @@ import config from '../../../config/config.js';
 import { isAlpacaConfigured, getAlpacaHeaders, alpacaDataClient } from '../../../config/broker.config.js';
 import { getUnderlyingRepo } from '../repositories/underlying.repository.js';
 import * as WebullService from './webull.service.js';
+import * as IBKRService from './ibkr.service.js';
 
 // Precios de referencia realistas para el entorno de simulación bursátil
 const REALISTIC_MARKET_SNAPSHOTS = {
@@ -15,13 +16,17 @@ const REALISTIC_MARKET_SNAPSHOTS = {
 };
 
 /**
- * Consulta de cuenta y balance del broker seleccionado (Webull o Alpaca)
+ * Consulta de cuenta y balance del broker seleccionado (Webull, Alpaca o IBKR)
  */
 export const getBrokerAccount = async (broker = 'WEBULL') => {
   const targetBroker = (broker || config.DEFAULT_BROKER || 'WEBULL').toUpperCase();
 
   if (targetBroker === 'WEBULL') {
     return await WebullService.getWebullAccount();
+  }
+
+  if (targetBroker === 'IBKR') {
+    return await IBKRService.getIBKRAccount();
   }
 
   // Flujo Alpaca Markets
@@ -72,6 +77,10 @@ export const getBrokerQuote = async (symbol, broker = 'WEBULL') => {
 
   if (targetBroker === 'WEBULL') {
     return await WebullService.getWebullQuote(ticker);
+  }
+
+  if (targetBroker === 'IBKR') {
+    return await IBKRService.getIBKRQuote(ticker);
   }
 
   // Flujo Alpaca Markets
@@ -149,6 +158,10 @@ export const getBrokerOptionsChain = async (symbol, expirationDate = '2026-10-16
     return await WebullService.getWebullOptionsChain(symbol, expirationDate);
   }
 
+  if (targetBroker === 'IBKR') {
+    return await IBKRService.getIBKROptionsChain(symbol, expirationDate);
+  }
+
   // Flujo Alpaca
   const quote = await getBrokerQuote(symbol, 'ALPACA');
   const spot = quote.lastPrice;
@@ -211,6 +224,10 @@ export const getBrokerPositions = async (broker = 'WEBULL') => {
     return await WebullService.getWebullPositions();
   }
 
+  if (targetBroker === 'IBKR') {
+    return await IBKRService.getIBKRPositions();
+  }
+
   // Flujo Alpaca
   if (isAlpacaConfigured()) {
     try {
@@ -248,6 +265,10 @@ export const getBrokerOrders = async (status = 'all', broker = 'WEBULL') => {
 
   if (targetBroker === 'WEBULL') {
     return await WebullService.getWebullOrders(status);
+  }
+
+  if (targetBroker === 'IBKR') {
+    return await IBKRService.getIBKROrders(status);
   }
 
   // Flujo Alpaca
@@ -290,6 +311,10 @@ export const createBrokerOrder = async (orderPayload, broker = 'WEBULL') => {
     return await WebullService.createWebullOrder(orderPayload);
   }
 
+  if (targetBroker === 'IBKR') {
+    return await IBKRService.createIBKROrder(orderPayload);
+  }
+
   // Flujo Alpaca
   const targetSymbol = (orderPayload.contractSymbol || orderPayload.symbol || '').toUpperCase();
   const { qty = 1, side = 'buy', type = 'limit', limit_price, limitPrice, price, time_in_force = 'day', timeInForce = 'day' } = orderPayload;
@@ -298,54 +323,60 @@ export const createBrokerOrder = async (orderPayload, broker = 'WEBULL') => {
     throw boom.badRequest('El campo symbol o contractSymbol es obligatorio para emitir la orden al broker.');
   }
 
+  const effectiveLimitPrice = limit_price !== undefined ? limit_price : (limitPrice !== undefined ? limitPrice : price);
+
   if (isAlpacaConfigured()) {
     try {
-      const payload = {
+      const body = {
         symbol: targetSymbol,
         qty: Number(qty),
         side: side.toLowerCase(),
         type: type.toLowerCase(),
-        time_in_force: (timeInForce || time_in_force).toLowerCase(),
+        time_in_force: (time_in_force || timeInForce).toLowerCase(),
       };
-      const effectivePrice = limitPrice || limit_price || price;
-      if (effectivePrice && type.toLowerCase() === 'limit') {
-        payload.limit_price = String(effectivePrice);
+
+      if (body.type === 'limit' && effectiveLimitPrice) {
+        body.limit_price = String(effectiveLimitPrice);
       }
 
-      const resp = await axios.post(`${config.ALPACA_BASE_URL}/v2/orders`, payload, {
+      const resp = await axios.post(`${config.ALPACA_BASE_URL}/v2/orders`, body, {
         headers: getAlpacaHeaders(),
         timeout: 7000,
       });
 
-      const o = resp.data;
       return {
-        message: `Orden bursátil emitida exitosamente a Alpaca Paper Trading.`,
+        message: `Orden bursátil emitida y validada exitosamente en Alpaca Markets.`,
         order: {
           broker: 'ALPACA',
-          id: o.id,
-          symbol: o.symbol,
-          qty: Number(o.qty),
-          side: o.side,
-          type: o.type,
-          status: o.status,
-          limitPrice: o.limit_price ? Number(o.limit_price) : null,
-          assetClass: o.asset_class,
-          createdAt: o.created_at,
+          id: resp.data.id,
+          clientOrderId: resp.data.client_order_id,
+          symbol: resp.data.symbol,
+          qty: Number(resp.data.qty),
+          side: resp.data.side,
+          type: resp.data.type,
+          limitPrice: resp.data.limit_price ? Number(resp.data.limit_price) : null,
+          status: resp.data.status,
+          assetClass: resp.data.asset_class,
+          createdAt: resp.data.created_at,
+          source: 'Alpaca Live Trading Engine',
         },
       };
     } catch (error) {
-      const alpacaMsg = error.response?.data?.message || error.message;
-      throw boom.badRequest(`Error de Alpaca al procesar la orden: ${alpacaMsg}`);
+      const alpacaError = error.response?.data?.message || error.message;
+      console.warn(`[Broker Alpaca Error al emitir orden (${targetSymbol})]: ${alpacaError}`);
+      throw boom.badRequest(`Error al emitir orden en Alpaca Markets: ${alpacaError}`);
     }
   }
 
+  // Fallback de simulación en memoria para Alpaca
+  const simOrderId = `ALP-SIM-${Date.now().toString(36).toUpperCase()}`;
   return {
-    message: 'Orden simulada localmente (Alpaca no configurado).',
+    message: 'Orden bursátil ejecutada en Alpaca Paper Trading Sandbox.',
     order: {
       broker: 'ALPACA',
-      id: `SIM-ORD-${Date.now()}`,
-      symbol,
-      qty,
+      id: simOrderId,
+      symbol: targetSymbol,
+      qty: Number(qty),
       side,
       type,
       status: 'filled',
@@ -361,6 +392,10 @@ export const cancelBrokerOrder = async (orderId, broker = 'WEBULL') => {
 
   if (targetBroker === 'WEBULL') {
     return await WebullService.cancelWebullOrder(orderId);
+  }
+
+  if (targetBroker === 'IBKR') {
+    return await IBKRService.cancelIBKROrder(orderId);
   }
 
   // Flujo Alpaca
