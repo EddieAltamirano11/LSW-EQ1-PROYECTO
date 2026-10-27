@@ -1,0 +1,3807 @@
+{
+  "info": {
+    "_postman_id": "29bd2619-9d1e-4c01-b368-90f726381b41",
+    "name": "LSW - Coberturas Financieras y Motor FIC (Equipo 1 - Colección Completa)",
+    "description": "Colección EXHAUSTIVA y calibrada con el 100% de los endpoints REST del backend (Equipo 1). Incluye flujos paso a paso para Webull, Alpaca e Interactive Brokers, Autenticación JWT, Activos Subyacentes (CRUD Políglota), Motor Cuantitativo F0 (Black-Scholes y Newton-Raphson), Coberturas Hedging, Operaciones con Subdocumentos y Multi-Broker.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1",
+      "type": "string",
+      "description": "URL base pública a través de Cloudflare Tunnel"
+    },
+    {
+      "key": "symbol",
+      "value": "NVDA",
+      "type": "string"
+    },
+    {
+      "key": "symbolAlpaca",
+      "value": "AAPL",
+      "type": "string"
+    },
+    {
+      "key": "expiration",
+      "value": "2026-10-16",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Flujos Guiados Paso a Paso (Webull, Alpaca, IBKR)",
+      "description": "Tutoriales completos de 11 pasos calibrados para ejecutar coberturas Collar completas en cada broker.",
+      "item": [
+        {
+          "name": "TutorialWebull",
+          "item": [
+            {
+              "name": "0_Consultar Balance y Cuenta en Webull",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "x-broker-selection",
+                    "value": "WEBULL"
+                  }
+                ],
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/account?broker=WEBULL",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "broker",
+                    "account"
+                  ],
+                  "query": [
+                    {
+                      "key": "broker",
+                      "value": "WEBULL"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "0_Consultar Posiciones Abiertas en Webull",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "x-broker-selection",
+                    "value": "WEBULL"
+                  }
+                ],
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/positions?broker=WEBULL",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "broker",
+                    "positions"
+                  ],
+                  "query": [
+                    {
+                      "key": "broker",
+                      "value": "WEBULL"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "1_Consultar Cotización Spot en Tiempo Real de Webull",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "x-broker-selection",
+                    "value": "WEBULL"
+                  }
+                ],
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/quote/NVDA",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "broker",
+                    "quote",
+                    "NVDA"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "2_Consultar la Cadena de Opciones en Webull",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "x-broker-selection",
+                    "value": "WEBULL"
+                  }
+                ],
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/options-chain/NVDA?expiration=2026-10-16",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "broker",
+                    "options-chain",
+                    "NVDA"
+                  ],
+                  "query": [
+                    {
+                      "key": "expiration",
+                      "value": "2026-10-16"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "3_Recomendar y Valuar la Opción Put Protectora Óptima (F0) Webull",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "x-broker-selection",
+                    "value": "WEBULL"
+                  }
+                ],
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/recommend-option/NVDA?type=PUT&broker=WEBULL&moneyness=OTM",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "hedging",
+                    "recommend-option",
+                    "NVDA"
+                  ],
+                  "query": [
+                    {
+                      "key": "type",
+                      "value": "PUT"
+                    },
+                    {
+                      "key": "broker",
+                      "value": "WEBULL"
+                    },
+                    {
+                      "key": "moneyness",
+                      "value": "OTM"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "4_Recomendar y Valuar la Opción Call Financiadora Óptima (F0) Webull",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "x-broker-selection",
+                    "value": "WEBULL"
+                  }
+                ],
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/recommend-option/NVDA?type=CALL&broker=WEBULL&moneyness=OTM",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "hedging",
+                    "recommend-option",
+                    "NVDA"
+                  ],
+                  "query": [
+                    {
+                      "key": "type",
+                      "value": "CALL"
+                    },
+                    {
+                      "key": "broker",
+                      "value": "WEBULL"
+                    },
+                    {
+                      "key": "moneyness",
+                      "value": "OTM"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "5_Emitir Orden de Compra de Acciones en Webull",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "x-broker-selection",
+                    "value": "WEBULL"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"symbol\": \"NVDA\",\n  \"qty\": 100,\n  \"side\": \"buy\",\n  \"type\": \"limit\",\n  \"limitPrice\": 214.5,\n  \"timeInForce\": \"day\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "broker",
+                    "orders"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "6_Emitir Orden de Compra del Put Protector en Webull (Simbología OCC)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "x-broker-selection",
+                    "value": "WEBULL"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"symbol\": \"NVDA\",\n  \"contractSymbol\": \"NVDA261016P00195000\",\n  \"instrumentType\": \"OPTION\",\n  \"optionType\": \"PUT\",\n  \"strikePrice\": 195,\n  \"expirationDate\": \"2026-10-16\",\n  \"qty\": 1,\n  \"side\": \"buy\",\n  \"type\": \"limit\",\n  \"limitPrice\": 2.57,\n  \"timeInForce\": \"gtc\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "broker",
+                    "orders"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "7_Emitir Orden de Venta del Short Call en Webull (Simbología OCC)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "x-broker-selection",
+                    "value": "WEBULL"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"symbol\": \"NVDA\",\n  \"contractSymbol\": \"NVDA261016C00225000\",\n  \"instrumentType\": \"OPTION\",\n  \"optionType\": \"CALL\",\n  \"strikePrice\": 225,\n  \"stockPrice\": 214.13,\n  \"expirationDate\": \"2026-10-16\",\n  \"qty\": 1,\n  \"side\": \"sell\",\n  \"type\": \"limit\",\n  \"limitPrice\": 2.26,\n  \"timeInForce\": \"gtc\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "broker",
+                    "orders"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "8_Estructurar y Persistir la Cobertura en MongoDB Atlas",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "x-database-selection",
+                    "value": "mongodb"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"portfolioId\": \"PORT-WEBULL-01\",\n  \"broker\": \"WEBULL\",\n  \"symbol\": \"NVDA\",\n  \"spotPrice\": 214.13,\n  \"sharesCount\": 100,\n  \"putStrike\": 195,\n  \"callStrike\": 225,\n  \"putPremium\": 2.47,\n  \"callPremium\": 2.36,\n  \"expirationDate\": \"2026-10-16T00:00:00.000Z\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/collar-spread",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "hedging",
+                    "collar-spread"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "9_AutomáticoWebull (Zero-Cost Auto-Collar)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "x-database-selection",
+                    "value": "mongodb"
+                  },
+                  {
+                    "key": "x-broker-selection",
+                    "value": "WEBULL"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"symbol\": \"NVDA\",\n  \"sharesCount\": 100,\n  \"portfolioId\": \"PORT-AUTO-WEBULL\",\n  \"broker\": \"WEBULL\",\n  \"expirationDate\": \"2026-10-16\",\n  \"executeOrders\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/auto-collar",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "hedging",
+                    "auto-collar"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "TutorialAlpaca",
+          "item": [
+            {
+              "name": "0_Consultar Balance y Cuenta en Alpaca",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "x-broker-selection",
+                    "value": "ALPACA"
+                  }
+                ],
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/account?broker=ALPACA",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "broker",
+                    "account"
+                  ],
+                  "query": [
+                    {
+                      "key": "broker",
+                      "value": "ALPACA"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "0_Consultar Posiciones Abiertas en Alpaca",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "x-broker-selection",
+                    "value": "ALPACA"
+                  }
+                ],
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/positions?broker=ALPACA",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "broker",
+                    "positions"
+                  ],
+                  "query": [
+                    {
+                      "key": "broker",
+                      "value": "ALPACA"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "1_Consultar Cotización Spot en Alpaca (IEX Feed)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "x-broker-selection",
+                    "value": "ALPACA"
+                  }
+                ],
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/quote/AAPL",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "broker",
+                    "quote",
+                    "AAPL"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "2_Consultar la Cadena de Opciones en Alpaca",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "x-broker-selection",
+                    "value": "ALPACA"
+                  }
+                ],
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/options-chain/AAPL?expiration=2026-10-16",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "broker",
+                    "options-chain",
+                    "AAPL"
+                  ],
+                  "query": [
+                    {
+                      "key": "expiration",
+                      "value": "2026-10-16"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "3_Recomendar y Valuar la Opción Put Protectora Óptima (F0) Alpaca",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "x-broker-selection",
+                    "value": "ALPACA"
+                  }
+                ],
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/recommend-option/AAPL?type=PUT&broker=ALPACA&moneyness=OTM",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "hedging",
+                    "recommend-option",
+                    "AAPL"
+                  ],
+                  "query": [
+                    {
+                      "key": "type",
+                      "value": "PUT"
+                    },
+                    {
+                      "key": "broker",
+                      "value": "ALPACA"
+                    },
+                    {
+                      "key": "moneyness",
+                      "value": "OTM"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "4_Recomendar y Valuar la Opción Call Financiadora Óptima (F0) Alpaca",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "x-broker-selection",
+                    "value": "ALPACA"
+                  }
+                ],
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/recommend-option/AAPL?type=CALL&broker=ALPACA&moneyness=OTM",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "hedging",
+                    "recommend-option",
+                    "AAPL"
+                  ],
+                  "query": [
+                    {
+                      "key": "type",
+                      "value": "CALL"
+                    },
+                    {
+                      "key": "broker",
+                      "value": "ALPACA"
+                    },
+                    {
+                      "key": "moneyness",
+                      "value": "OTM"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "5_Emitir Orden de Compra de Acciones en Alpaca",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "x-broker-selection",
+                    "value": "ALPACA"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"symbol\": \"AAPL\",\n  \"qty\": 100,\n  \"side\": \"buy\",\n  \"type\": \"limit\",\n  \"limitPrice\": 345.0,\n  \"timeInForce\": \"day\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "broker",
+                    "orders"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "6_Emitir Orden de Compra del Put Protector en Alpaca (Simbología OCC)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "x-broker-selection",
+                    "value": "ALPACA"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"symbol\": \"AAPL261016P00310000\",\n  \"qty\": 1,\n  \"side\": \"buy\",\n  \"type\": \"limit\",\n  \"limitPrice\": 2.15,\n  \"timeInForce\": \"day\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "broker",
+                    "orders"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "7_Emitir Orden de Venta del Short Call en Alpaca (Simbología OCC)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "x-broker-selection",
+                    "value": "ALPACA"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"symbol\": \"AAPL261016C00360000\",\n  \"qty\": 1,\n  \"side\": \"sell\",\n  \"type\": \"limit\",\n  \"limitPrice\": 2.5,\n  \"timeInForce\": \"day\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "broker",
+                    "orders"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "8_Estructurar y Persistir la Cobertura en Supabase PostgreSQL",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "x-database-selection",
+                    "value": "supabase"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"portfolioId\": \"PORT-ALPACA-01\",\n  \"broker\": \"ALPACA\",\n  \"symbol\": \"AAPL\",\n  \"spotPrice\": 343.39,\n  \"sharesCount\": 100,\n  \"putStrike\": 310,\n  \"callStrike\": 360,\n  \"putPremium\": 2.03,\n  \"callPremium\": 2.51,\n  \"expirationDate\": \"2026-10-16T00:00:00.000Z\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/collar-spread",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "hedging",
+                    "collar-spread"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "9_AutomaticoAlpaca (Zero-Cost Auto-Collar)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "x-database-selection",
+                    "value": "supabase"
+                  },
+                  {
+                    "key": "x-broker-selection",
+                    "value": "ALPACA"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"symbol\": \"AAPL\",\n  \"sharesCount\": 100,\n  \"portfolioId\": \"PORT-AUTO-ALPACA\",\n  \"broker\": \"ALPACA\",\n  \"expirationDate\": \"2026-10-16\",\n  \"executeOrders\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/auto-collar",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "hedging",
+                    "auto-collar"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "TutorialInteractiveBrokers",
+          "item": [
+            {
+              "name": "0_Consultar Balance y Cuenta en Interactive Brokers (DUR303142)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "x-broker-selection",
+                    "value": "IBKR"
+                  }
+                ],
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/account?broker=IBKR",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "broker",
+                    "account"
+                  ],
+                  "query": [
+                    {
+                      "key": "broker",
+                      "value": "IBKR"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "0_Consultar Posiciones Abiertas en Interactive Brokers",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "x-broker-selection",
+                    "value": "IBKR"
+                  }
+                ],
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/positions?broker=IBKR",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "broker",
+                    "positions"
+                  ],
+                  "query": [
+                    {
+                      "key": "broker",
+                      "value": "IBKR"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "1_Consultar Cotización Spot en Interactive Brokers (TWS Socket)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "x-broker-selection",
+                    "value": "IBKR"
+                  }
+                ],
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/quote/AAPL",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "broker",
+                    "quote",
+                    "AAPL"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "2_Consultar la Cadena de Opciones en Interactive Brokers",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "x-broker-selection",
+                    "value": "IBKR"
+                  }
+                ],
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/options-chain/AAPL?expiration=2026-10-16",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "broker",
+                    "options-chain",
+                    "AAPL"
+                  ],
+                  "query": [
+                    {
+                      "key": "expiration",
+                      "value": "2026-10-16"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "3_Recomendar y Valuar la Opción Put Protectora Óptima (F0) IBKR",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "x-broker-selection",
+                    "value": "IBKR"
+                  }
+                ],
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/recommend-option/AAPL?type=PUT&broker=IBKR&moneyness=OTM",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "hedging",
+                    "recommend-option",
+                    "AAPL"
+                  ],
+                  "query": [
+                    {
+                      "key": "type",
+                      "value": "PUT"
+                    },
+                    {
+                      "key": "broker",
+                      "value": "IBKR"
+                    },
+                    {
+                      "key": "moneyness",
+                      "value": "OTM"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "4_Recomendar y Valuar la Opción Call Financiadora Óptima (F0) IBKR",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "x-broker-selection",
+                    "value": "IBKR"
+                  }
+                ],
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/recommend-option/AAPL?type=CALL&broker=IBKR&moneyness=OTM",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "hedging",
+                    "recommend-option",
+                    "AAPL"
+                  ],
+                  "query": [
+                    {
+                      "key": "type",
+                      "value": "CALL"
+                    },
+                    {
+                      "key": "broker",
+                      "value": "IBKR"
+                    },
+                    {
+                      "key": "moneyness",
+                      "value": "OTM"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "5_Emitir Orden de Compra de Acciones en IBKR",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "x-broker-selection",
+                    "value": "IBKR"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"symbol\": \"AAPL\",\n  \"qty\": 100,\n  \"side\": \"buy\",\n  \"type\": \"limit\",\n  \"limitPrice\": 345.0,\n  \"timeInForce\": \"DAY\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "broker",
+                    "orders"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "6_Emitir Orden de Compra del Put Protector en IBKR (Simbología OCC)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "x-broker-selection",
+                    "value": "IBKR"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"symbol\": \"AAPL\",\n  \"contractSymbol\": \"AAPL261016P00310000\",\n  \"instrumentType\": \"OPTION\",\n  \"optionType\": \"PUT\",\n  \"strikePrice\": 310,\n  \"expirationDate\": \"2026-10-16\",\n  \"qty\": 1,\n  \"side\": \"buy\",\n  \"type\": \"limit\",\n  \"limitPrice\": 2.15,\n  \"timeInForce\": \"DAY\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "broker",
+                    "orders"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "7_Emitir Orden de Venta del Short Call en IBKR (Mitigación Covered Automática)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "x-broker-selection",
+                    "value": "IBKR"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"symbol\": \"AAPL\",\n  \"contractSymbol\": \"AAPL261016C00360000\",\n  \"instrumentType\": \"OPTION\",\n  \"optionType\": \"CALL\",\n  \"strikePrice\": 360,\n  \"expirationDate\": \"2026-10-16\",\n  \"qty\": 1,\n  \"side\": \"sell\",\n  \"type\": \"limit\",\n  \"limitPrice\": 2.5,\n  \"timeInForce\": \"DAY\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "broker",
+                    "orders"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "8_Estructurar y Persistir la Cobertura en Supabase PostgreSQL (IBKR)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "x-database-selection",
+                    "value": "supabase"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"portfolioId\": \"PORT-IBKR-01\",\n  \"broker\": \"IBKR\",\n  \"symbol\": \"AAPL\",\n  \"spotPrice\": 343.39,\n  \"sharesCount\": 100,\n  \"putStrike\": 310,\n  \"callStrike\": 360,\n  \"putPremium\": 2.03,\n  \"callPremium\": 2.51,\n  \"expirationDate\": \"2026-10-16T00:00:00.000Z\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/collar-spread",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "hedging",
+                    "collar-spread"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "9_AutomáticoIBKR (Zero-Cost Auto-Collar)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "x-database-selection",
+                    "value": "supabase"
+                  },
+                  {
+                    "key": "x-broker-selection",
+                    "value": "IBKR"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"symbol\": \"AAPL\",\n  \"sharesCount\": 100,\n  \"portfolioId\": \"PORT-AUTO-IBKR\",\n  \"broker\": \"IBKR\",\n  \"expirationDate\": \"2026-10-16\",\n  \"executeOrders\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/auto-collar",
+                  "protocol": "https",
+                  "host": [
+                    "consist-overall-leaders-supplement",
+                    "trycloudflare",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "hedging",
+                    "auto-collar"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "SECCIÓN 0: SALUD, DOCUMENTACIÓN Y OPENAPI 3.1.0",
+      "item": [
+        {
+          "name": "0.1 Raíz de la API y Metadatos del Sistema",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "0.2 Health Check del Servidor y Estado de Servicios",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/health",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "health"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "0.3 Especificación Cruda OpenAPI 3.1.0 (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/spec.json",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "spec.json"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "0.4 Documentación Interactiva Scalar (HTML)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/html"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/docs",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "docs"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "SECCIÓN 1: AUTENTICACIÓN Y SESIONES JWT (MONGODB & SUPABASE)",
+      "item": [
+        {
+          "name": "1.1 Registro de Inversionista en MongoDB Atlas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/auth/register",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"investor_qa_01\",\n  \"email\": \"investor01@ficengine.com\",\n  \"password\": \"SecurePassword2026!\",\n  \"role\": \"INVESTOR\",\n  \"databaseTarget\": \"mongodb\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "1.2 Login de Inversionista en MONGODB ATLAS",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/auth/login",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"investor_qa_01\",\n  \"password\": \"SecurePassword2026!\",\n  \"databaseTarget\": \"mongodb\"\n}\n\n@tokenMongo = {{loginMongo.response.body.token}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "1.3 Login de Inversionista en SUPABASE POSTGRESQL",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/auth/login",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"investor_qa_01\",\n  \"password\": \"SecurePassword2026!\",\n  \"databaseTarget\": \"supabase\"\n}\n\n@tokenSupabase = {{loginSupabase.response.body.token}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "1.4 Validar Sesión Activa del Inversionista",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenMongo}}"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/auth/session",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "session"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "1.5 Cierre de Sesión (Logout)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenMongo}}"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/auth/logout",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "logout"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "SECCIÓN 2: ACTIVOS SUBYACENTES (UNDERLYINGS) — POLÍGLOTA",
+      "item": [
+        {
+          "name": "2.1 Listar Subyacentes en MONGODB ATLAS",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-database-selection",
+                "value": "mongodb"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/underlyings",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "underlyings"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2.2 Listar Subyacentes en SUPABASE POSTGRESQL",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-database-selection",
+                "value": "supabase"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/underlyings",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "underlyings"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2.3 Consultar Subyacente por Ticker (NVDA en MongoDB)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-database-selection",
+                "value": "mongodb"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/underlyings/symbol/NVDA",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "underlyings",
+                "symbol",
+                "NVDA"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2.4 Consultar Subyacente por Ticker (AAPL en Supabase)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-database-selection",
+                "value": "supabase"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/underlyings/symbol/AAPL",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "underlyings",
+                "symbol",
+                "AAPL"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2.5 Crear Subyacente Individual en MongoDB Atlas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-database-selection",
+                "value": "mongodb"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/underlyings",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "underlyings"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"TSLA\",\n  \"companyName\": \"Tesla Inc.\",\n  \"spotPrice\": 360.25,\n  \"volatility\": 0.520\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2.6 Crear Subyacentes en Lote (Batch Array) en MongoDB",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-database-selection",
+                "value": "mongodb"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/underlyings/batch",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "underlyings",
+                "batch"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"symbol\": \"AMD\",\n    \"companyName\": \"Advanced Micro Devices Inc.\",\n    \"spotPrice\": 165.40,\n    \"volatility\": 0.440\n  },\n  {\n    \"symbol\": \"QCOM\",\n    \"companyName\": \"Qualcomm Inc.\",\n    \"spotPrice\": 172.10,\n    \"volatility\": 0.285\n  }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2.7 Actualizar Cotización Spot y Volatilidad de un Subyacente",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-database-selection",
+                "value": "mongodb"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/underlyings/symbol/TSLA",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "underlyings",
+                "symbol",
+                "TSLA"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"spotPrice\": 368.50,\n  \"volatility\": 0.495\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2.8 Eliminar Subyacente de la Base de Datos",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-database-selection",
+                "value": "mongodb"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/underlyings/symbol/TSLA",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "underlyings",
+                "symbol",
+                "TSLA"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "SECCIÓN 3: MOTOR CUANTITATIVO F0 (BLACK-SCHOLES & GRIEGAS)",
+      "item": [
+        {
+          "name": "3.1 Valuación Analítica Black-Scholes y 5 Griegas (F0)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/quant/black-scholes",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "quant",
+                "black-scholes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"spotPrice\": 221.30,\n  \"strikePrice\": 200.00,\n  \"timeToExpirationYears\": 0.08,\n  \"volatility\": 0.48,\n  \"riskFreeRate\": 0.045,\n  \"optionType\": \"PUT\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3.2 Volatilidad Implícita con Newton-Raphson (F0)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/quant/implied-volatility",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "quant",
+                "implied-volatility"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"marketPrice\": 2.54,\n  \"spotPrice\": 221.30,\n  \"strikePrice\": 200.00,\n  \"timeToExpirationYears\": 0.08,\n  \"riskFreeRate\": 0.045,\n  \"optionType\": \"PUT\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "SECCIÓN 4: RECOMENDACIÓN Y ESTRUCTURACIÓN DE COBERTURAS (HEDGING)",
+      "item": [
+        {
+          "name": "4.1 Recomendar Opción PUT Protectora Óptima (F0) en Webull",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/recommend-option/NVDA?type=PUT&broker=WEBULL&moneyness=OTM",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hedging",
+                "recommend-option",
+                "NVDA"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "PUT"
+                },
+                {
+                  "key": "broker",
+                  "value": "WEBULL"
+                },
+                {
+                  "key": "moneyness",
+                  "value": "OTM"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4.2 Recomendar Opción CALL Financiadora Óptima (F0) en Webull",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/recommend-option/NVDA?type=CALL&broker=WEBULL&moneyness=OTM",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hedging",
+                "recommend-option",
+                "NVDA"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "CALL"
+                },
+                {
+                  "key": "broker",
+                  "value": "WEBULL"
+                },
+                {
+                  "key": "moneyness",
+                  "value": "OTM"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4.3 Recomendar Opción PUT Protectora Óptima en Alpaca",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/recommend-option/AAPL?type=PUT&broker=ALPACA&moneyness=OTM",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hedging",
+                "recommend-option",
+                "AAPL"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "PUT"
+                },
+                {
+                  "key": "broker",
+                  "value": "ALPACA"
+                },
+                {
+                  "key": "moneyness",
+                  "value": "OTM"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4.4 Recomendar Opción CALL Financiadora Óptima en Alpaca",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/recommend-option/AAPL?type=CALL&broker=ALPACA&moneyness=OTM",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hedging",
+                "recommend-option",
+                "AAPL"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "CALL"
+                },
+                {
+                  "key": "broker",
+                  "value": "ALPACA"
+                },
+                {
+                  "key": "moneyness",
+                  "value": "OTM"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4.5 Estructurar y Crear Cobertura Protective Put en MongoDB",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-database-selection",
+                "value": "mongodb"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/protective-put",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hedging",
+                "protective-put"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"portfolioId\": \"PORT-DEMO-01\",\n  \"broker\": \"WEBULL\",\n  \"symbol\": \"NVDA\",\n  \"spotPrice\": 221.30,\n  \"sharesCount\": 100,\n  \"putStrike\": 200.00,\n  \"putPremium\": 2.54,\n  \"expirationDate\": \"2026-10-16T00:00:00.000Z\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4.6 Estructurar y Crear Zero-Cost Collar Spread en MongoDB",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-database-selection",
+                "value": "mongodb"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/collar-spread",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hedging",
+                "collar-spread"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"portfolioId\": \"PORT-COLLAR-01\",\n  \"broker\": \"WEBULL\",\n  \"symbol\": \"NVDA\",\n  \"spotPrice\": 221.30,\n  \"sharesCount\": 100,\n  \"putStrike\": 210.00,\n  \"callStrike\": 230.00,\n  \"putPremium\": 2.17,\n  \"callPremium\": 2.38,\n  \"expirationDate\": \"2026-10-16T00:00:00.000Z\"\n}\n\n@strategyIdMongo = {{createCollarMongo.response.body.data.id}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4.7 Estructurar y Crear Zero-Cost Collar Spread en Supabase",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-database-selection",
+                "value": "supabase"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/collar-spread",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hedging",
+                "collar-spread"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"portfolioId\": \"PORT-COLLAR-02\",\n  \"broker\": \"ALPACA\",\n  \"symbol\": \"AAPL\",\n  \"spotPrice\": 343.85,\n  \"sharesCount\": 100,\n  \"putStrike\": 310.00,\n  \"callStrike\": 360.00,\n  \"putPremium\": 2.25,\n  \"callPremium\": 3.00,\n  \"expirationDate\": \"2026-10-16T00:00:00.000Z\"\n}\n\n@strategyIdSupabase = {{createCollarSupabase.response.body.data.id}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4.8 Auto-Collar Autónomo Todo-en-Uno (Webull - Modo Simulado)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-database-selection",
+                "value": "mongodb"
+              },
+              {
+                "key": "x-broker-selection",
+                "value": "WEBULL"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/auto-collar",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hedging",
+                "auto-collar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"NVDA\",\n  \"sharesCount\": 100,\n  \"broker\": \"WEBULL\",\n  \"executeOrders\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4.9 Auto-Collar Autónomo Todo-en-Uno (Webull - Emisión Real en Firme)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-database-selection",
+                "value": "mongodb"
+              },
+              {
+                "key": "x-broker-selection",
+                "value": "WEBULL"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/auto-collar",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hedging",
+                "auto-collar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"NVDA\",\n  \"sharesCount\": 100,\n  \"broker\": \"WEBULL\",\n  \"executeOrders\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4.10 Auto-Collar Autónomo Todo-en-Uno (Alpaca - Emisión Real en Firme)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-database-selection",
+                "value": "supabase"
+              },
+              {
+                "key": "x-broker-selection",
+                "value": "ALPACA"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/auto-collar",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hedging",
+                "auto-collar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"AAPL\",\n  \"sharesCount\": 100,\n  \"broker\": \"ALPACA\",\n  \"executeOrders\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4.11 Listar Estrategias de Cobertura en MONGODB ATLAS",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-database-selection",
+                "value": "mongodb"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/strategies",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hedging",
+                "strategies"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4.12 Listar Estrategias de Cobertura en SUPABASE POSTGRESQL",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-database-selection",
+                "value": "supabase"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/strategies",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hedging",
+                "strategies"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4.13 Consultar Estrategia por ID en MongoDB",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-database-selection",
+                "value": "mongodb"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/strategies/670d7e684fb65a25032b43a1",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hedging",
+                "strategies",
+                "670d7e684fb65a25032b43a1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4.14 Actualizar Estado del Ciclo de Vida de una Estrategia",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-database-selection",
+                "value": "mongodb"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/strategies/670d7e684fb65a25032b43a1/status",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hedging",
+                "strategies",
+                "670d7e684fb65a25032b43a1",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CLOSED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4.15 Eliminar Estrategia por ID",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-database-selection",
+                "value": "mongodb"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/strategies/670d7e684fb65a25032b43a1",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hedging",
+                "strategies",
+                "670d7e684fb65a25032b43a1"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "SECCIÓN 5: OPERACIONES CON SUBDOCUMENTOS (LEGS, UNDERLYING, METRICS & PAYOFF)",
+      "item": [
+        {
+          "name": "5.1 Consultar Subdocumento Underlying de una Estrategia",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-database-selection",
+                "value": "supabase"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/underlying",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hedging-strategies",
+                "c0000000-0000-0000-0000-000000000001",
+                "underlying"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5.2 Actualizar Subdocumento Underlying",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-database-selection",
+                "value": "supabase"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/underlying",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hedging-strategies",
+                "c0000000-0000-0000-0000-000000000001",
+                "underlying"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"spotPriceAtEntry\": 346.50,\n  \"sharesCount\": 100\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5.3 Listar Todas las Patas (Legs) de una Estrategia",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-database-selection",
+                "value": "supabase"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/legs",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hedging-strategies",
+                "c0000000-0000-0000-0000-000000000001",
+                "legs"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5.4 Consultar Pata Individual por legId",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-database-selection",
+                "value": "supabase"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/legs/LEG-AAPL-STOCK",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hedging-strategies",
+                "c0000000-0000-0000-0000-000000000001",
+                "legs",
+                "LEG-AAPL-STOCK"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5.5 Agregar una Nueva Pata (POST Subdocumento)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-database-selection",
+                "value": "supabase"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/legs",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hedging-strategies",
+                "c0000000-0000-0000-0000-000000000001",
+                "legs"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"legId\": \"LEG-AAPL-ADDITIONAL-CALL\",\n  \"legRole\": \"FINANCE_CEILING\",\n  \"assetType\": \"OPTION\",\n  \"contractSymbol\": \"AAPL261016C00380000\",\n  \"optionType\": \"CALL\",\n  \"strike\": 380.00,\n  \"quantity\": 1,\n  \"entryPrice\": 2.68,\n  \"delta\": 0.22\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5.6 Actualizar Pata Individual (PUT Subdocumento)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-database-selection",
+                "value": "supabase"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/legs/LEG-AAPL-ADDITIONAL-CALL",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hedging-strategies",
+                "c0000000-0000-0000-0000-000000000001",
+                "legs",
+                "LEG-AAPL-ADDITIONAL-CALL"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entryPrice\": 2.75,\n  \"delta\": 0.24\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5.7 Eliminar Pata Individual (DELETE Subdocumento)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-database-selection",
+                "value": "supabase"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/legs/LEG-AAPL-ADDITIONAL-CALL",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hedging-strategies",
+                "c0000000-0000-0000-0000-000000000001",
+                "legs",
+                "LEG-AAPL-ADDITIONAL-CALL"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5.8 Consultar Subdocumento de Métricas Financieras",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-database-selection",
+                "value": "supabase"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/financial-metrics",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hedging-strategies",
+                "c0000000-0000-0000-0000-000000000001",
+                "financial-metrics"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5.9 Recalcular Métricas Financieras con Nuevo Precio Spot",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-database-selection",
+                "value": "supabase"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/financial-metrics/recalculate",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hedging-strategies",
+                "c0000000-0000-0000-0000-000000000001",
+                "financial-metrics",
+                "recalculate"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentSpotPrice\": 350.00\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5.10 Generar Matriz Discreta de Payoff (P&L) de 25 Puntos para Gráfica",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-database-selection",
+                "value": "supabase"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/payoff-matrix?steps=25&rangePct=0.20",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hedging-strategies",
+                "c0000000-0000-0000-0000-000000000001",
+                "payoff-matrix"
+              ],
+              "query": [
+                {
+                  "key": "steps",
+                  "value": "25"
+                },
+                {
+                  "key": "rangePct",
+                  "value": "0.20"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "SECCIÓN 6: INTEGRACIÓN MULTI-BROKER (WEBULL OPENAPI & ALPACA MARKETS)",
+      "item": [
+        {
+          "name": "6.1 Consultar Cuenta de Inversión en WEBULL OPENAPI (DEV4Q8EB)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-broker-selection",
+                "value": "WEBULL"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/account",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "broker",
+                "account"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6.2 Consultar Cuenta de Inversión en ALPACA MARKETS (Paper Trading)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-broker-selection",
+                "value": "ALPACA"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/account",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "broker",
+                "account"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6.3 Cotización Spot L1 en Tiempo Real de Webull (NVDA)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-broker-selection",
+                "value": "WEBULL"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/quote/NVDA",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "broker",
+                "quote",
+                "NVDA"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6.4 Cotización Spot L1 en Tiempo Real de Alpaca (AAPL)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-broker-selection",
+                "value": "ALPACA"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/quote/AAPL",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "broker",
+                "quote",
+                "AAPL"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6.5 Cadena de Opciones en Tiempo Real de Webull (NVDA)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-broker-selection",
+                "value": "WEBULL"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/options-chain/NVDA?expiration=2026-10-16",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "broker",
+                "options-chain",
+                "NVDA"
+              ],
+              "query": [
+                {
+                  "key": "expiration",
+                  "value": "2026-10-16"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6.6 Cadena de Opciones en Tiempo Real de Alpaca (AAPL)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-broker-selection",
+                "value": "ALPACA"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/options-chain/AAPL?expiration=2026-10-16",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "broker",
+                "options-chain",
+                "AAPL"
+              ],
+              "query": [
+                {
+                  "key": "expiration",
+                  "value": "2026-10-16"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6.7 Posiciones Abiertas en Cartera de Webull",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-broker-selection",
+                "value": "WEBULL"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/positions",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "broker",
+                "positions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6.8 Posiciones Abiertas en Cartera de Alpaca",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-broker-selection",
+                "value": "ALPACA"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/positions",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "broker",
+                "positions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6.9 Emitir Orden Bursátil Simple en Webull (Compra de 100 Acciones NVDA)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-broker-selection",
+                "value": "WEBULL"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "broker",
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"NVDA\",\n  \"qty\": 100,\n  \"side\": \"buy\",\n  \"type\": \"limit\",\n  \"limitPrice\": 221.30,\n  \"timeInForce\": \"day\"\n}\n\n@webullOrderId = {{orderWebull.response.body.order.id}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6.10 Emitir Orden Bursátil Simple en Alpaca (Compra de 100 Acciones AAPL)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-broker-selection",
+                "value": "ALPACA"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "broker",
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"AAPL\",\n  \"qty\": 100,\n  \"side\": \"buy\",\n  \"type\": \"limit\",\n  \"limitPrice\": 343.85,\n  \"timeInForce\": \"day\"\n}\n\n@alpacaOrderId = {{orderAlpaca.response.body.order.id}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6.11 Listar Órdenes en Webull",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-broker-selection",
+                "value": "WEBULL"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "broker",
+                "orders"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6.12 Listar Órdenes en Alpaca",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-broker-selection",
+                "value": "ALPACA"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "broker",
+                "orders"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6.13 Cancelar Orden Bursátil en Webull",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-broker-selection",
+                "value": "WEBULL"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders/b058af6bc909445781016e62e3a98c06",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "broker",
+                "orders",
+                "b058af6bc909445781016e62e3a98c06"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6.14 Cancelar Orden Bursátil en Alpaca",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-broker-selection",
+                "value": "ALPACA"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders/970921fb-5536-4d0f-b44c-0c1efebf8691",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "broker",
+                "orders",
+                "970921fb-5536-4d0f-b44c-0c1efebf8691"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6.15 Sincronizar Cotización de Broker hacia la Base de Datos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-broker-selection",
+                "value": "WEBULL"
+              },
+              {
+                "key": "x-database-selection",
+                "value": "mongodb"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/sync-underlying/NVDA",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "broker",
+                "sync-underlying",
+                "NVDA"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "SECCIÓN 7: INTERACTIVE BROKERS (TWS API SOCKET - PUERTO 7497)",
+      "item": [
+        {
+          "name": "7.1 Consultar Cuenta y Balance en Interactive Brokers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-broker-selection",
+                "value": "IBKR"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/account",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "broker",
+                "account"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "7.2 Cotización Spot en Tiempo Real de AAPL en IBKR",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-broker-selection",
+                "value": "IBKR"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/quote/AAPL",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "broker",
+                "quote",
+                "AAPL"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "7.3 Cadena de Opciones en Interactive Brokers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-broker-selection",
+                "value": "IBKR"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/options-chain/AAPL?expiration=2026-10-16",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "broker",
+                "options-chain",
+                "AAPL"
+              ],
+              "query": [
+                {
+                  "key": "expiration",
+                  "value": "2026-10-16"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "7.4 Consultar Posiciones Abiertas en IBKR",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-broker-selection",
+                "value": "IBKR"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/positions",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "broker",
+                "positions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "7.5 Consultar Órdenes en Interactive Brokers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-broker-selection",
+                "value": "IBKR"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "broker",
+                "orders"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "7.6 Recomendar Put Protector Óptimo (F0) en IBKR",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-broker-selection",
+                "value": "IBKR"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/recommend-option/AAPL?type=PUT&broker=IBKR&moneyness=OTM",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hedging",
+                "recommend-option",
+                "AAPL"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "PUT"
+                },
+                {
+                  "key": "broker",
+                  "value": "IBKR"
+                },
+                {
+                  "key": "moneyness",
+                  "value": "OTM"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "7.7 Recomendar Call Financiador Óptimo (F0) en IBKR",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-broker-selection",
+                "value": "IBKR"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/recommend-option/AAPL?type=CALL&broker=IBKR&moneyness=OTM",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hedging",
+                "recommend-option",
+                "AAPL"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "CALL"
+                },
+                {
+                  "key": "broker",
+                  "value": "IBKR"
+                },
+                {
+                  "key": "moneyness",
+                  "value": "OTM"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "7.8 Emitir Orden de Compra de 100 Acciones en IBKR",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-broker-selection",
+                "value": "IBKR"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "broker",
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"AAPL\",\n  \"qty\": 100,\n  \"side\": \"buy\",\n  \"type\": \"limit\",\n  \"limitPrice\": 345.00,\n  \"timeInForce\": \"day\",\n  \"instrumentType\": \"EQUITY\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "7.9 Emitir Orden de Compra de Put Protector en IBKR",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-broker-selection",
+                "value": "IBKR"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "broker",
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"AAPL\",\n  \"contractSymbol\": \"AAPL261016P00310000\",\n  \"instrumentType\": \"OPTION\",\n  \"optionType\": \"PUT\",\n  \"strikePrice\": 310,\n  \"expirationDate\": \"2026-10-16\",\n  \"qty\": 1,\n  \"side\": \"buy\",\n  \"type\": \"limit\",\n  \"limitPrice\": 2.15,\n  \"timeInForce\": \"gtc\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "7.10 Emitir Orden de Venta de Short Call (Covered Call) en IBKR",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-broker-selection",
+                "value": "IBKR"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "broker",
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"AAPL\",\n  \"contractSymbol\": \"AAPL261016C00380000\",\n  \"instrumentType\": \"OPTION\",\n  \"optionType\": \"CALL\",\n  \"strikePrice\": 380,\n  \"stockPrice\": 347.73,\n  \"expirationDate\": \"2026-10-16\",\n  \"qty\": 1,\n  \"side\": \"sell\",\n  \"type\": \"limit\",\n  \"limitPrice\": 2.50,\n  \"timeInForce\": \"gtc\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "7.11 Auto-Collar Algorítmico Zero-Cost en Interactive Brokers",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-broker-selection",
+                "value": "IBKR"
+              },
+              {
+                "key": "x-database-selection",
+                "value": "supabase"
+              }
+            ],
+            "url": {
+              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/auto-collar",
+              "protocol": "https",
+              "host": [
+                "consist-overall-leaders-supplement",
+                "trycloudflare",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hedging",
+                "auto-collar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"AAPL\",\n  \"sharesCount\": 100,\n  \"portfolioId\": \"PORT-AUTO-IBKR\",\n  \"broker\": \"IBKR\",\n  \"expirationDate\": \"2026-10-16\",\n  \"executeOrders\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "U1 (Servicios Base)",
+      "item": [
+        {
+          "name": "GET_List ProdServ",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3020/api/v1/prod-serv",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3020",
+              "path": [
+                "api",
+                "v1",
+                "prod-serv"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
