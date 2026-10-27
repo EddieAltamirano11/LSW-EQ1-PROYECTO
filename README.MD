@@ -12,7 +12,7 @@
 1. **Altamirano Plantillas Eddie David** (23400498)
 2. **Durán Ocampo Luis Carlos** (23400531)
 3. **Díaz Rodríguez Fernando** (23400530)
-4. **Espinoza Benitez Jesús** (23400536)
+4. **Espinosa Benitez Jesús** (23400536)
 5. **Martínez Orozco Carlos** (23400577)
 6. **Nuñez Carvajal José Tadeo** (23400585)
 7. **Rendón Vázquez Karime Lizbeth** (23400608)
