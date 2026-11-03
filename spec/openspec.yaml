@@ -257,7 +257,7 @@ paths:
           description: Broker bursátil alternativo por query param
         - in: query
           name: expiration
-          schema: { type: string, example: '2026-10-16' }
+          schema: { type: string, example: '2027-01-15' }
           description: Fecha de vencimiento de las opciones
         - in: query
           name: moneyness
@@ -320,7 +320,7 @@ paths:
                 symbol: { type: string, example: AAPL }
                 sharesCount: { type: integer, example: 100 }
                 protectionPct: { type: number, example: 0.05 }
-                expirationDate: { type: string, example: '2026-10-16' }
+                expirationDate: { type: string, example: '2027-01-15' }
                 executeOrders: { type: boolean, default: false, example: true, description: 'Si es true, emite las órdenes bursátiles de las opciones al broker (Webull o Alpaca) de inmediato para que se reflejen en la terminal' }
       responses:
         '201':
@@ -356,7 +356,7 @@ paths:
               type: object
               properties:
                 sharesCount: { type: integer, default: 100, example: 100, description: Cantidad de acciones a cubrir (por defecto 100, 1 contrato) }
-                expirationDate: { type: string, example: '2026-10-16', description: Fecha de vencimiento de las opciones }
+                expirationDate: { type: string, example: '2027-01-15', description: Fecha de vencimiento de las opciones }
                 broker: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL, example: WEBULL }
                 executeOrders: { type: boolean, default: false, example: true, description: 'Si es true, emite las órdenes bursátiles al broker de inmediato' }
       responses:
@@ -386,7 +386,7 @@ paths:
                 sharesCount: { type: integer, example: 100 }
                 putStrike: { type: number, example: 220.00 }
                 putPremium: { type: number, example: 4.20 }
-                expirationDate: { type: string, format: date-time, example: '2026-10-16T00:00:00Z' }
+                expirationDate: { type: string, format: date-time, example: '2027-01-15T00:00:00Z' }
       responses:
         '201':
           description: Cobertura Protective Put emitida con suelo blindado
@@ -940,7 +940,7 @@ paths:
           schema: { type: string, example: SPY }
         - in: query
           name: expiration
-          schema: { type: string, example: '2026-10-16' }
+          schema: { type: string, example: '2027-01-15' }
         - in: header
           name: x-broker-selection
           schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
@@ -1027,13 +1027,13 @@ components:
           type: string
           enum: [EQUITY, OPTION]
           example: OPTION
-        contractSymbol: { type: string, example: 'NVDA261016P00119500' }
+        contractSymbol: { type: string, example: 'NVDA270115P00119500' }
         optionType:
           type: string
           enum: [CALL, PUT, null]
           example: PUT
         strike: { type: number, example: 119.50 }
-        expirationDate: { type: string, format: date-time, example: '2026-10-16T00:00:00Z' }
+        expirationDate: { type: string, format: date-time, example: '2027-01-15T00:00:00Z' }
         quantity: { type: integer, example: 1 }
         entryPrice: { type: number, example: 2.15 }
         delta: { type: number, example: -0.2105 }
@@ -1148,7 +1148,7 @@ components:
         instrumentType: { type: string, enum: [EQUITY, OPTION], default: EQUITY, example: OPTION }
         optionType: { type: string, enum: [CALL, PUT], description: Requerido si instrumentType es OPTION, example: CALL }
         strikePrice: { type: number, description: Precio de ejercicio para opciones, example: 235.00 }
-        expirationDate: { type: string, description: Fecha de vencimiento para opciones (YYYY-MM-DD), example: '2026-10-16' }
+        expirationDate: { type: string, description: Fecha de vencimiento para opciones (YYYY-MM-DD), example: '2027-01-15' }
         qty: { type: integer, example: 10 }
         side: { type: string, enum: [buy, sell], example: buy }
         type: { type: string, enum: [market, limit], default: limit, example: limit }

@@ -3,6 +3,7 @@ import { spawnSync } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import config from '../../../config/config.js';
+import { nextValidExpiration } from '../../../utils/expiration.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -149,7 +150,7 @@ export const getIBKRQuote = async (symbol) => {
 /**
  * Consulta de cadena de opciones desde Interactive Brokers
  */
-export const getIBKROptionsChain = async (symbol, expirationDate = '2026-10-16') => {
+export const getIBKROptionsChain = async (symbol, expirationDate = nextValidExpiration()) => {
   const ticker = symbol.toUpperCase();
   const bridgeRes = runBridge('options_chain', ['--symbol', ticker, '--expiration', expirationDate]);
 
@@ -315,9 +316,9 @@ export const createIBKROrder = async (orderData) => {
   if (instrumentType === 'OPTION') {
     let strike = strikePrice;
     let optType = optionType;
-    let expDate = expirationDate || '2026-10-16';
+    let expDate = expirationDate || nextValidExpiration();
 
-    // Parsear contractSymbol OCC si está presente (ej. AAPL261016C00360000)
+    // Parsear contractSymbol OCC si está presente (ej. AAPL270115C00360000)
     if (contractSymbol && contractSymbol.length >= 18) {
       const match = contractSymbol.match(/^([A-Z]+)(\d{6})([CP])(\d{8})$/);
       if (match) {

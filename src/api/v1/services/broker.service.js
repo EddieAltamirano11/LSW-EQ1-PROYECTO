@@ -3,6 +3,14 @@ import axios from 'axios';
 import config from '../../../config/config.js';
 import { isAlpacaConfigured, getAlpacaHeaders, alpacaDataClient } from '../../../config/broker.config.js';
 import { getUnderlyingRepo } from '../repositories/underlying.repository.js';
+import {
+  buildOccSymbol,
+  isExpiredOptionSymbol,
+  isOccSymbol,
+  nextValidExpiration,
+  parseOccExpiration,
+  toExpirationDateString,
+} from '../../../utils/expiration.js';
 import * as WebullService from './webull.service.js';
 import * as IBKRService from './ibkr.service.js';
 
@@ -15,11 +23,7 @@ const REALISTIC_MARKET_SNAPSHOTS = {
   GOOGL: { companyName: 'Alphabet Inc.', spotPrice: 165.40, volatility: 0.240, bid: 165.35, ask: 165.45 },
 };
 
-const defaultOptionExpiration = (daysAhead = 90) => {
-  const date = new Date();
-  date.setUTCDate(date.getUTCDate() + daysAhead);
-  return date.toISOString().slice(0, 10);
-};
+const defaultOptionExpiration = () => nextValidExpiration();
 
 /**
  * Consulta de cuenta y balance del broker seleccionado (Webull, Alpaca o IBKR)
@@ -166,13 +170,15 @@ export const getBrokerQuote = async (symbol, broker = 'WEBULL') => {
  */
 export const getBrokerOptionsChain = async (symbol, expirationDate = defaultOptionExpiration(), broker = 'WEBULL') => {
   const targetBroker = (broker || config.DEFAULT_BROKER || 'WEBULL').toUpperCase();
+  // Normalizamos a YYYY-MM-DD: los simbolos OCC no admiten hora ni fechas pasadas.
+  const expiration = toExpirationDateString(expirationDate) || defaultOptionExpiration();
 
   if (targetBroker === 'WEBULL') {
-    return await WebullService.getWebullOptionsChain(symbol, expirationDate);
+    return await WebullService.getWebullOptionsChain(symbol, expiration);
   }
 
   if (targetBroker === 'IBKR') {
-    return await IBKRService.getIBKROptionsChain(symbol, expirationDate);
+    return await IBKRService.getIBKROptionsChain(symbol, expiration);
   }
 
   // Flujo Alpaca
@@ -191,10 +197,10 @@ export const getBrokerOptionsChain = async (symbol, expirationDate = defaultOpti
     const isITM = spot > strike;
     const premium = Number((Math.max(spot - strike, 0) + (isITM ? 3.5 : 2.0) + Math.random()).toFixed(2));
     return {
-      contractSymbol: `${quote.symbol}${expirationDate.replace(/-/g, '').slice(2)}C${String(strike * 1000).padStart(8, '0')}`,
+      contractSymbol: buildOccSymbol(quote.symbol, expiration, 'CALL', strike),
       type: 'CALL',
       strike,
-      expirationDate,
+      expirationDate: expiration,
       bid: Number((premium - 0.1).toFixed(2)),
       ask: Number((premium + 0.1).toFixed(2)),
       lastPrice: premium,
@@ -205,10 +211,10 @@ export const getBrokerOptionsChain = async (symbol, expirationDate = defaultOpti
     const isITM = strike > spot;
     const premium = Number((Math.max(strike - spot, 0) + (isITM ? 3.5 : 2.0) + Math.random()).toFixed(2));
     return {
-      contractSymbol: `${quote.symbol}${expirationDate.replace(/-/g, '').slice(2)}P${String(strike * 1000).padStart(8, '0')}`,
+      contractSymbol: buildOccSymbol(quote.symbol, expiration, 'PUT', strike),
       type: 'PUT',
       strike,
-      expirationDate,
+      expirationDate: expiration,
       bid: Number((premium - 0.1).toFixed(2)),
       ask: Number((premium + 0.1).toFixed(2)),
       lastPrice: premium,
@@ -219,7 +225,7 @@ export const getBrokerOptionsChain = async (symbol, expirationDate = defaultOpti
     broker: 'ALPACA',
     symbol: quote.symbol,
     spotPrice: spot,
-    expirationDate,
+    expirationDate: expiration,
     source: quote.source,
     contractsCount: calls.length + puts.length,
     calls,
@@ -319,6 +325,24 @@ export const getBrokerOrders = async (status = 'all', broker = 'WEBULL') => {
  */
 export const createBrokerOrder = async (orderPayload, broker = 'WEBULL') => {
   const targetBroker = (orderPayload.broker || broker || config.DEFAULT_BROKER || 'WEBULL').toUpperCase();
+
+  // Guardrail: un contrato OCC vencido siempre es rechazado por el broker
+  // ("asset not found"). Lo detenemos aquí con un 400 explícito y accionable.
+  const requestedSymbol = String(orderPayload.contractSymbol || orderPayload.symbol || '').toUpperCase();
+  if (isOccSymbol(requestedSymbol)) {
+    const expiration = parseOccExpiration(requestedSymbol);
+    if (!expiration) {
+      throw boom.badRequest(
+        `El contrato de opción '${requestedSymbol}' no tiene una fecha de vencimiento OCC válida (YYMMDD).`
+      );
+    }
+    if (isExpiredOptionSymbol(requestedSymbol)) {
+      throw boom.badRequest(
+        `El contrato de opción '${requestedSymbol}' venció el ${expiration.toISOString().slice(0, 10)}. ` +
+        'Solicita un vencimiento futuro en /hedging/recommend-option o /broker/options-chain antes de emitir la orden.'
+      );
+    }
+  }
 
   if (targetBroker === 'WEBULL') {
     return await WebullService.createWebullOrder(orderPayload);

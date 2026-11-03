@@ -1,4 +1,5 @@
 import * as HedgingService from '../services/hedging.service.js';
+import { nextValidExpiration } from '../../../utils/expiration.js';
 
 // === ESTRATEGIAS PRINCIPALES ===
 export const listStrategies = async (req, res, next) => {
@@ -68,7 +69,7 @@ export const recommendOption = async (req, res, next) => {
     const symbol = req.params.symbol || req.query.symbol;
     const type = req.query.type || req.params.type || req.body?.type || 'PUT';
     const broker = req.body?.broker || req.query?.broker || req.broker;
-    const expirationDate = req.query.expiration || req.query.expirationDate || '2026-10-16';
+    const expirationDate = req.query.expiration || req.query.expirationDate || nextValidExpiration();
     const moneyness = req.query.moneyness || 'OTM';
     const volatility = req.query.volatility ? Number(req.query.volatility) : undefined;
 

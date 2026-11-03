@@ -1,6 +1,6 @@
 $kind: http-request
 name: 4_Recomendar y Valuar la Opción Call Financiadora Óptima (F0) Alpaca
-url: '{{baseUrl}}/hedging/recommend-option/AAPL?type=CALL&broker=ALPACA&moneyness=OTM'
+url: '{{baseUrl}}/hedging/recommend-option/AAPL?type=CALL&broker=ALPACA&moneyness=OTM&expiration=2027-01-15'
 method: GET
 headers:
   x-broker-selection: ALPACA
@@ -8,4 +8,5 @@ queryParams:
   type: CALL
   broker: ALPACA
   moneyness: OTM
+  expiration: 2027-01-15
 order: 4000

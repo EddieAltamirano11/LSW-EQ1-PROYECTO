@@ -76,7 +76,7 @@ A pesar de que el frontend y el consumidor REST reciben la misma interfaz JSON u
 ### C. Motor de Derivados y Opciones Financieras (Calls y Puts)
 
 * **Alpaca Markets**:
-  * Modela las opciones como contratos con un símbolo formateado según la convención OCC (ej. `AAPL261016C00230000`).
+  * Modela las opciones como contratos con un símbolo formateado según la convención OCC (ej. `AAPL270115C00230000`).
 
 * **Webull OpenAPI**:
   * Trata las opciones como estructuras de derivados con patas explícitas (`legs`):
@@ -92,7 +92,7 @@ A pesar de que el frontend y el consumidor REST reciben la misma interfaz JSON u
         {
           "symbol": "AAPL",
           "strike_price": "230.00",
-          "option_expire_date": "2026-10-16",
+          "option_expire_date": "2027-01-15",
           "instrument_type": "OPTION",
           "option_type": "CALL",
           "side": "BUY",

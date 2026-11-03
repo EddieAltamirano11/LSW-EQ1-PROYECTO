@@ -3,17 +3,14 @@ import { getHedgingRepo } from '../repositories/hedging.repository.js';
 import { getUnderlyingRepo } from '../repositories/underlying.repository.js';
 import { calculateBlackScholes } from './quant.service.js';
 import { getBrokerQuote, getBrokerOptionsChain, createBrokerOrder } from './broker.service.js';
+import { buildOccSymbol, nextValidExpiration, toExpirationDateString } from '../../../utils/expiration.js';
 import { randomUUID } from 'crypto';
 import config from '../../../config/config.js';
 
 const MS_PER_YEAR = 365 * 24 * 60 * 60 * 1000;
 
-// Fecha de expiración por defecto: 90 días hacia adelante (siempre futura).
-const defaultExpirationDate = (daysAhead = 90) => {
-  const date = new Date();
-  date.setUTCDate(date.getUTCDate() + daysAhead);
-  return date.toISOString().slice(0, 10);
-};
+// Fecha de expiración por defecto: siguiente vencimiento listado (tercer viernes).
+const defaultExpirationDate = () => nextValidExpiration();
 
 // Años hasta el vencimiento. Devuelve null si la fecha es inválida o pasada.
 const yearsToExpiration = (expirationDate) => {
@@ -138,7 +135,7 @@ export const createProtectivePut = async (payload, dbTarget = 'mongodb') => {
         legId: `LEG-${symbol.toUpperCase()}-PUT`,
         legRole: 'HEDGE_FLOOR',
         assetType: 'OPTION',
-        contractSymbol: `${symbol.toUpperCase()}261016P${String(K * 1000).padStart(8, '0')}`,
+        contractSymbol: buildOccSymbol(symbol, expirationDate, 'PUT', K),
         optionType: 'PUT',
         strike: K,
         expirationDate: new Date(expirationDate),
@@ -253,7 +250,7 @@ export const createCollarSpread = async (payload, dbTarget = 'mongodb') => {
         legId: `LEG-${symbol.toUpperCase()}-PUT`,
         legRole: 'HEDGE_FLOOR',
         assetType: 'OPTION',
-        contractSymbol: `${symbol.toUpperCase()}261016P${String(K_put * 1000).padStart(8, '0')}`,
+        contractSymbol: buildOccSymbol(symbol, expirationDate, 'PUT', K_put),
         optionType: 'PUT',
         strike: K_put,
         expirationDate: new Date(expirationDate),
@@ -268,7 +265,7 @@ export const createCollarSpread = async (payload, dbTarget = 'mongodb') => {
         legId: `LEG-${symbol.toUpperCase()}-CALL`,
         legRole: 'FINANCE_CEILING',
         assetType: 'OPTION',
-        contractSymbol: `${symbol.toUpperCase()}261016C${String(K_call * 1000).padStart(8, '0')}`,
+        contractSymbol: buildOccSymbol(symbol, expirationDate, 'CALL', K_call),
         optionType: 'CALL',
         strike: K_call,
         expirationDate: new Date(expirationDate),
@@ -887,7 +884,7 @@ export const recommendOption = async (params) => {
     symbol,
     type,
     optionType,
-    expirationDate = '2026-10-16',
+    expirationDate = defaultExpirationDate(),
     broker = config.DEFAULT_BROKER || 'WEBULL',
     moneyness = 'OTM',
     volatility,
@@ -905,12 +902,17 @@ export const recommendOption = async (params) => {
   const ticker = symbol.toUpperCase();
   const targetBroker = (broker || config.DEFAULT_BROKER || 'WEBULL').toUpperCase();
 
+  // Normalizamos el vencimiento a YYYY-MM-DD y exigimos que sea futuro:
+  // nunca se recomienda un contrato ya caducado (causa de "asset not found").
+  const expiration = toExpirationDateString(expirationDate) || defaultExpirationDate();
+  const timeToExpirationYears = requireFutureExpiration(expiration);
+
   // 1. Obtener precio spot del broker
   const quote = await getBrokerQuote(ticker, targetBroker);
   const spotPrice = quote.lastPrice;
 
   // 2. Obtener la cadena de opciones disponible
-  const chain = await getBrokerOptionsChain(ticker, expirationDate, targetBroker);
+  const chain = await getBrokerOptionsChain(ticker, expiration, targetBroker);
   const optionsList = optType === 'PUT' ? (chain.puts || []) : (chain.calls || []);
 
   if (!optionsList || optionsList.length === 0) {
@@ -926,7 +928,7 @@ export const recommendOption = async (params) => {
     const bs = calculateBlackScholes({
       spotPrice,
       strikePrice: strike,
-      timeToExpirationYears: 0.1,
+      timeToExpirationYears,
       volatility: effectiveVol,
       optionType: optType,
     });
@@ -949,7 +951,7 @@ export const recommendOption = async (params) => {
     const score = distancePenalty + fairPenalty;
 
     return {
-      contractSymbol: opt.contractSymbol || `${ticker}261016${optType[0]}${String(strike * 1000).padStart(8, '0')}`,
+      contractSymbol: opt.contractSymbol || buildOccSymbol(ticker, expiration, optType, strike),
       type: optType,
       strike,
       bid: opt.bid ? Number(opt.bid) : Number((premium - 0.1).toFixed(2)),
@@ -991,7 +993,7 @@ export const recommendOption = async (params) => {
     companyName: quote.companyName || `${ticker} Corporation`,
     spotPrice,
     optionType: optType,
-    expirationDate,
+    expirationDate: expiration,
     moneynessPreference: moneyness.toUpperCase(),
     recommendedContract: {
       contractSymbol: best.contractSymbol,
