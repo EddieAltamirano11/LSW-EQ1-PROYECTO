@@ -1,0 +1,6 @@
+$kind: http-request
+url: '{{baseUrl}}/broker/orders/b058af6bc909445781016e62e3a98c06'
+method: DELETE
+headers:
+  x-broker-selection: WEBULL
+order: 5000

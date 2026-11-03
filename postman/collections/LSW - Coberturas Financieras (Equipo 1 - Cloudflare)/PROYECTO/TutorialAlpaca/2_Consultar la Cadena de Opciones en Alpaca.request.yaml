@@ -1,0 +1,8 @@
+$kind: http-request
+url: '{{baseUrl}}/broker/options-chain/AAPL?expiration=2027-01-15'
+method: GET
+headers:
+  x-broker-selection: ALPACA
+queryParams:
+  expiration: 2027-01-15
+order: 2000

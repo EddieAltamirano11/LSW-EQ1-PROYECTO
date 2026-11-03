@@ -1,0 +1,19 @@
+$kind: http-request
+url: '{{baseUrl}}/hedging/auto-collar'
+method: POST
+headers:
+  x-database-selection: supabase
+  x-broker-selection: ALPACA
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "symbol": "AAPL",
+      "sharesCount": 100,
+      "portfolioId": "PORT-AUTO-ALPACA",
+      "broker": "ALPACA",
+      "expirationDate": "2027-01-15",
+      "executeOrders": true
+    }
+order: 9000

@@ -1,0 +1,6 @@
+$kind: collection
+description: Colección completa y calibrada para el backend de Coberturas Financieras (Equipo 1). Incluye flujos paso a paso para Alpaca y Webull. Las URLs usan la variable baseUrl (environment Local o variable de colección).
+variables:
+  - key: baseUrl
+    value: 'http://localhost:3050/api/v1'
+    description: URL base de la API. Para exponerla con un túnel, cambia solo este valor.

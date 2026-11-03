@@ -1,0 +1,24 @@
+$kind: http-request
+name: 7_Emitir Orden de Venta del Short Call en Webull (Simbología OCC)
+url: '{{baseUrl}}/broker/orders'
+method: POST
+headers:
+  x-broker-selection: WEBULL
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "symbol": "NVDA270115C00225000",
+      "instrumentType": "OPTION",
+      "optionType": "CALL",
+      "strikePrice": 225,
+      "stockPrice": 214.13,
+      "expirationDate": "2027-01-15",
+      "qty": 1,
+      "side": "sell",
+      "type": "limit",
+      "limitPrice": 2.26,
+      "timeInForce": "gtc"
+    }
+order: 7000

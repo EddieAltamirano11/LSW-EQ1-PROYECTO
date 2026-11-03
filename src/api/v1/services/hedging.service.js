@@ -3,7 +3,36 @@ import { getHedgingRepo } from '../repositories/hedging.repository.js';
 import { getUnderlyingRepo } from '../repositories/underlying.repository.js';
 import { calculateBlackScholes } from './quant.service.js';
 import { getBrokerQuote, getBrokerOptionsChain } from './broker.service.js';
+import config from '../../../config/config.js';
 import { randomUUID } from 'crypto';
+
+const MS_PER_YEAR = 365 * 24 * 60 * 60 * 1000;
+
+// Fecha de expiración por defecto: 90 días hacia adelante (siempre futura).
+const defaultExpirationDate = (daysAhead = 90) => {
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() + daysAhead);
+  return date.toISOString().slice(0, 10);
+};
+
+// Años hasta el vencimiento. Devuelve null si la fecha es inválida o pasada.
+const yearsToExpiration = (expirationDate) => {
+  if (!expirationDate) return null;
+  const expiration = new Date(expirationDate);
+  if (Number.isNaN(expiration.getTime())) return null;
+  const years = (expiration.getTime() - Date.now()) / MS_PER_YEAR;
+  return years > 0 ? years : null;
+};
+
+const requireFutureExpiration = (expirationDate) => {
+  const years = yearsToExpiration(expirationDate);
+  if (years === null) {
+    throw boom.badRequest(
+      `La fecha de expiración '${expirationDate}' debe ser una fecha futura válida (formato YYYY-MM-DD).`
+    );
+  }
+  return years;
+};
 
 export const listStrategies = async (filter = {}, dbTarget = 'mongodb') => {
   const repo = getHedgingRepo(dbTarget);
@@ -29,7 +58,7 @@ export const createProtectivePut = async (payload, dbTarget = 'mongodb') => {
     sharesCount = 100,
     putStrike,
     putPremium,
-    expirationDate = '2026-10-16T00:00:00.000Z',
+    expirationDate = defaultExpirationDate(),
     volatility = 0.22,
   } = payload;
 
@@ -52,12 +81,13 @@ export const createProtectivePut = async (payload, dbTarget = 'mongodb') => {
   const contracts = Math.max(1, Math.ceil(count / 100));
   const K = Number(putStrike);
   const premium = Number(putPremium);
+  const timeToExpirationYears = requireFutureExpiration(expirationDate);
 
   // Valuación cuantitativa F0 de la pata Put
   const quant = calculateBlackScholes({
     spotPrice: S,
     strikePrice: K,
-    timeToExpirationYears: 0.1,
+    timeToExpirationYears,
     volatility,
     optionType: 'PUT',
   });
@@ -136,7 +166,7 @@ export const createCollarSpread = async (payload, dbTarget = 'mongodb') => {
     callStrike,
     putPremium = 6.5,
     callPremium = 6.6,
-    expirationDate = '2026-10-16T00:00:00.000Z',
+    expirationDate = defaultExpirationDate(),
     volatility = 0.15,
   } = payload;
 
@@ -161,13 +191,14 @@ export const createCollarSpread = async (payload, dbTarget = 'mongodb') => {
   const p_put = Number(putPremium);
   const p_call = Number(callPremium);
   const contracts = Math.max(1, Math.ceil(count / 100));
+  const timeToExpirationYears = requireFutureExpiration(expirationDate);
 
   if (K_put >= S) throw boom.badRequest('El Strike del Put protector debe ser inferior al precio Spot (Out-of-the-Money).');
   if (K_call <= S) throw boom.badRequest('El Strike del Call financiador debe ser superior al precio Spot (Out-of-the-Money).');
 
   // Griegas F0
-  const putQuant = calculateBlackScholes({ spotPrice: S, strikePrice: K_put, timeToExpirationYears: 0.1, volatility, optionType: 'PUT' });
-  const callQuant = calculateBlackScholes({ spotPrice: S, strikePrice: K_call, timeToExpirationYears: 0.1, volatility, optionType: 'CALL' });
+  const putQuant = calculateBlackScholes({ spotPrice: S, strikePrice: K_put, timeToExpirationYears, volatility, optionType: 'PUT' });
+  const callQuant = calculateBlackScholes({ spotPrice: S, strikePrice: K_call, timeToExpirationYears, volatility, optionType: 'CALL' });
 
   // Flujo neto de primas por acción
   const netCreditPerShare = p_call - p_put;
@@ -253,7 +284,7 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
     symbol,
     sharesCount = 10,
     portfolioId = 'PORT-01',
-    expirationDate = '2026-10-16',
+    expirationDate = defaultExpirationDate(),
     autoPersist = true,
   } = params;
 
@@ -262,6 +293,8 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
   }
 
   const ticker = symbol.toUpperCase();
+  const expiration = String(expirationDate).slice(0, 10);
+  const timeToExpirationYears = requireFutureExpiration(expiration);
 
   // 1. Obtener precio spot del broker
   const quote = await getBrokerQuote(ticker);
@@ -328,7 +361,7 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
   const putBS = calculateBlackScholes({
     spotPrice,
     strikePrice: optimalPut.strike,
-    timeToExpirationYears: 0.1,
+    timeToExpirationYears,
     volatility: quote.volatility || 0.2,
     optionType: 'PUT',
   });
@@ -336,7 +369,7 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
   const callBS = calculateBlackScholes({
     spotPrice,
     strikePrice: optimalCall.strike,
-    timeToExpirationYears: 0.1,
+    timeToExpirationYears,
     volatility: quote.volatility || 0.2,
     optionType: 'CALL',
   });
@@ -344,7 +377,7 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
   // 5. Validación de Precio Justo según Black-Scholes (F0 Fair Pricing Guardrail)
   // Evalúa que el mercado no presente un sobreprecio abusivo en la prima del Put protector
   const putFairRatio = optimalPut.premium / Math.max(0.01, putBS.theoreticalPrice);
-  const isFairPrice = putFairRatio <= 4.0; // Umbral de tolerancia ante picos de volatilidad implícita
+  const isFairPrice = putFairRatio <= config.F0_MAX_PREMIUM_RATIO; // Tolerancia ante picos de volatilidad implícita
 
   if (!isFairPrice) {
     throw boom.badRequest(
@@ -356,6 +389,8 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
     symbol: ticker,
     companyName: quote.companyName || `${ticker} Corporation`,
     spotPrice,
+    expirationDate: expiration,
+    timeToExpirationYears: Number(timeToExpirationYears.toFixed(4)),
     evaluatedPairsCount: evaluatedPairs.length,
     selectionCriteria: {
       putMoneyness: `${(bestPair.putDistancePct * 100).toFixed(1)}% OTM (Deducible de riesgo)`,
@@ -402,7 +437,7 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
     callStrike: optimalCall.strike,
     putPremium: optimalPut.premium,
     callPremium: optimalCall.premium,
-    expirationDate: `${expirationDate}T00:00:00.000Z`,
+    expirationDate: `${expiration}T00:00:00.000Z`,
     volatility: quote.volatility || 0.2,
   };
 
@@ -412,6 +447,125 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
     message: `Estrategia Zero-Cost Collar calibrada, optimizada con F0 y persistida en ${dbTarget.toUpperCase()} exitosamente.`,
     analysis: analysisReport,
     strategy: createdStrategy,
+  };
+};
+
+// ============================================================================
+// RECOMENDACIÓN DE UNA SOLA PATA (PUT PROTECTOR O CALL FINANCIADOR)
+// ============================================================================
+export const recommendOption = async (params) => {
+  const {
+    symbol,
+    optionType = 'PUT',
+    expirationDate = defaultExpirationDate(),
+    moneyness = 'OTM',
+    targetMoneynessPct = 0.05,
+    sharesCount = 100,
+  } = params;
+
+  if (!symbol) {
+    throw boom.badRequest('El símbolo del activo (symbol) es requerido.');
+  }
+
+  const type = String(optionType).toUpperCase();
+  if (!['PUT', 'CALL'].includes(type)) {
+    throw boom.badRequest("El tipo de opción (type) debe ser 'PUT' o 'CALL'.");
+  }
+
+  const mode = String(moneyness).toUpperCase();
+  if (!['OTM', 'ITM', 'ATM'].includes(mode)) {
+    throw boom.badRequest("La moneyness debe ser 'OTM', 'ITM' o 'ATM'.");
+  }
+
+  const ticker = symbol.toUpperCase();
+  const expiration = String(expirationDate).slice(0, 10);
+  const timeToExpirationYears = requireFutureExpiration(expiration);
+
+  const quote = await getBrokerQuote(ticker);
+  const spotPrice = quote.lastPrice;
+  const chain = await getBrokerOptionsChain(ticker, expiration);
+  const contracts = type === 'PUT' ? chain.puts || [] : chain.calls || [];
+
+  if (contracts.length === 0) {
+    throw boom.badRequest(`No hay contratos ${type} disponibles para ${ticker} al ${expiration}.`);
+  }
+
+  const isOtm = (strike) => (type === 'PUT' ? strike < spotPrice : strike > spotPrice);
+  const isItm = (strike) => (type === 'PUT' ? strike > spotPrice : strike < spotPrice);
+
+  let candidates;
+  if (mode === 'ATM') {
+    candidates = [...contracts].sort(
+      (a, b) => Math.abs(a.strike - spotPrice) - Math.abs(b.strike - spotPrice)
+    );
+  } else {
+    candidates = contracts.filter((contract) =>
+      mode === 'OTM' ? isOtm(contract.strike) : isItm(contract.strike)
+    );
+  }
+
+  if (candidates.length === 0) {
+    throw boom.badRequest(`No se encontraron contratos ${mode} para ${ticker} al ${expiration}.`);
+  }
+
+  // Strike objetivo: 5% OTM por defecto, o el más cercano al spot en modo ATM.
+  const targetStrike =
+    mode === 'ATM'
+      ? spotPrice
+      : type === 'PUT'
+        ? spotPrice * (1 - targetMoneynessPct)
+        : spotPrice * (1 + targetMoneynessPct);
+
+  const selected = candidates.reduce((best, candidate) =>
+    Math.abs(candidate.strike - targetStrike) < Math.abs(best.strike - targetStrike)
+      ? candidate
+      : best
+  );
+
+  const marketPremium = Number(selected.premium || selected.lastPrice || selected.ask || 0);
+  const bs = calculateBlackScholes({
+    spotPrice,
+    strikePrice: selected.strike,
+    timeToExpirationYears,
+    volatility: quote.volatility || 0.2,
+    optionType: type,
+  });
+
+  const premiumRatio = marketPremium / Math.max(0.01, bs.theoreticalPrice);
+  const isFairPrice = premiumRatio <= config.F0_MAX_PREMIUM_RATIO;
+  const contractsNeeded = Math.max(1, Math.ceil(Number(sharesCount) / 100));
+
+  return {
+    message: `Recomendación ${type} ${mode} para ${ticker} calculada exitosamente.`,
+    symbol: ticker,
+    companyName: quote.companyName,
+    spotPrice,
+    expirationDate: expiration,
+    timeToExpirationYears: Number(timeToExpirationYears.toFixed(4)),
+    optionType: type,
+    moneyness: mode,
+    recommendation: {
+      contractSymbol: selected.contractSymbol,
+      strike: selected.strike,
+      marketPremium,
+      bid: selected.bid,
+      ask: selected.ask,
+      contractsNeeded,
+      totalCostUSD: Number((marketPremium * contractsNeeded * 100).toFixed(2)),
+      theoreticalPriceBS: bs.theoreticalPrice,
+      greeks: bs.greeks,
+      premiumRatio: Number(premiumRatio.toFixed(2)),
+      fairPrice: isFairPrice,
+      guardrail:
+        isFairPrice
+          ? `VALIDADO_JUSTO (ratio ${premiumRatio.toFixed(2)} <= ${config.F0_MAX_PREMIUM_RATIO})`
+          : `SOBREPRECIO_DETECTADO (ratio ${premiumRatio.toFixed(2)} > ${config.F0_MAX_PREMIUM_RATIO})`,
+      role:
+        type === 'PUT'
+          ? 'HEDGE_FLOOR (Póliza de Seguro Protector)'
+          : 'FINANCE_CEILING (Financiamiento a Costo Cero)',
+    },
+    source: chain.source,
   };
 };
 

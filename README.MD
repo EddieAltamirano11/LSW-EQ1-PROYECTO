@@ -63,3 +63,4 @@
 - **Consola de Documentación Scalar:** `http://localhost:3050/api/v1/docs`
 - **Especificación OpenAPI cruda:** `http://localhost:3050/api/v1/spec.json`
 - **Descriptor del Servicio:** `http://localhost:3050/api/v1`
+- **Catálogo completo de llamadas (Markdown):** [`docs/LLAMADAS-API.md`](docs/LLAMADAS-API.md)

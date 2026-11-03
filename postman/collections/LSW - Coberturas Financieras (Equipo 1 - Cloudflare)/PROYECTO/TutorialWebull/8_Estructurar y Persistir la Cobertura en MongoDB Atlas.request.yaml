@@ -1,0 +1,22 @@
+$kind: http-request
+url: '{{baseUrl}}/hedging/collar-spread'
+method: POST
+headers:
+  x-database-selection: mongodb
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "portfolioId": "PORT-WEBULL-01",
+      "broker": "WEBULL",
+      "symbol": "NVDA",
+      "spotPrice": 214.13,
+      "sharesCount": 100,
+      "putStrike": 195,
+      "callStrike": 225,
+      "putPremium": 2.47,
+      "callPremium": 2.36,
+      "expirationDate": "2027-01-15T00:00:00.000Z"
+    }
+order: 8000

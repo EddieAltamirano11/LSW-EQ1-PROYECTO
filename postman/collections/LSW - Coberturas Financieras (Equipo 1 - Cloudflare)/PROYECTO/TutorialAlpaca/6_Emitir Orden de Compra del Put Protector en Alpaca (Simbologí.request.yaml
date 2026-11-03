@@ -1,0 +1,19 @@
+$kind: http-request
+name: 6_Emitir Orden de Compra del Put Protector en Alpaca (Simbología OCC)
+url: '{{baseUrl}}/broker/orders'
+method: POST
+headers:
+  x-broker-selection: ALPACA
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "symbol": "AAPL270115P00310000",
+      "qty": 1,
+      "side": "buy",
+      "type": "limit",
+      "limitPrice": 2.15,
+      "timeInForce": "day"
+    }
+order: 6000

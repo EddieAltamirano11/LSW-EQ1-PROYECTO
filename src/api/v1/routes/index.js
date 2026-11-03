@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import mongoose from 'mongoose';
 import config from '../../../config/config.js';
 import authRoutes from './auth.routes.js';
 import underlyingRoutes from './underlying.routes.js';
@@ -27,12 +28,21 @@ const routerAPI = (app) => {
   router.use('/market', marketRoutes);
   router.use('/docs', docsRoutes);
 
-  // Health check modular
+  // Health check modular con estado real de dependencias
   router.get('/health', (req, res) => {
+    const mongoStates = ['DISCONNECTED', 'CONNECTED', 'CONNECTING', 'DISCONNECTING'];
+    const mongodb = mongoStates[mongoose.connection.readyState] || 'UNKNOWN';
+
     res.status(200).json({
-      status: 'UP',
+      status: mongodb === 'CONNECTED' ? 'UP' : 'DEGRADED',
       uptime: process.uptime(),
       timestamp: new Date().toISOString(),
+      dependencies: {
+        mongodb,
+        supabase: config.SUPABASE_URL ? 'CONFIGURED' : 'NOT_CONFIGURED',
+        alpaca: config.ALPACA_API_KEY_ID ? 'CONFIGURED' : 'NOT_CONFIGURED',
+      },
+      activeDatabase: req.dbTarget,
     });
   });
 

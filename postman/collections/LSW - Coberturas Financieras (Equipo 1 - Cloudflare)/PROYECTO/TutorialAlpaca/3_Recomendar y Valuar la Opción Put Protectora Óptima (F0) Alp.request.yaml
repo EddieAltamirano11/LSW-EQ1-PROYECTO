@@ -1,0 +1,11 @@
+$kind: http-request
+name: 3_Recomendar y Valuar la Opción Put Protectora Óptima (F0) Alpaca
+url: '{{baseUrl}}/hedging/recommend-option/AAPL?type=PUT&broker=ALPACA&moneyness=OTM'
+method: GET
+headers:
+  x-broker-selection: ALPACA
+queryParams:
+  type: PUT
+  broker: ALPACA
+  moneyness: OTM
+order: 3000

@@ -1,0 +1,19 @@
+$kind: http-request
+url: '{{baseUrl}}/hedging/auto-collar'
+method: POST
+headers:
+  x-database-selection: mongodb
+  x-broker-selection: WEBULL
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "symbol": "NVDA",
+      "sharesCount": 100,
+      "portfolioId": "PORT-AUTO-WEBULL",
+      "broker": "WEBULL",
+      "expirationDate": "2027-01-15",
+      "executeOrders": true
+    }
+order: 9000

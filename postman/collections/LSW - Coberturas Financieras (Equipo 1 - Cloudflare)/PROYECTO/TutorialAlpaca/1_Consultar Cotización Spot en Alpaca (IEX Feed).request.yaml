@@ -1,0 +1,6 @@
+$kind: http-request
+url: '{{baseUrl}}/broker/quote/AAPL'
+method: GET
+headers:
+  x-broker-selection: ALPACA
+order: 1000

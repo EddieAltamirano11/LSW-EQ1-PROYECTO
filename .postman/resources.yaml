@@ -1,0 +1,13 @@
+# Use this workspace to collaborate
+workspace:
+  id: dadb8137-40ab-415a-8da7-6ca1896065a6
+
+localResources:
+  specs:
+    - ../spec/openspec.yaml
+
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
+
+cloudResources:
+  collections:
+    ../postman/collections/LSW - Coberturas Financieras (Equipo 1 - Cloudflare): 26019653-b3a1-47cf-b9cf-f737ad227c15

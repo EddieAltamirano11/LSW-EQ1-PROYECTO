@@ -1,0 +1,23 @@
+$kind: http-request
+name: 6_Emitir Orden de Compra del Put Protector en Webull (Simbología OCC)
+url: '{{baseUrl}}/broker/orders'
+method: POST
+headers:
+  x-broker-selection: WEBULL
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "symbol": "NVDA270115P00195000",
+      "instrumentType": "OPTION",
+      "optionType": "PUT",
+      "strikePrice": 195,
+      "expirationDate": "2027-01-15",
+      "qty": 1,
+      "side": "buy",
+      "type": "limit",
+      "limitPrice": 2.57,
+      "timeInForce": "gtc"
+    }
+order: 6000

@@ -7,7 +7,13 @@ const config = {
   API_URL: process.env.API_URL || '/api/v1',
   NODE_ENV: process.env.NODE_ENV || 'development',
   JWT_SECRET: process.env.JWT_SECRET || 'los_eddies_default_jwt_secret',
-  
+
+  // Resolución DNS alternativa (solo se usa si la del sistema falla al resolver SRV de Atlas)
+  DNS_SERVERS: process.env.DNS_SERVERS || '',
+
+  // Umbral de tolerancia del guardrail F0 (prima de mercado / prima teórica Black-Scholes)
+  F0_MAX_PREMIUM_RATIO: Number(process.env.F0_MAX_PREMIUM_RATIO || 6),
+
   // MongoDB
   MONGODB_URI: process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/',
   MONGODB_DB_NAME: process.env.MONGODB_DB_NAME || 'fintech_hedging_db',

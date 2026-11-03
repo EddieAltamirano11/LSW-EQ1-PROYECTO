@@ -1,0 +1,9 @@
+$kind: http-request
+url: '{{baseUrl}}/broker/orders?status=all&broker=WEBULL'
+method: GET
+headers:
+  x-broker-selection: WEBULL
+queryParams:
+  status: all
+  broker: WEBULL
+order: 4000

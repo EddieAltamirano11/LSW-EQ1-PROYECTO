@@ -1,0 +1,14 @@
+$kind: http-request
+url: '{{baseUrl}}/underlyings/UND-AAPL-485f'
+method: PUT
+headers:
+  Content-Type: application/json
+  x-database-selection: mongodb
+body:
+  type: json
+  content: |-
+    {
+      "spotPrice": 343.39,
+      "volatility": 0.22
+    }
+order: 6000

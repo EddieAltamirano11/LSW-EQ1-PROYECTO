@@ -1,0 +1,11 @@
+$kind: http-request
+name: 3_Recomendar y Valuar la Opción Put Protectora Óptima (F0) Webull
+url: '{{baseUrl}}/hedging/recommend-option/NVDA?type=PUT&broker=WEBULL&moneyness=OTM'
+method: GET
+headers:
+  x-broker-selection: WEBULL
+queryParams:
+  type: PUT
+  broker: WEBULL
+  moneyness: OTM
+order: 3000

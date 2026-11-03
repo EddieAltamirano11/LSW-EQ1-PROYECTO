@@ -13,6 +13,12 @@ const REALISTIC_MARKET_SNAPSHOTS = {
   GOOGL: { companyName: 'Alphabet Inc.', spotPrice: 165.40, volatility: 0.240, bid: 165.35, ask: 165.45 },
 };
 
+const defaultOptionExpiration = (daysAhead = 90) => {
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() + daysAhead);
+  return date.toISOString().slice(0, 10);
+};
+
 export const getBrokerQuote = async (symbol) => {
   const ticker = symbol.toUpperCase();
 
@@ -34,7 +40,13 @@ export const getBrokerQuote = async (symbol) => {
         let effectiveBid = (q?.bp && q.bp > 1) ? q.bp : Number((effectiveLastPrice - 0.05).toFixed(2));
         let effectiveAsk = (q?.ap && q.ap > 1) ? q.ap : Number((effectiveLastPrice + 0.05).toFixed(2));
 
-        if (effectiveBid >= effectiveAsk || effectiveBid < effectiveLastPrice * 0.7 || effectiveAsk > effectiveLastPrice * 1.3) {
+        if (
+          effectiveBid >= effectiveAsk ||
+          effectiveBid < effectiveLastPrice * 0.7 ||
+          effectiveAsk > effectiveLastPrice * 1.3 ||
+          effectiveLastPrice < effectiveBid ||
+          effectiveLastPrice > effectiveAsk
+        ) {
           effectiveBid = Number((effectiveLastPrice - 0.05).toFixed(2));
           effectiveAsk = Number((effectiveLastPrice + 0.05).toFixed(2));
         }
@@ -45,6 +57,7 @@ export const getBrokerQuote = async (symbol) => {
           lastPrice: Number(effectiveLastPrice.toFixed(2)),
           bid: Number(effectiveBid.toFixed(2)),
           ask: Number(effectiveAsk.toFixed(2)),
+          volatility: REALISTIC_MARKET_SNAPSHOTS[ticker]?.volatility || 0.2,
           bidSize: q?.bs || 100,
           askSize: q?.as || 100,
           timestamp: snap.latestTrade?.t || q?.t || new Date().toISOString(),
@@ -81,7 +94,7 @@ export const getBrokerQuote = async (symbol) => {
   };
 };
 
-export const getBrokerOptionsChain = async (symbol, expirationDate = '2026-10-16') => {
+export const getBrokerOptionsChain = async (symbol, expirationDate = defaultOptionExpiration()) => {
   const quote = await getBrokerQuote(symbol);
   const spot = quote.lastPrice;
 

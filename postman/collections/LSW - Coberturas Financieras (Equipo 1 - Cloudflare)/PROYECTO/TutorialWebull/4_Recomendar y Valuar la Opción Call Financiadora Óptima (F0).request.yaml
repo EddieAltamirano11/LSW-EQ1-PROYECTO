@@ -1,0 +1,11 @@
+$kind: http-request
+name: 4_Recomendar y Valuar la Opción Call Financiadora Óptima (F0) Webull
+url: '{{baseUrl}}/hedging/recommend-option/NVDA?type=CALL&broker=WEBULL&moneyness=OTM'
+method: GET
+headers:
+  x-broker-selection: WEBULL
+queryParams:
+  type: CALL
+  broker: WEBULL
+  moneyness: OTM
+order: 4000

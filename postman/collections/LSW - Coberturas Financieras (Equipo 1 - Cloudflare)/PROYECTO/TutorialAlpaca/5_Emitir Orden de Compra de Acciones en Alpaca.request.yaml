@@ -1,0 +1,18 @@
+$kind: http-request
+url: '{{baseUrl}}/broker/orders'
+method: POST
+headers:
+  x-broker-selection: ALPACA
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "symbol": "AAPL",
+      "qty": 100,
+      "side": "buy",
+      "type": "limit",
+      "limitPrice": 345.0,
+      "timeInForce": "day"
+    }
+order: 5000

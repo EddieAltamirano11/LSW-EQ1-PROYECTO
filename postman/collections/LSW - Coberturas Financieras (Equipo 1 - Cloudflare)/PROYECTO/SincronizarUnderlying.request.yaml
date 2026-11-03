@@ -1,0 +1,10 @@
+$kind: http-request
+url: '{{baseUrl}}/broker/sync-underlying/MSFT?x-database-selection=mongodb&x-broker-selection=WEBULL'
+method: POST
+headers:
+  x-database-selection: mongodb
+  x-broker-selection: WEBULL
+queryParams:
+  x-database-selection: mongodb
+  x-broker-selection: WEBULL
+order: 3000

@@ -235,6 +235,28 @@ paths:
         '200':
           description: Parámetros sugeridos de suelo y techo financiero
 
+  /hedging/recommend-option/{symbol}:
+    get:
+      tags: [Coberturas]
+      summary: Recomendar y valuar una pata individual (Put protector o Call financiador)
+      parameters:
+        - in: path
+          name: symbol
+          required: true
+          schema: { type: string, example: AAPL }
+        - in: query
+          name: type
+          schema: { type: string, enum: [PUT, CALL], default: PUT }
+        - in: query
+          name: moneyness
+          schema: { type: string, enum: [OTM, ATM, ITM], default: OTM }
+        - in: query
+          name: expiration
+          schema: { type: string, example: '2027-01-15' }
+      responses:
+        '200':
+          description: Contrato sugerido con prima, precio teórico Black-Scholes y griegas
+
   /hedging/auto-collar:
     post:
       tags: [Coberturas]

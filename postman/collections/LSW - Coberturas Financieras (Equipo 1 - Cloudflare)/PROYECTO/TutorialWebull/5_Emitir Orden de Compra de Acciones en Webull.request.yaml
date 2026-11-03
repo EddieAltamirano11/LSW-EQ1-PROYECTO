@@ -1,0 +1,18 @@
+$kind: http-request
+url: '{{baseUrl}}/broker/orders'
+method: POST
+headers:
+  x-broker-selection: WEBULL
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "symbol": "NVDA",
+      "qty": 100,
+      "side": "buy",
+      "type": "limit",
+      "limitPrice": 214.5,
+      "timeInForce": "day"
+    }
+order: 5000

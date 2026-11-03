@@ -1,0 +1,19 @@
+$kind: http-request
+name: 7_Emitir Orden de Venta del Short Call en Alpaca (Simbología OCC)
+url: '{{baseUrl}}/broker/orders'
+method: POST
+headers:
+  x-broker-selection: ALPACA
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "symbol": "AAPL270115C00360000",
+      "qty": 1,
+      "side": "sell",
+      "type": "limit",
+      "limitPrice": 2.5,
+      "timeInForce": "day"
+    }
+order: 7000

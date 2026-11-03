@@ -63,9 +63,26 @@ export const recommendCollar = async (req, res, next) => {
     const result = await HedgingService.autoCalibrateAndCreateCollar({
       symbol,
       sharesCount: req.query.sharesCount ? Number(req.query.sharesCount) : 10,
-      expirationDate: req.query.expiration || '2026-10-16',
+      expirationDate: req.query.expiration,
       autoPersist: false,
     }, req.dbTarget);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Recomendación de una sola pata: PUT protector o CALL financiador
+export const recommendOption = async (req, res, next) => {
+  try {
+    const result = await HedgingService.recommendOption({
+      symbol: req.params.symbol || req.query.symbol,
+      optionType: req.query.type || req.query.optionType || 'PUT',
+      expirationDate: req.query.expiration,
+      moneyness: req.query.moneyness || 'OTM',
+      targetMoneynessPct: req.query.moneynessPct ? Number(req.query.moneynessPct) : 0.05,
+      sharesCount: req.query.sharesCount ? Number(req.query.sharesCount) : 100,
+    });
     res.status(200).json(result);
   } catch (error) {
     next(error);

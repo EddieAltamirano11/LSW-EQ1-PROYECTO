@@ -1,0 +1,22 @@
+$kind: http-request
+url: '{{baseUrl}}/hedging/collar-spread'
+method: POST
+headers:
+  x-database-selection: supabase
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "portfolioId": "PORT-ALPACA-01",
+      "broker": "ALPACA",
+      "symbol": "AAPL",
+      "spotPrice": 343.39,
+      "sharesCount": 100,
+      "putStrike": 310,
+      "callStrike": 360,
+      "putPremium": 2.03,
+      "callPremium": 2.51,
+      "expirationDate": "2027-01-15T00:00:00.000Z"
+    }
+order: 8000
