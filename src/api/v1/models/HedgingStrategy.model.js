@@ -10,6 +10,7 @@ const legSchema = new mongoose.Schema(
     },
     assetType: { type: String, required: true, enum: ['EQUITY', 'OPTION'] },
     contractSymbol: { type: String, default: null },
+    brokerOrderId: { type: String, default: null },
     optionType: { type: String, enum: ['CALL', 'PUT', null], default: null },
     strike: { type: Number, default: null },
     expirationDate: { type: Date, default: null },
@@ -48,6 +49,13 @@ const hedgingStrategySchema = new mongoose.Schema(
   {
     _id: { type: String, required: true },
     portfolioId: { type: String, required: true },
+    broker: {
+      type: String,
+      required: true,
+      enum: ['ALPACA', 'IBKR', 'WEBULL', 'SIMULATED'],
+      default: 'ALPACA',
+      uppercase: true,
+    },
     strategyType: {
       type: String,
       required: true,

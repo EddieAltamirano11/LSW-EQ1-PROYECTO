@@ -9,8 +9,10 @@ import { apiReference } from '@scalar/express-api-reference';
 
 import config from './config/config.js';
 import routerAPI from './api/v1/routes/index.js';
+import loginRoutes from './web/login.routes.js';
 import { authMiddleware } from './middlewares/auth.middleware.js';
 import { databaseContextMiddleware } from './middlewares/databaseContext.middleware.js';
+import { brokerContextMiddleware } from './middlewares/brokerContext.middleware.js';
 import { errorHandler } from './middlewares/errorHandler.middleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -25,9 +27,13 @@ app.use(morgan('dev'));
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: false }));
 
-// Inyección de contexto de persistencia y autenticación
+// Pantalla pública de acceso de demostración
+app.use(loginRoutes);
+
+// Inyección de contexto de persistencia, autenticación y broker
 app.use(authMiddleware);
 app.use(databaseContextMiddleware);
+app.use(brokerContextMiddleware);
 // Carga y publicación dinámica del contrato OpenSpec
 const specPath = path.join(__dirname, '../spec/openspec.yaml');
 
