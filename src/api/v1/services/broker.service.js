@@ -11,6 +11,7 @@ import {
   parseOccExpiration,
   toExpirationDateString,
 } from '../../../utils/expiration.js';
+import { evaluateCoveredOptionSell } from '../../../utils/optionOrder.js';
 import * as WebullService from './webull.service.js';
 import * as IBKRService from './ibkr.service.js';
 
@@ -21,6 +22,7 @@ const REALISTIC_MARKET_SNAPSHOTS = {
   NVDA: { companyName: 'NVIDIA Corporation', spotPrice: 125.80, volatility: 0.450, bid: 125.75, ask: 125.85 },
   MSFT: { companyName: 'Microsoft Corporation', spotPrice: 428.30, volatility: 0.185, bid: 428.25, ask: 428.35 },
   GOOGL: { companyName: 'Alphabet Inc.', spotPrice: 165.40, volatility: 0.240, bid: 165.35, ask: 165.45 },
+  KO: { companyName: 'The Coca-Cola Company', spotPrice: 94.78, volatility: 0.170, bid: 94.73, ask: 94.83 },
 };
 
 const defaultOptionExpiration = () => nextValidExpiration();
@@ -227,6 +229,8 @@ export const getBrokerOptionsChain = async (symbol, expirationDate = defaultOpti
     spotPrice: spot,
     expirationDate: expiration,
     source: quote.source,
+    chainSource: 'ALPACA_SYNTHETIC_CHAIN',
+    chainIsSimulated: true,
     contractsCount: calls.length + puts.length,
     calls,
     puts,
@@ -320,6 +324,20 @@ export const getBrokerOrders = async (status = 'all', broker = 'WEBULL') => {
   return [];
 };
 
+const fetchAlpacaPositions = async () => {
+  const resp = await axios.get(`${config.ALPACA_BASE_URL}/v2/positions`, {
+    headers: getAlpacaHeaders(),
+    timeout: 5000,
+  });
+
+  return resp.data.map((pos) => ({
+    symbol: pos.symbol,
+    qty: Number(pos.qty),
+    side: pos.side,
+    assetClass: pos.asset_class,
+  }));
+};
+
 /**
  * Emisión y ejecución de orden bursátil al broker seleccionado
  */
@@ -361,6 +379,34 @@ export const createBrokerOrder = async (orderPayload, broker = 'WEBULL') => {
   }
 
   const effectiveLimitPrice = limit_price !== undefined ? limit_price : (limitPrice !== undefined ? limitPrice : price);
+
+  // Guardrail de cobertura: vender una opcion sin 100 acciones del subyacente
+  // (o sin una posicion larga del mismo contrato) es una naked option y Alpaca
+  // la rechaza con "account not eligible to trade uncovered option contracts".
+  const isOptionSell = String(side).toLowerCase().startsWith('sell') && isOccSymbol(targetSymbol);
+  const requestedQty = Number(qty) || 1;
+
+  if (isOptionSell && isAlpacaConfigured() && requestedQty > 0) {
+    try {
+      const positions = await fetchAlpacaPositions();
+      const coverage = evaluateCoveredOptionSell({
+        contractSymbol: targetSymbol,
+        qty: requestedQty,
+        positions,
+      });
+
+      if (coverage && !coverage.ok) {
+        throw boom.conflict(
+          `No puedes vender '${targetSymbol}' sin cobertura: requiere ${coverage.requiredShares} acciones de ${coverage.underlying} ` +
+          `y tu posición actual es ${coverage.availableShares}. Compra el subyacente primero o vende una posición larga existente.`
+        );
+      }
+    } catch (error) {
+      if (error.isBoom) throw error;
+      // Si el broker no responde no bloqueamos la orden: Alpaca decidirá.
+      console.warn(`[Broker Alpaca] No se pudo verificar la cobertura de '${targetSymbol}': ${error.message}`);
+    }
+  }
 
   if (isAlpacaConfigured()) {
     try {

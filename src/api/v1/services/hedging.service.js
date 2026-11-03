@@ -995,6 +995,11 @@ export const recommendOption = async (params) => {
     optionType: optType,
     expirationDate: expiration,
     moneynessPreference: moneyness.toUpperCase(),
+    chainSource: chain.chainSource || chain.source || null,
+    chainIsSimulated: Boolean(
+      chain.chainIsSimulated ??
+      /synthetic|simulat|sandbox|fallback/i.test(String(chain.chainSource || chain.source || ''))
+    ),
     recommendedContract: {
       contractSymbol: best.contractSymbol,
       type: best.type,

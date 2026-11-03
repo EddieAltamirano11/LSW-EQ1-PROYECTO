@@ -242,15 +242,20 @@ paths:
           required: true
           schema: { type: string, example: NVDA }
           description: Símbolo del activo subyacente
+        - in: path
+          name: type
+          required: false
+          schema: { type: string, enum: [PUT, CALL], default: PUT }
+          description: Tipo de opción en la ruta (/recommend-option/{symbol}/{type})
         - in: query
           name: type
-          required: true
+          required: false
           schema: { type: string, enum: [PUT, CALL], default: PUT }
           description: Tipo de opción a recomendar (PUT para cobertura de piso o CALL para techo de financiamiento)
         - in: header
           name: x-broker-selection
           schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
-          description: Broker bursátil para consultar cotizaciones y cadena de opciones real (WEBULL, ALPACA o IBKR)
+          description: Broker bursátil para consultar cotizaciones y cadena de opciones (WEBULL, ALPACA o IBKR)
         - in: query
           name: broker
           schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
@@ -258,7 +263,7 @@ paths:
         - in: query
           name: expiration
           schema: { type: string, example: '2027-01-15' }
-          description: Fecha de vencimiento de las opciones
+          description: Vencimiento en formato YYYY-MM-DD. Debe ser futuro; por defecto se usa el siguiente tercer viernes.
         - in: query
           name: moneyness
           schema: { type: string, enum: [OTM, ATM, ITM], default: OTM }
@@ -266,28 +271,34 @@ paths:
       responses:
         '200':
           description: Contrato de opción óptimo recomendado con griegas calculadas y justificación analítica
-
-  /hedging/recommend-option/{symbol}:
-    get:
-      tags: [Coberturas]
-      summary: Recomendar y valuar una pata individual (Put protector o Call financiador)
-      parameters:
-        - in: path
-          name: symbol
-          required: true
-          schema: { type: string, example: AAPL }
-        - in: query
-          name: type
-          schema: { type: string, enum: [PUT, CALL], default: PUT }
-        - in: query
-          name: moneyness
-          schema: { type: string, enum: [OTM, ATM, ITM], default: OTM }
-        - in: query
-          name: expiration
-          schema: { type: string, example: '2027-01-15' }
-      responses:
-        '200':
-          description: Contrato sugerido con prima, precio teórico Black-Scholes y griegas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  broker: { type: string, example: ALPACA }
+                  symbol: { type: string, example: KO }
+                  expirationDate:
+                    type: string
+                    example: '2026-12-18'
+                    description: Vencimiento efectivo usado (siempre futuro y viernes listado)
+                  chainSource:
+                    type: string
+                    example: ALPACA_SYNTHETIC_CHAIN
+                    description: Origen de la cadena de opciones consultada
+                  chainIsSimulated:
+                    type: boolean
+                    example: true
+                    description: true si los contratos y primas son simulados y pueden no existir en el broker
+                  recommendedContract:
+                    type: object
+                    properties:
+                      contractSymbol: { type: string, example: KO261218C00100000 }
+                      strike: { type: number, example: 100 }
+                      marketPremium: { type: number, example: 2.79 }
+                      theoreticalPriceBS: { type: number, example: 2.737 }
+                      fairPricingBS: { type: string, example: VALIDADO_JUSTO }
+                  availableContractsCount: { type: integer, example: 5 }
 
   /hedging/auto-collar:
     post:
