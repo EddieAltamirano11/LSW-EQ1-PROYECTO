@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Acceso de demostración de Los Eddies con selección de MongoDB o Supabase.">
+  <title>Iniciar sesión · Los Eddies</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/login/assets/login.css">
+  <script type="module" src="/login/assets/login.js"></script>
+</head>
+<body data-api-base="__LOGIN_API_BASE__">
+  <main class="login-shell">
+    <aside class="intro" aria-label="LSW: Equipo 1 - Los Eddies">
+      <a class="brand" href="/login" aria-label="LSW: Equipo 1 - Los Eddies · Inicio de sesión">
+        <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span>LSW: Equipo 1 - Los Eddies</span>
+      </a>
+    </aside>
+
+    <section class="access-panel" aria-labelledby="access-title">
+      <div class="panel-heading">
+        <h2 id="access-title">Iniciar sesión</h2>
+      </div>
+
+      <form id="login-form" novalidate autocomplete="off">
+        <fieldset id="login-fields">
+          <fieldset class="database-field">
+            <legend>Base de datos</legend>
+            <div class="database-switch">
+              <label class="database-option">
+                <input type="radio" name="databaseTarget" value="mongodb" checked>
+                <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c-1 4-6 6-6 11 0 4 3 7 6 8 3-1 6-4 6-8 0-5-5-7-6-11Z"/><path d="M12 7v16"/></svg>MongoDB</span>
+              </label>
+              <label class="database-option">
+                <input type="radio" name="databaseTarget" value="supabase">
+                <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13 2-9 12h7l-1 8 10-13h-7l1-7Z"/></svg>Supabase</span>
+              </label>
+            </div>
+            <p class="field-hint">Esta será la base seleccionada para tu sesión.</p>
+          </fieldset>
+
+          <div class="form-field">
+            <label for="username">Usuario</label>
+            <input id="username" name="username" type="text" placeholder="Escribe tu usuario" autocomplete="off" autocapitalize="none" spellcheck="false" required aria-describedby="username-error">
+            <p id="username-error" class="field-error" hidden></p>
+          </div>
+          <div class="form-field">
+            <label for="password">Contraseña</label>
+            <input id="password" name="password" type="password" placeholder="Escribe tu contraseña" autocomplete="off" required aria-describedby="password-error">
+            <p id="password-error" class="field-error" hidden></p>
+          </div>
+          <button class="primary-button" id="submit-button" type="submit"><span id="submit-label">Iniciar sesión</span><span class="button-arrow" aria-hidden="true">↗</span></button>
+        </fieldset>
+      </form>
+
+      <div id="session-confirmation" class="session-confirmation" hidden>
+        <div class="success-icon" aria-hidden="true">✓</div>
+        <p class="session-greeting">Hola, <strong id="session-username"></strong></p>
+        <div class="session-database"><span>Base seleccionada</span><strong id="session-database"></strong></div>
+        <p class="field-hint">Tu sesión de demostración está lista.</p>
+        <button class="primary-button" id="back-button" type="button">Volver al inicio de sesión<span aria-hidden="true">↗</span></button>
+      </div>
+
+      <p id="login-status" class="status-message" role="status" aria-live="polite" aria-atomic="true"></p>
+      <p id="login-error" class="error-message" role="alert" aria-atomic="true" hidden></p>
+      <noscript><p class="error-message">Activa JavaScript para iniciar una sesión de demostración.</p></noscript>
+    </section>
+  </main>
+</body>
+</html>

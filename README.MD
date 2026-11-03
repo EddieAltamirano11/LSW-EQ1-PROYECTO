@@ -63,3 +63,31 @@
 - **Consola de Documentación Scalar:** `http://localhost:3050/api/v1/docs`
 - **Especificación OpenAPI cruda:** `http://localhost:3050/api/v1/spec.json`
 - **Descriptor del Servicio:** `http://localhost:3050/api/v1`
+
+## Inicio de sesión de demostración
+
+Con el servidor iniciado mediante `npm run dev` o `npm start`, abrir
+`http://localhost:3050/login` (ajustar host y puerto si se configuraron otros).
+Seleccionar **MongoDB** o **Supabase** en el switch, escribir un usuario y una
+contraseña no vacíos y pulsar **Iniciar sesión**. MongoDB es la opción inicial.
+
+Este acceso conserva el modo de demostración de la API: no valida cuentas reales
+ni comprueba la disponibilidad de la base elegida. La pantalla utiliza el prefijo
+`API_URL` configurado en el servidor; no requiere editar el JavaScript para cambiarlo.
+
+Después del acceso, la pantalla confirma la sesión con el token recibido y muestra
+el usuario y la **base seleccionada**. Para elegir otra base, pulsar
+**Volver al inicio de sesión**, mover el switch y realizar un nuevo login.
+
+El token permanece únicamente en memoria durante la visita. La contraseña se borra
+al confirmar el acceso o al volver al formulario. Recargar la página descarta la
+sesión de la pantalla y vuelve a mostrar los campos vacíos con MongoDB seleccionado.
+Volver al formulario descarta el token local; no revoca el JWT emitido por la API.
+Los errores permiten reintentar y cada solicitud tiene un límite de 15 segundos.
+
+Para comprobar la pantalla y los contratos de sesión sin iniciar conexiones a bases
+ni ejecutar operaciones con brokers:
+
+```bash
+node --test test/login.routes.test.js test/login.session.test.js
+```
