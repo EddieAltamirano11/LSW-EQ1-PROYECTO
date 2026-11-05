@@ -4,6 +4,7 @@ Permite interconectar el microservicio REST Express con el socket local de TWS (
 """
 
 import sys
+import os
 import json
 import argparse
 import math
@@ -16,10 +17,10 @@ try:
 except ImportError:
     HAS_IB = False
 
-TWS_HOST = '127.0.0.1'
-TWS_PORT = 7497
-CLIENT_ID = 25
-ACCOUNT_ID = 'DUR303142'
+TWS_HOST = os.getenv('IBKR_TWS_HOST', '127.0.0.1')
+TWS_PORT = int(os.getenv('IBKR_TWS_PORT', '7497'))
+CLIENT_ID = int(os.getenv('IBKR_CLIENT_ID', '25'))
+ACCOUNT_ID = os.getenv('IBKR_ACCOUNT_ID', 'DUR303142')
 
 FALLBACK_STOCKS = {
     'AAPL': {'companyName': 'Apple Inc.', 'price': 347.73, 'bid': 347.50, 'ask': 348.00, 'volatility': 0.22},

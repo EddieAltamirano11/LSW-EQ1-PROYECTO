@@ -7,7 +7,9 @@ export const errorHandler = (err, req, res, next) => {
 
   // Si no es un error Boom, lo envolvemos
   if (!boom.isBoom(error)) {
-    if (error.name === 'ValidationError') {
+    if (error.statusCode || error.status) {
+      error = boom.boomify(error, { statusCode: error.statusCode || error.status });
+    } else if (error.name === 'ValidationError') {
       error = boom.badRequest(error.message);
     } else if (error.code === 11000) {
       error = boom.conflict('Llave duplicada en la base de datos.');

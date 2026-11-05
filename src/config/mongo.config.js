@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import dns from 'dns';
 import config from './config.js';
 
 let isConnected = false;
@@ -6,6 +7,9 @@ let isConnected = false;
 export const connectMongoDB = async () => {
   if (isConnected) return;
   try {
+    try {
+      dns.setServers(['8.8.8.8', '1.1.1.1']);
+    } catch (_) {}
     const conn = await mongoose.connect(config.MONGODB_URI, {
       dbName: config.MONGODB_DB_NAME,
       serverSelectionTimeoutMS: 8000,
