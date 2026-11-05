@@ -1,8 +1,8 @@
 import json
 import re
 
-TUNNEL_URL = "https://consist-overall-leaders-supplement.trycloudflare.com"
-HOST_PARTS = ["consist-overall-leaders-supplement", "trycloudflare", "com"]
+TUNNEL_URL = "https://lsw-eq1-proyecto.onrender.com"
+HOST_PARTS = ["lsw-eq1-proyecto", "onrender", "com"]
 
 def make_url_obj(raw_url):
     u = raw_url.replace("{{baseUrl}}", f"{TUNNEL_URL}/api/v1")
@@ -175,9 +175,9 @@ def build_complete_collection():
         "variable": [
             {
                 "key": "baseUrl",
-                "value": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1",
+                "value": "https://lsw-eq1-proyecto.onrender.com/api/v1",
                 "type": "string",
-                "description": "URL base pública a través de Cloudflare Tunnel"
+                "description": "URL base pública alojada 24/7 en Render Cloud"
             },
             {
                 "key": "symbol",

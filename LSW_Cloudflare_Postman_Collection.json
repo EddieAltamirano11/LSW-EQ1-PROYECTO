@@ -8,9 +8,9 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1",
+      "value": "https://lsw-eq1-proyecto.onrender.com/api/v1",
       "type": "string",
-      "description": "URL base pública a través de Cloudflare Tunnel"
+      "description": "URL base pública alojada 24/7 en Render Cloud"
     },
     {
       "key": "symbol",
@@ -1345,11 +1345,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -1371,11 +1371,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/health",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/health",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -1398,11 +1398,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/spec.json",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/spec.json",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -1425,11 +1425,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/docs",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/docs",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -1457,11 +1457,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/auth/register",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/auth/register",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -1494,11 +1494,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/auth/login",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/auth/login",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -1531,11 +1531,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/auth/login",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/auth/login",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -1568,11 +1568,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/auth/session",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/auth/session",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -1596,11 +1596,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/auth/logout",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/auth/logout",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -1629,11 +1629,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/underlyings",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/underlyings",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -1656,11 +1656,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/underlyings",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/underlyings",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -1683,11 +1683,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/underlyings/symbol/NVDA",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/underlyings/symbol/NVDA",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -1712,11 +1712,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/underlyings/symbol/AAPL",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/underlyings/symbol/AAPL",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -1745,11 +1745,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/underlyings",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/underlyings",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -1785,11 +1785,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/underlyings/batch",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/underlyings/batch",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -1826,11 +1826,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/underlyings/symbol/TSLA",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/underlyings/symbol/TSLA",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -1864,11 +1864,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/underlyings/symbol/TSLA",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/underlyings/symbol/TSLA",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -1898,11 +1898,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/quant/black-scholes",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/quant/black-scholes",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -1935,11 +1935,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/quant/implied-volatility",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/quant/implied-volatility",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -1972,11 +1972,11 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/recommend-option/NVDA?type=PUT&broker=WEBULL&moneyness=OTM",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/recommend-option/NVDA?type=PUT&broker=WEBULL&moneyness=OTM",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -2010,11 +2010,11 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/recommend-option/NVDA?type=CALL&broker=WEBULL&moneyness=OTM",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/recommend-option/NVDA?type=CALL&broker=WEBULL&moneyness=OTM",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -2048,11 +2048,11 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/recommend-option/AAPL?type=PUT&broker=ALPACA&moneyness=OTM",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/recommend-option/AAPL?type=PUT&broker=ALPACA&moneyness=OTM",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -2086,11 +2086,11 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/recommend-option/AAPL?type=CALL&broker=ALPACA&moneyness=OTM",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/recommend-option/AAPL?type=CALL&broker=ALPACA&moneyness=OTM",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -2133,11 +2133,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/protective-put",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/protective-put",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -2174,11 +2174,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/collar-spread",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/collar-spread",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -2215,11 +2215,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/collar-spread",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/collar-spread",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -2260,11 +2260,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/auto-collar",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/auto-collar",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -2305,11 +2305,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/auto-collar",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/auto-collar",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -2350,11 +2350,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/auto-collar",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/auto-collar",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -2387,11 +2387,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/strategies",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/strategies",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -2415,11 +2415,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/strategies",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/strategies",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -2443,11 +2443,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/strategies/670d7e684fb65a25032b43a1",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/strategies/670d7e684fb65a25032b43a1",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -2476,11 +2476,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/strategies/670d7e684fb65a25032b43a1/status",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/strategies/670d7e684fb65a25032b43a1/status",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -2515,11 +2515,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/strategies/670d7e684fb65a25032b43a1",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/strategies/670d7e684fb65a25032b43a1",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -2549,11 +2549,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/underlying",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/underlying",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -2582,11 +2582,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/underlying",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/underlying",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -2620,11 +2620,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/legs",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/legs",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -2649,11 +2649,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/legs/LEG-AAPL-STOCK",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/legs/LEG-AAPL-STOCK",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -2683,11 +2683,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/legs",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/legs",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -2725,11 +2725,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/legs/LEG-AAPL-ADDITIONAL-CALL",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/legs/LEG-AAPL-ADDITIONAL-CALL",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -2764,11 +2764,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/legs/LEG-AAPL-ADDITIONAL-CALL",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/legs/LEG-AAPL-ADDITIONAL-CALL",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -2794,11 +2794,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/financial-metrics",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/financial-metrics",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -2827,11 +2827,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/financial-metrics/recalculate",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/financial-metrics/recalculate",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -2866,11 +2866,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/payoff-matrix?steps=25&rangePct=0.20",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging-strategies/c0000000-0000-0000-0000-000000000001/payoff-matrix?steps=25&rangePct=0.20",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -2910,11 +2910,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/account",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/account",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -2938,11 +2938,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/account",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/account",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -2966,11 +2966,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/quote/NVDA",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/quote/NVDA",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -2995,11 +2995,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/quote/AAPL",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/quote/AAPL",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -3024,11 +3024,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/options-chain/NVDA?expiration=2026-10-16",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/options-chain/NVDA?expiration=2026-10-16",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -3059,11 +3059,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/options-chain/AAPL?expiration=2026-10-16",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/options-chain/AAPL?expiration=2026-10-16",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -3094,11 +3094,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/positions",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/positions",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -3122,11 +3122,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/positions",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/positions",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -3154,11 +3154,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/orders",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -3195,11 +3195,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/orders",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -3232,11 +3232,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/orders",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -3260,11 +3260,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/orders",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -3288,11 +3288,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders/b058af6bc909445781016e62e3a98c06",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/orders/b058af6bc909445781016e62e3a98c06",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -3317,11 +3317,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders/970921fb-5536-4d0f-b44c-0c1efebf8691",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/orders/970921fb-5536-4d0f-b44c-0c1efebf8691",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -3350,11 +3350,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/sync-underlying/NVDA",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/sync-underlying/NVDA",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -3384,11 +3384,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/account",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/account",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -3412,11 +3412,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/quote/AAPL",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/quote/AAPL",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -3441,11 +3441,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/options-chain/AAPL?expiration=2026-10-16",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/options-chain/AAPL?expiration=2026-10-16",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -3476,11 +3476,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/positions",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/positions",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -3504,11 +3504,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/orders",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -3532,11 +3532,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/recommend-option/AAPL?type=PUT&broker=IBKR&moneyness=OTM",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/recommend-option/AAPL?type=PUT&broker=IBKR&moneyness=OTM",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -3575,11 +3575,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/recommend-option/AAPL?type=CALL&broker=IBKR&moneyness=OTM",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/recommend-option/AAPL?type=CALL&broker=IBKR&moneyness=OTM",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -3622,11 +3622,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/orders",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -3663,11 +3663,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/orders",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -3704,11 +3704,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/orders",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
@@ -3749,11 +3749,11 @@
               }
             ],
             "url": {
-              "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/auto-collar",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/auto-collar",
               "protocol": "https",
               "host": [
-                "consist-overall-leaders-supplement",
-                "trycloudflare",
+                "lsw-eq1-proyecto",
+                "onrender",
                 "com"
               ],
               "path": [
