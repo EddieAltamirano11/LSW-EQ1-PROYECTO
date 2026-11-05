@@ -4,7 +4,8 @@ import { randomUUID } from 'crypto';
 const mapFromSupabase = (row) => {
   if (!row) return null;
   const stockLeg = row.legs_config?.find((l) => l.assetType === 'EQUITY' || l.legRole === 'UNDERLYING');
-  const sym = stockLeg?.legId?.split('-')?.[1] || 'NVDA';
+  const uData = row.underlying_data || {};
+  const sym = uData.symbol || stockLeg?.legId?.split('-')?.[1] || row.underlying?.symbol || 'AAPL';
   return {
     id: row.id,
     portfolioId: row.portfolio_id,
@@ -14,8 +15,9 @@ const mapFromSupabase = (row) => {
     status: row.status,
     underlying: {
       symbol: sym,
-      sharesCount: row.shares_count || 10,
-      spotPriceAtEntry: stockLeg?.entryPrice || 125.80,
+      companyName: uData.companyName || `${sym} Inc.`,
+      sharesCount: uData.sharesCount || row.shares_count || stockLeg?.quantity || 100,
+      spotPriceAtEntry: uData.spotPriceAtEntry || stockLeg?.entryPrice || row.spot_price_at_entry || 100.0,
     },
     legs: row.legs_config || [],
     financialMetrics: row.financial_metrics || {},
@@ -24,9 +26,22 @@ const mapFromSupabase = (row) => {
 };
 
 export class HedgingSupabaseRepository {
-  async getAll() {
+  async getAll(filter = {}) {
     const client = getSupabaseClient();
-    const { data, error } = await client.from('tbl_hedging_strategies').select('*').order('created_at', { ascending: false });
+    let query = client.from('tbl_hedging_strategies').select('*').order('created_at', { ascending: false });
+    if (filter.status) {
+      query = query.eq('status', filter.status);
+    }
+    if (filter.strategyType) {
+      query = query.eq('strategy_type', filter.strategyType);
+    }
+    if (filter.broker) {
+      query = query.eq('broker', filter.broker.toUpperCase());
+    }
+    if (filter.portfolioId) {
+      query = query.eq('portfolio_id', filter.portfolioId);
+    }
+    const { data, error } = await query;
     if (error) throw error;
     return (data || []).map(mapFromSupabase);
   }

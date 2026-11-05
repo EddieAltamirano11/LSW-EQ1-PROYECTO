@@ -6,6 +6,28 @@ import { getBrokerQuote, getBrokerOptionsChain, createBrokerOrder } from './brok
 import { randomUUID } from 'crypto';
 import config from '../../../config/config.js';
 
+export const formatOccSymbol = (symbol, expirationDate, type, strike) => {
+  const sym = String(symbol || '').toUpperCase().trim();
+  const d = expirationDate ? new Date(expirationDate) : new Date(Date.now() + 30 * 86400000);
+  const validD = isNaN(d.getTime()) ? new Date(Date.now() + 30 * 86400000) : d;
+  const yy = String(validD.getUTCFullYear()).slice(-2);
+  const mm = String(validD.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(validD.getUTCDate()).padStart(2, '0');
+  const t = String(type || 'C').toUpperCase().charAt(0);
+  const strikeNum = Math.round(Number(strike || 0) * 1000);
+  const strikeStr = String(strikeNum).padStart(8, '0');
+  return `${sym}${yy}${mm}${dd}${t}${strikeStr}`;
+};
+
+export const calculateTimeToExpirationYears = (expirationDate) => {
+  if (!expirationDate) return 0.1;
+  const d = new Date(expirationDate);
+  if (isNaN(d.getTime())) return 0.1;
+  const now = new Date();
+  const diffDays = (d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+  return Number((Math.max(1, diffDays) / 365).toFixed(4));
+};
+
 export const listStrategies = async (filter = {}, dbTarget = 'mongodb') => {
   const repo = getHedgingRepo(dbTarget);
   return await repo.getAll(filter);
@@ -62,11 +84,13 @@ export const createProtectivePut = async (payload, dbTarget = 'mongodb') => {
   const K = Number(putStrike);
   const premium = Number(putPremium);
 
+  const timeToExpiration = calculateTimeToExpirationYears(expirationDate);
+
   // Valuación cuantitativa F0 de la pata Put
   const quant = calculateBlackScholes({
     spotPrice: S,
     strikePrice: K,
-    timeToExpirationYears: 0.1,
+    timeToExpirationYears: timeToExpiration,
     volatility,
     optionType: 'PUT',
   });
@@ -183,9 +207,11 @@ export const createCollarSpread = async (payload, dbTarget = 'mongodb') => {
   if (K_put >= S) throw boom.badRequest('El Strike del Put protector debe ser inferior al precio Spot (Out-of-the-Money).');
   if (K_call <= S) throw boom.badRequest('El Strike del Call financiador debe ser superior al precio Spot (Out-of-the-Money).');
 
+  const timeToExpiration = calculateTimeToExpirationYears(expirationDate);
+
   // Griegas F0
-  const putQuant = calculateBlackScholes({ spotPrice: S, strikePrice: K_put, timeToExpirationYears: 0.1, volatility, optionType: 'PUT' });
-  const callQuant = calculateBlackScholes({ spotPrice: S, strikePrice: K_call, timeToExpirationYears: 0.1, volatility, optionType: 'CALL' });
+  const putQuant = calculateBlackScholes({ spotPrice: S, strikePrice: K_put, timeToExpirationYears: timeToExpiration, volatility, optionType: 'PUT' });
+  const callQuant = calculateBlackScholes({ spotPrice: S, strikePrice: K_call, timeToExpirationYears: timeToExpiration, volatility, optionType: 'CALL' });
 
   // Flujo neto de primas por acción
   const netCreditPerShare = p_call - p_put;
@@ -1031,32 +1057,35 @@ export const recalculateMetrics = async (strategyId, { currentSpotPrice } = {}, 
 // GENERACIÓN DE LA MATRIZ VECTORIAL DE PAYOFF (P&L) PARA LA PWA
 export const generatePayoffMatrix = async (strategyId, { steps = 25, rangePct = 0.25 } = {}, dbTarget = 'mongodb') => {
   const strategy = await getStrategyById(strategyId, dbTarget);
-  const S0 = strategy.underlying.spotPriceAtEntry || 100;
-  const shares = strategy.underlying.sharesCount || 100;
+  const S0 = Number(strategy.underlying.spotPriceAtEntry || 100);
+  const shares = Number(strategy.underlying.sharesCount || 100);
 
-  const minPrice = S0 * (1 - rangePct);
-  const maxPrice = S0 * (1 + rangePct);
-  const stepSize = (maxPrice - minPrice) / steps;
+  const numSteps = Math.max(5, Math.min(100, Number(steps) || 25));
+  const validRangePct = (Number(rangePct) > 0.01 && Number(rangePct) <= 2.0) ? Number(rangePct) : 0.25;
+
+  const minPrice = Math.max(0.01, S0 * (1 - validRangePct));
+  const maxPrice = S0 * (1 + validRangePct);
+  const stepSize = Math.max(0.01, (maxPrice - minPrice) / numSteps);
 
   const putLeg = (strategy.legs || []).find((l) => l.legRole === 'HEDGE_FLOOR' || l.role === 'LONG_PUT');
   const callLeg = (strategy.legs || []).find((l) => l.legRole === 'FINANCE_CEILING' || l.role === 'SHORT_CALL');
 
-  const K_put = putLeg ? (putLeg.strike || 0) : 0;
-  const P_put = putLeg ? (putLeg.entryPrice || putLeg.premium || 0) : 0;
-  const K_call = callLeg ? (callLeg.strike || 0) : 0;
-  const P_call = callLeg ? (callLeg.entryPrice || callLeg.premium || 0) : 0;
+  const K_put = putLeg ? Number(putLeg.strike || 0) : 0;
+  const P_put = putLeg ? Number(putLeg.entryPrice || putLeg.premium || 0) : 0;
+  const K_call = callLeg ? Number(callLeg.strike || 0) : 0;
+  const P_call = callLeg ? Number(callLeg.entryPrice || callLeg.premium || 0) : 0;
 
-  const netPremiumPerShare = P_call - P_put;
+  const netPremiumPerShare = (callLeg ? P_call : 0) - (putLeg ? P_put : 0);
 
   const points = [];
-  for (let S_T = minPrice; S_T <= maxPrice + 0.001; S_T += stepSize) {
+  for (let S_T = minPrice; S_T <= maxPrice + (stepSize * 0.1); S_T += stepSize) {
     const unhedgedPL = (S_T - S0) * shares;
 
     let optionPayoff = 0;
-    if (putLeg && S_T < K_put) {
+    if (putLeg && K_put > 0 && S_T < K_put) {
       optionPayoff += (K_put - S_T); // Ejercicio del Put
     }
-    if (callLeg && S_T > K_call) {
+    if (callLeg && K_call > 0 && S_T > K_call) {
       optionPayoff -= (S_T - K_call); // Obligación de venta del Call
     }
 

@@ -29,6 +29,25 @@ export const getBrokerAccount = async (broker = 'WEBULL') => {
     return await IBKRService.getIBKRAccount();
   }
 
+  if (targetBroker === 'SIMULATED') {
+    return {
+      broker: 'SIMULATED',
+      accountId: 'SIM-ACCOUNT-001',
+      status: 'ACTIVE',
+      currency: 'USD',
+      cash: 100000,
+      portfolioValue: 100000,
+      buyingPower: 200000,
+      unrealizedPL: 0,
+      realizedPL: 0,
+      tradingBlocked: false,
+      transfersBlocked: false,
+      accountBlocked: false,
+      createdAt: new Date().toISOString(),
+      source: 'In-Memory Simulated Account',
+    };
+  }
+
   // Flujo Alpaca Markets
   if (isAlpacaConfigured()) {
     try {
@@ -81,6 +100,28 @@ export const getBrokerQuote = async (symbol, broker = 'WEBULL') => {
 
   if (targetBroker === 'IBKR') {
     return await IBKRService.getIBKRQuote(ticker);
+  }
+
+  if (targetBroker === 'SIMULATED') {
+    const data = REALISTIC_MARKET_SNAPSHOTS[ticker] || {
+      companyName: `${ticker} Corp.`,
+      spotPrice: 150.0,
+      volatility: 0.25,
+      bid: 149.95,
+      ask: 150.05,
+    };
+    return {
+      broker: 'SIMULATED',
+      symbol: ticker,
+      companyName: data.companyName,
+      lastPrice: data.spotPrice,
+      bid: data.bid,
+      ask: data.ask,
+      bidSize: 100,
+      askSize: 100,
+      timestamp: new Date().toISOString(),
+      source: 'Pure In-Memory Simulation Engine',
+    };
   }
 
   // Flujo Alpaca Markets
@@ -315,15 +356,35 @@ export const createBrokerOrder = async (orderPayload, broker = 'WEBULL') => {
     return await IBKRService.createIBKROrder(orderPayload);
   }
 
-  // Flujo Alpaca
   const targetSymbol = (orderPayload.contractSymbol || orderPayload.symbol || '').toUpperCase();
   const { qty = 1, side = 'buy', type = 'limit', limit_price, limitPrice, price, time_in_force = 'day', timeInForce = 'day' } = orderPayload;
+  const effectiveLimitPrice = limit_price !== undefined ? limit_price : (limitPrice !== undefined ? limitPrice : price);
 
+  if (targetBroker === 'SIMULATED') {
+    const simOrderId = `SIM-${Date.now().toString(36).toUpperCase()}`;
+    return {
+      message: 'Orden bursátil ejecutada en Sandbox Simulado Autónomo.',
+      order: {
+        broker: 'SIMULATED',
+        id: simOrderId,
+        clientOrderId: `CLI-${simOrderId}`,
+        symbol: targetSymbol || 'SIM',
+        qty: Number(qty),
+        side: side.toLowerCase(),
+        type: type.toLowerCase(),
+        limitPrice: effectiveLimitPrice ? Number(effectiveLimitPrice) : null,
+        status: 'filled',
+        assetClass: orderPayload.instrumentType || (targetSymbol.length > 6 ? 'us_option' : 'us_equity'),
+        createdAt: new Date().toISOString(),
+        source: 'Simulated Execution Engine (Pure In-Memory Sandbox)',
+      },
+    };
+  }
+
+  // Flujo Alpaca
   if (!targetSymbol) {
     throw boom.badRequest('El campo symbol o contractSymbol es obligatorio para emitir la orden al broker.');
   }
-
-  const effectiveLimitPrice = limit_price !== undefined ? limit_price : (limitPrice !== undefined ? limitPrice : price);
 
   if (isAlpacaConfigured()) {
     try {

@@ -125,13 +125,19 @@ def get_guided_tutorials():
     
     tutorials = []
     u1 = None
-    for top in existing.get("item", []):
-        if "U1" in top.get("name", ""):
-            u1 = top
-        elif top.get("name") == "PROYECTO":
-            for sub in top.get("item", []):
-                if sub.get("name") in ["TutorialWebull", "TutorialAlpaca", "TutorialInteractiveBrokers"]:
-                    tutorials.append(sub)
+    
+    def search_items(item_list):
+        nonlocal u1
+        for top in item_list:
+            if "U1" in top.get("name", "") and not u1:
+                u1 = top
+            if top.get("name") in ["TutorialWebull", "TutorialAlpaca", "TutorialInteractiveBrokers"]:
+                if top not in tutorials:
+                    tutorials.append(top)
+            if "item" in top:
+                search_items(top["item"])
+
+    search_items(existing.get("item", []))
     return tutorials, u1
 
 def build_complete_collection():
