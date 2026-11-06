@@ -14,9 +14,16 @@ const BRIDGE_SCRIPT = path.join(__dirname, '../../../../scripts/webull_desktop_b
  */
 export const runBridge = (command, args = []) => {
   try {
-    const result = spawnSync('python', [BRIDGE_SCRIPT, command, ...args], {
+    const pythonCmd = process.env.PYTHON_BIN || (process.platform === 'win32' ? 'python' : 'python3');
+    const result = spawnSync(pythonCmd, [BRIDGE_SCRIPT, command, ...args], {
       encoding: 'utf-8',
       timeout: 15000,
+      env: {
+        ...process.env,
+        WEBULL_APP_KEY: config.WEBULL_APP_KEY || '',
+        WEBULL_APP_SECRET: config.WEBULL_APP_SECRET || '',
+        WEBULL_ACCOUNT_ID: config.WEBULL_ACCOUNT_ID || '',
+      },
     });
     if (result.stdout) {
       const lines = result.stdout.trim().split('\n');

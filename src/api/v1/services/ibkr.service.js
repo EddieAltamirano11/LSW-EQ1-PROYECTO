@@ -14,10 +14,21 @@ const BRIDGE_SCRIPT = path.join(__dirname, '../../../../scripts/ibkr_desktop_bri
  */
 export const runBridge = (command, args = []) => {
   try {
-    const result = spawnSync('python', [BRIDGE_SCRIPT, command, ...args], {
+    const pythonCmd = process.env.PYTHON_BIN || (process.platform === 'win32' ? 'python' : 'python3');
+    const result = spawnSync(pythonCmd, [BRIDGE_SCRIPT, command, ...args], {
       encoding: 'utf-8',
       timeout: 15000,
+      env: {
+        ...process.env,
+        IBKR_TWS_HOST: config.IBKR_TWS_HOST || '127.0.0.1',
+        IBKR_TWS_PORT: String(config.IBKR_TWS_PORT || 7497),
+        IBKR_ACCOUNT_ID: config.IBKR_ACCOUNT_ID || 'DUR303142',
+        IBKR_CLIENT_ID: String(config.IBKR_CLIENT_ID || 25),
+      },
     });
+    if (result.error) {
+      console.warn(`[IBKR Desktop Bridge Spawn Error] (${command}): ${result.error.message}`);
+    }
     if (result.stdout) {
       const lines = result.stdout.trim().split('\n');
       for (let i = lines.length - 1; i >= 0; i--) {

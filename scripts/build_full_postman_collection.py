@@ -1,13 +1,18 @@
 import json
 import re
+import os
+import shutil
 
 TUNNEL_URL = "https://lsw-eq1-proyecto.onrender.com"
 HOST_PARTS = ["lsw-eq1-proyecto", "onrender", "com"]
 
-def make_url_obj(raw_url):
-    u = raw_url.replace("{{baseUrl}}", f"{TUNNEL_URL}/api/v1")
-    u = u.replace("http://localhost:3050/api/v1", f"{TUNNEL_URL}/api/v1")
-    u = u.replace("http://localhost:3020/api/v1", f"{TUNNEL_URL}/api/v1")
+def clean_url_string(u):
+    if not u:
+        return u
+    # Reemplazar cualquier variante previa de localhost o cloudflare por la URL viva de Render
+    u = re.sub(r"https?://[a-zA-Z0-9\-\.]+\.trycloudflare\.com", TUNNEL_URL, u)
+    u = re.sub(r"http://localhost:\d+", TUNNEL_URL, u)
+    u = u.replace("{{baseUrl}}", f"{TUNNEL_URL}/api/v1")
     u = u.replace("{{symbol}}", "NVDA")
     u = u.replace("{{symbolAlpaca}}", "AAPL")
     u = u.replace("{{expiration}}", "2026-10-16")
@@ -15,6 +20,10 @@ def make_url_obj(raw_url):
     u = u.replace("{{strategyIdSupabase}}", "c0000000-0000-0000-0000-000000000001")
     u = u.replace("{{webullOrderId}}", "b058af6bc909445781016e62e3a98c06")
     u = u.replace("{{alpacaOrderId}}", "970921fb-5536-4d0f-b44c-0c1efebf8691")
+    return u
+
+def make_url_obj(raw_url):
+    u = clean_url_string(raw_url)
 
     query_parts = []
     base_and_query = u.split("?", 1)
@@ -41,6 +50,29 @@ def make_url_obj(raw_url):
     if query_parts:
         url_obj["query"] = query_parts
     return url_obj
+
+def sanitize_item_recursive(it):
+    if isinstance(it, dict):
+        if "request" in it and isinstance(it["request"], dict):
+            req = it["request"]
+            if "url" in req:
+                u = req["url"]
+                if isinstance(u, str):
+                    req["url"] = make_url_obj(u)
+                elif isinstance(u, dict):
+                    raw_str = u.get("raw", "")
+                    cleaned_raw = clean_url_string(raw_str)
+                    u["raw"] = cleaned_raw
+                    u["protocol"] = "https"
+                    u["host"] = HOST_PARTS
+                    base_only = cleaned_raw.split("?")[0].replace(f"{TUNNEL_URL}/", "")
+                    u["path"] = [p for p in base_only.split("/") if p]
+        if "item" in it and isinstance(it["item"], list):
+            for sub in it["item"]:
+                sanitize_item_recursive(sub)
+    elif isinstance(it, list):
+        for sub in it:
+            sanitize_item_recursive(sub)
 
 def parse_http_file(http_path):
     with open(http_path, "r", encoding="utf-8") as f:
@@ -119,8 +151,12 @@ def parse_http_file(http_path):
     return parsed_sections
 
 def get_guided_tutorials():
-    # Cargar los 3 tutoriales paso a paso calibrados de generate_calibrated_collection
-    with open(r"c:\GitHub\FIC-generator\LSW-EQ1-PROYECTO\LSW_Cloudflare_Postman_Collection.json", "r", encoding="utf-8") as f:
+    # Cargar los 3 tutoriales paso a paso calibrados
+    base_file = r"c:\GitHub\FIC-generator\LSW-EQ1-PROYECTO\LSW_Cloudflare_Postman_Collection.json"
+    if not os.path.exists(base_file):
+        base_file = r"c:\GitHub\FIC-generator\LSW_Cloudflare_Postman_Collection.json"
+        
+    with open(base_file, "r", encoding="utf-8") as f:
         existing = json.load(f)
     
     tutorials = []
@@ -138,6 +174,13 @@ def get_guided_tutorials():
                 search_items(top["item"])
 
     search_items(existing.get("item", []))
+    
+    # Sanitizar recursivamente tutoriales y U1 para que apunten a Render
+    for t in tutorials:
+        sanitize_item_recursive(t)
+    if u1:
+        sanitize_item_recursive(u1)
+        
     return tutorials, u1
 
 def build_complete_collection():
@@ -150,7 +193,7 @@ def build_complete_collection():
     # 1. Tutoriales Paso a Paso
     items.append({
         "name": "1. Flujos Guiados Paso a Paso (Webull, Alpaca, IBKR)",
-        "description": "Tutoriales completos de 11 pasos calibrados para ejecutar coberturas Collar completas en cada broker.",
+        "description": "Tutoriales completos de 11 pasos calibrados para ejecutar coberturas Collar completas en cada broker alojados en Render Cloud.",
         "item": tutorials
     })
     
@@ -165,11 +208,15 @@ def build_complete_collection():
     if u1:
         items.append(u1)
         
+    # Sanitizar todos los items al 100%
+    for it in items:
+        sanitize_item_recursive(it)
+        
     collection = {
         "info": {
             "_postman_id": "29bd2619-9d1e-4c01-b368-90f726381b41",
-            "name": "LSW - Coberturas Financieras y Motor FIC (Equipo 1 - Colección Completa)",
-            "description": "Colección EXHAUSTIVA y calibrada con el 100% de los endpoints REST del backend (Equipo 1). Incluye flujos paso a paso para Webull, Alpaca e Interactive Brokers, Autenticación JWT, Activos Subyacentes (CRUD Políglota), Motor Cuantitativo F0 (Black-Scholes y Newton-Raphson), Coberturas Hedging, Operaciones con Subdocumentos y Multi-Broker.",
+            "name": "LSW - Coberturas Financieras y Motor FIC (Render Cloud 24/7 - Equipo 1)",
+            "description": "Colección OFICIAL y calibrada al 100% para Render Cloud (https://lsw-eq1-proyecto.onrender.com). Permite verificar la totalidad de los 104 endpoints REST: Autenticación JWT, Activos Subyacentes, Opciones Cuantitativas F0, Spreads Collar y Coberturas en los 3 Brokers (Webull, Alpaca e Interactive Brokers en DigitalOcean VPS).",
             "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
         },
         "variable": [
@@ -200,15 +247,26 @@ def build_complete_collection():
     
     out_paths = [
         r"c:\GitHub\FIC-generator\LSW_Cloudflare_Postman_Collection.json",
+        r"c:\GitHub\FIC-generator\LSW_Render_Postman_Collection.json",
         r"c:\GitHub\FIC-generator\LSW-EQ1-PROYECTO\LSW_Cloudflare_Postman_Collection.json",
+        r"c:\GitHub\FIC-generator\LSW-EQ1-PROYECTO\LSW_Render_Postman_Collection.json",
         r"c:\GitHub\FIC-generator\U2Act2\LSW_Cloudflare_Postman_Collection.json",
-        r"C:\Users\ealta\.gemini\antigravity\brain\dc48f4da-e1e3-43d9-81ea-99f87e476809\LSW_Cloudflare_Postman_Collection.json"
+        r"c:\GitHub\FIC-generator\U2Act2\LSW_Render_Postman_Collection.json",
+        r"C:\Users\ealta\.gemini\antigravity\brain\dc48f4da-e1e3-43d9-81ea-99f87e476809\LSW_Cloudflare_Postman_Collection.json",
+        r"C:\Users\ealta\.gemini\antigravity\brain\dc48f4da-e1e3-43d9-81ea-99f87e476809\LSW_Render_Postman_Collection.json"
     ]
     
     for op in out_paths:
         with open(op, "w", encoding="utf-8") as f:
             json.dump(collection, f, indent=2, ensure_ascii=False)
         print(f"Colección guardada con éxito en: {op}")
+
+    # Copia en el Escritorio para facilidad de importación en Postman
+    desktop_dir = r"C:\Users\ealta\OneDrive\Escritorio"
+    if os.path.exists(desktop_dir):
+        desktop_dest = os.path.join(desktop_dir, "LSW_Render_Postman_Collection.json")
+        shutil.copyfile(out_paths[0], desktop_dest)
+        print(f"Copia creada directamente en Escritorio: {desktop_dest}")
 
     total_reqs = 0
     def count_reqs(it_list):
@@ -223,4 +281,3 @@ def build_complete_collection():
 
 if __name__ == "__main__":
     build_complete_collection()
-

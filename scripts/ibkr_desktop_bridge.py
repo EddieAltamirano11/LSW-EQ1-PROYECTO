@@ -328,6 +328,8 @@ def cmd_place_order(args):
                 ib.qualifyContracts(contract)
                 if order_type == 'LIMIT' and price > 0:
                     order = LimitOrder(action, qty, price)
+                    order.outsideRth = True
+                    order.tif = 'DAY'
                 else:
                     order = MarketOrder(action, qty)
                 order.account = ACCOUNT_ID
@@ -380,6 +382,8 @@ def cmd_place_order(args):
 
                 if order_type == 'LIMIT' and price > 0:
                     order = LimitOrder(action, qty, price)
+                    order.outsideRth = True
+                    order.tif = 'DAY'
                 else:
                     order = MarketOrder(action, qty)
                 order.account = ACCOUNT_ID

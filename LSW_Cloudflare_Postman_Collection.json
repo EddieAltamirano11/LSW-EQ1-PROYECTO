@@ -1,8 +1,8 @@
 {
   "info": {
     "_postman_id": "29bd2619-9d1e-4c01-b368-90f726381b41",
-    "name": "LSW - Coberturas Financieras y Motor FIC (Equipo 1 - Colección Completa)",
-    "description": "Colección EXHAUSTIVA y calibrada con el 100% de los endpoints REST del backend (Equipo 1). Incluye flujos paso a paso para Webull, Alpaca e Interactive Brokers, Autenticación JWT, Activos Subyacentes (CRUD Políglota), Motor Cuantitativo F0 (Black-Scholes y Newton-Raphson), Coberturas Hedging, Operaciones con Subdocumentos y Multi-Broker.",
+    "name": "LSW - Coberturas Financieras y Motor FIC (Render Cloud 24/7 - Equipo 1)",
+    "description": "Colección OFICIAL y calibrada al 100% para Render Cloud (https://lsw-eq1-proyecto.onrender.com). Permite verificar la totalidad de los 104 endpoints REST: Autenticación JWT, Activos Subyacentes, Opciones Cuantitativas F0, Spreads Collar y Coberturas en los 3 Brokers (Webull, Alpaca e Interactive Brokers en DigitalOcean VPS).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -31,7 +31,7 @@
   "item": [
     {
       "name": "1. Flujos Guiados Paso a Paso (Webull, Alpaca, IBKR)",
-      "description": "Tutoriales completos de 11 pasos calibrados para ejecutar coberturas Collar completas en cada broker.",
+      "description": "Tutoriales completos de 11 pasos calibrados para ejecutar coberturas Collar completas en cada broker alojados en Render Cloud.",
       "item": [
         {
           "name": "TutorialWebull",
@@ -47,11 +47,11 @@
                   }
                 ],
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/account?broker=WEBULL",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/account?broker=WEBULL",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -81,11 +81,11 @@
                   }
                 ],
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/positions?broker=WEBULL",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/positions?broker=WEBULL",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -115,11 +115,11 @@
                   }
                 ],
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/quote/NVDA",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/quote/NVDA",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -144,11 +144,11 @@
                   }
                 ],
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/options-chain/NVDA?expiration=2026-10-16",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/options-chain/NVDA?expiration=2026-10-16",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -179,11 +179,11 @@
                   }
                 ],
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/recommend-option/NVDA?type=PUT&broker=WEBULL&moneyness=OTM",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/recommend-option/NVDA?type=PUT&broker=WEBULL&moneyness=OTM",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -222,11 +222,11 @@
                   }
                 ],
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/recommend-option/NVDA?type=CALL&broker=WEBULL&moneyness=OTM",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/recommend-option/NVDA?type=CALL&broker=WEBULL&moneyness=OTM",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -278,11 +278,11 @@
                   }
                 },
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/orders",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -319,11 +319,11 @@
                   }
                 },
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/orders",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -360,11 +360,11 @@
                   }
                 },
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/orders",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -401,11 +401,11 @@
                   }
                 },
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/collar-spread",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/collar-spread",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -446,11 +446,11 @@
                   }
                 },
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/auto-collar",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/auto-collar",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -479,11 +479,11 @@
                   }
                 ],
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/account?broker=ALPACA",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/account?broker=ALPACA",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -513,11 +513,11 @@
                   }
                 ],
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/positions?broker=ALPACA",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/positions?broker=ALPACA",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -547,11 +547,11 @@
                   }
                 ],
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/quote/AAPL",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/quote/AAPL",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -576,11 +576,11 @@
                   }
                 ],
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/options-chain/AAPL?expiration=2026-10-16",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/options-chain/AAPL?expiration=2026-10-16",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -611,11 +611,11 @@
                   }
                 ],
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/recommend-option/AAPL?type=PUT&broker=ALPACA&moneyness=OTM",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/recommend-option/AAPL?type=PUT&broker=ALPACA&moneyness=OTM",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -654,11 +654,11 @@
                   }
                 ],
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/recommend-option/AAPL?type=CALL&broker=ALPACA&moneyness=OTM",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/recommend-option/AAPL?type=CALL&broker=ALPACA&moneyness=OTM",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -710,11 +710,11 @@
                   }
                 },
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/orders",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -751,11 +751,11 @@
                   }
                 },
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/orders",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -792,11 +792,11 @@
                   }
                 },
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/orders",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -833,11 +833,11 @@
                   }
                 },
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/collar-spread",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/collar-spread",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -878,11 +878,11 @@
                   }
                 },
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/auto-collar",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/auto-collar",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -911,11 +911,11 @@
                   }
                 ],
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/account?broker=IBKR",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/account?broker=IBKR",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -945,11 +945,11 @@
                   }
                 ],
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/positions?broker=IBKR",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/positions?broker=IBKR",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -979,11 +979,11 @@
                   }
                 ],
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/quote/AAPL",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/quote/AAPL",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -1008,11 +1008,11 @@
                   }
                 ],
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/options-chain/AAPL?expiration=2026-10-16",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/options-chain/AAPL?expiration=2026-10-16",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -1043,11 +1043,11 @@
                   }
                 ],
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/recommend-option/AAPL?type=PUT&broker=IBKR&moneyness=OTM",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/recommend-option/AAPL?type=PUT&broker=IBKR&moneyness=OTM",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -1086,11 +1086,11 @@
                   }
                 ],
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/recommend-option/AAPL?type=CALL&broker=IBKR&moneyness=OTM",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/recommend-option/AAPL?type=CALL&broker=IBKR&moneyness=OTM",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -1142,11 +1142,11 @@
                   }
                 },
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/orders",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -1183,11 +1183,11 @@
                   }
                 },
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/orders",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -1224,11 +1224,11 @@
                   }
                 },
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/broker/orders",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/orders",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -1265,11 +1265,11 @@
                   }
                 },
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/collar-spread",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/collar-spread",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -1310,11 +1310,11 @@
                   }
                 },
                 "url": {
-                  "raw": "https://consist-overall-leaders-supplement.trycloudflare.com/api/v1/hedging/auto-collar",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/auto-collar",
                   "protocol": "https",
                   "host": [
-                    "consist-overall-leaders-supplement",
-                    "trycloudflare",
+                    "lsw-eq1-proyecto",
+                    "onrender",
                     "com"
                   ],
                   "path": [
@@ -3786,10 +3786,12 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://localhost:3020/api/v1/prod-serv",
-              "protocol": "http",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/prod-serv",
+              "protocol": "https",
               "host": [
-                "localhost"
+                "lsw-eq1-proyecto",
+                "onrender",
+                "com"
               ],
               "port": "3020",
               "path": [
