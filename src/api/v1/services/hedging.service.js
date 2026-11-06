@@ -765,7 +765,8 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
     // Garantiza que la BD refleje única y exclusivamente órdenes admitidas y activas en el broker
     const liveBrokerOrders = await getBrokerOrders('all', targetBroker);
     const validLiveStatuses = [
-      'submitted', 'presubmitted', 'pending_new', 'new', 'accepted', 
+      'submitted', 'presubmitted', 'pending_submit', 'pendingsubmit',
+      'pending_new', 'pending', 'new', 'accepted', 
       'filled', 'partially_filled', 'open', 'working'
     ];
     const unverifiedOrFailedLegs = [];
@@ -786,13 +787,24 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
         ? String(foundInBroker.status || '').toLowerCase() 
         : String(leg.status || '').toLowerCase();
 
+      const rawErrMsg = String(leg.details?.error || leg.details?.message || foundInBroker?.rejectReason || '');
+      const cleanErrMsg = rawErrMsg.replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').trim();
+      let diagExplanation = '';
+      if (cleanErrMsg.toLowerCase().includes('nbbo')) {
+        diagExplanation = `Precio límite ($${leg.limitPrice}) rechazado por violar límites NBBO (National Best Bid/Offer). Para vencimientos cercanos (${cleanExpDate}), la bolsa exige precios límites más cercanos al Bid/Ask real.`;
+      } else if (cleanErrMsg.toLowerCase().includes('no security definition')) {
+        diagExplanation = `Contrato inexistente en bolsa para ${leg.contractSymbol || leg.symbol} (strike $${leg.strike}, vencimiento ${cleanExpDate}).`;
+      } else if (rawErrMsg) {
+        diagExplanation = cleanErrMsg;
+      }
+
       if (['cancelled', 'canceled', 'rejected', 'inactive', 'failed', 'expired'].includes(liveStatus)) {
         unverifiedOrFailedLegs.push({
           legRole: leg.legRole,
           symbol: leg.contractSymbol || leg.symbol,
           orderId: leg.orderId,
           status: liveStatus,
-          reason: `Orden ${leg.orderId} cancelada o rechazada en ${targetBroker} (${liveStatus}).`,
+          reason: `Pata ${leg.legRole} (${leg.contractSymbol || leg.symbol}, Orden #${leg.orderId || 'N/A'}, Estado: '${liveStatus}'): ${diagExplanation || 'Cancelada/rechazada por el broker o matching engine.'}`,
         });
       } else if (!validLiveStatuses.includes(liveStatus)) {
         unverifiedOrFailedLegs.push({
@@ -800,7 +812,7 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
           symbol: leg.contractSymbol || leg.symbol,
           orderId: leg.orderId,
           status: liveStatus,
-          reason: `Orden ${leg.orderId} con estado no operable '${liveStatus}'.`,
+          reason: `Pata ${leg.legRole} (${leg.contractSymbol || leg.symbol}, Orden #${leg.orderId || 'N/A'}, Estado no operable: '${liveStatus}'): ${diagExplanation || 'El broker no confirmó la orden en un estado activo estándar.'}`,
         });
       } else if (foundInBroker) {
         leg.status = liveStatus;
@@ -816,7 +828,10 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
       ].join(' | ');
 
       throw boom.serverUnavailable(
-        `Falla de validación en vivo con ${targetBroker}: Las órdenes no fueron confirmadas activas por el broker (${issues}). ` +
+        `Falla de validación en vivo con ${targetBroker}: Las órdenes no fueron confirmadas activas por el broker.
+` +
+        `Diagnóstico detallado: ${issues}
+` +
         `Por política estricta de fidelidad e integridad transaccional, NINGÚN dato fue insertado en la base de datos (${dbTarget.toUpperCase()}).`
       );
     }

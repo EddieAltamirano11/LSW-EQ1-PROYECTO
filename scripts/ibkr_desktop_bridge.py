@@ -289,16 +289,24 @@ def cmd_options_chain(args):
     calls = []
     puts = []
     for k in strikes:
+        # Escalamiento temporal realista del valor intrínseco/extrínseco según días al vencimiento (evita rechazos NBBO)
+        try:
+            diff_days = max(1, (exp_dt.date() - datetime.now().date()).days)
+            time_factor = math.sqrt(diff_days / 42.0)
+        except Exception:
+            time_factor = 1.0
+
         # Calls
         is_call_itm = spot > k
-        c_prem = round(max(spot - k, 0) + (3.2 if is_call_itm else 2.1) + 0.15, 2)
+        c_extrinsic = round((3.2 if is_call_itm else 2.1) * time_factor + 0.15, 2)
+        c_prem = round(max(spot - k, 0) + c_extrinsic, 2)
         c_sym = f"{symbol}{exp_occ}C{str(int(k * 1000)).zfill(8)}"
         calls.append({
             'contractSymbol': c_sym,
             'type': 'CALL',
             'strike': float(k),
             'expirationDate': expiration_input,
-            'bid': round(c_prem - 0.10, 2),
+            'bid': round(max(0.05, c_prem - 0.10), 2),
             'ask': round(c_prem + 0.10, 2),
             'lastPrice': c_prem,
             'volatility': 0.25
@@ -306,7 +314,8 @@ def cmd_options_chain(args):
 
         # Puts
         is_put_itm = k > spot
-        p_prem = round(max(k - spot, 0) + (3.2 if is_put_itm else 2.1) + 0.10, 2)
+        p_extrinsic = round((3.2 if is_put_itm else 2.1) * time_factor + 0.10, 2)
+        p_prem = round(max(k - spot, 0) + p_extrinsic, 2)
         p_sym = f"{symbol}{exp_occ}P{str(int(k * 1000)).zfill(8)}"
         puts.append({
             'contractSymbol': p_sym,
@@ -345,6 +354,13 @@ def cmd_place_order(args):
 
     ib = get_ib_connection()
     if ib and ib.isConnected():
+        tws_events = []
+        def on_tws_error(reqId, errorCode, errorString, contract):
+            # Filtrar eventos puramente informativos
+            if errorCode not in [2104, 2106, 2107, 2108, 2158]:
+                tws_events.append({'reqId': reqId, 'code': errorCode, 'message': errorString})
+        ib.errorEvent += on_tws_error
+
         try:
             # 1. Caso Acción (EQUITY)
             if instrument_type == 'EQUITY':
@@ -358,15 +374,23 @@ def cmd_place_order(args):
                     order = MarketOrder(action, qty)
                 order.account = ACCOUNT_ID
                 trade = ib.placeOrder(contract, order)
-                ib.sleep(1)
+                for _ in range(5):
+                    ib.sleep(0.5)
+                    status = trade.orderStatus.status.lower() if trade.orderStatus else 'submitted'
+                    if status not in ['pendingsubmit', 'pending_submit']:
+                        break
 
                 order_id = str(trade.order.orderId or trade.order.permId or client_order_id)
                 status = trade.orderStatus.status.lower() if trade.orderStatus else 'submitted'
                 err_msgs = [entry.message for entry in trade.log if entry.message]
+                for evt in tws_events:
+                    msg = evt.get('message', '')
+                    if msg and msg not in err_msgs:
+                        err_msgs.append(f"{msg} (Código {evt.get('code')})")
 
                 if status in ['cancelled', 'canceled', 'inactive', 'rejected']:
                     ib.disconnect()
-                    err_txt = err_msgs[-1] if err_msgs else f"TWS canceló la orden con estado {status}"
+                    err_txt = ' | '.join(err_msgs) if err_msgs else f"TWS canceló la orden con estado {status}"
                     print(json.dumps({
                         'success': False,
                         'mode': 'ORDER_REJECTED',
@@ -430,22 +454,30 @@ def cmd_place_order(args):
                     order = MarketOrder(action, qty)
                 order.account = ACCOUNT_ID
                 trade = ib.placeOrder(contract, order)
-                ib.sleep(1)
+                for _ in range(5):
+                    ib.sleep(0.5)
+                    status = trade.orderStatus.status.lower() if trade.orderStatus else 'submitted'
+                    if status not in ['pendingsubmit', 'pending_submit']:
+                        break
 
                 order_id = str(trade.order.orderId or trade.order.permId or client_order_id)
                 status = trade.orderStatus.status.lower() if trade.orderStatus else 'submitted'
                 err_msgs = [entry.message for entry in trade.log if entry.message]
+                for evt in tws_events:
+                    msg = evt.get('message', '')
+                    if msg and msg not in err_msgs:
+                        err_msgs.append(f"{msg} (Código {evt.get('code')})")
 
                 if status in ['cancelled', 'canceled', 'inactive', 'rejected']:
                     ib.disconnect()
-                    err_txt = err_msgs[-1] if err_msgs else f"TWS canceló la orden con estado {status}"
+                    err_txt = ' | '.join(err_msgs) if err_msgs else f"TWS canceló la orden con estado {status}"
                     print(json.dumps({
                         'success': False,
                         'mode': 'ORDER_REJECTED',
                         'orderId': order_id,
                         'clientOrderId': client_order_id,
                         'symbol': symbol,
-                        'instrumentType': 'EQUITY',
+                        'instrumentType': 'OPTION',
                         'status': status,
                         'error': f"Orden bursátil no admitida o cancelada por Interactive Brokers TWS ({status}): {err_txt}"
                     }))
