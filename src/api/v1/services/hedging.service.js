@@ -2,7 +2,7 @@ import boom from '@hapi/boom';
 import { getHedgingRepo } from '../repositories/hedging.repository.js';
 import { getUnderlyingRepo } from '../repositories/underlying.repository.js';
 import { calculateBlackScholes } from './quant.service.js';
-import { getBrokerQuote, getBrokerOptionsChain, createBrokerOrder } from './broker.service.js';
+import { getBrokerQuote, getBrokerOptionsChain, createBrokerOrder, getBrokerOrders } from './broker.service.js';
 import { randomUUID } from 'crypto';
 import config from '../../../config/config.js';
 import { assertBrokerAndDatabasesReadiness } from './preflight.service.js';
@@ -20,13 +20,65 @@ export const formatOccSymbol = (symbol, expirationDate, type, strike) => {
   return `${sym}${yy}${mm}${dd}${t}${strikeStr}`;
 };
 
+/**
+ * Validador estricto de fecha de expiración para derivados bursátiles
+ * Impide negociar, cotizar o estructurar opciones con fechas pasadas o vencidas
+ */
+export const validateFutureExpirationDate = (expirationDate) => {
+  if (!expirationDate) {
+    throw boom.badRequest('La fecha de expiración (expirationDate) es obligatoria para negociar opciones.');
+  }
+  const cleanDate = String(expirationDate).split('T')[0];
+  const parts = cleanDate.split('-');
+  if (parts.length !== 3) {
+    throw boom.badRequest(`La fecha de expiración '${expirationDate}' tiene formato inválido. Use formato YYYY-MM-DD.`);
+  }
+  const expYear = parseInt(parts[0], 10);
+  const expMonth = parseInt(parts[1], 10) - 1;
+  const expDay = parseInt(parts[2], 10);
+  const expDateObj = new Date(expYear, expMonth, expDay);
+
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  if (isNaN(expDateObj.getTime()) || expDateObj <= today) {
+    throw boom.badRequest(
+      `La fecha de expiración '${cleanDate}' es inválida porque ya ha vencido o vence hoy. ` +
+      `Las opciones financieras requieren una fecha futura de vencimiento para poder cotizarse y emitirse en el broker.`
+    );
+  }
+  return cleanDate;
+};
+
 export const calculateTimeToExpirationYears = (expirationDate) => {
   if (!expirationDate) return 0.1;
+  const cleanDate = String(expirationDate).split('T')[0];
+  const parts = cleanDate.split('-');
+  if (parts.length === 3) {
+    const expYear = parseInt(parts[0], 10);
+    const expMonth = parseInt(parts[1], 10) - 1;
+    const expDay = parseInt(parts[2], 10);
+    const d = new Date(expYear, expMonth, expDay);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const diffDays = (d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
+    if (diffDays <= 0) {
+      throw boom.badRequest(
+        `La fecha de expiración '${cleanDate}' ya ha vencido. Las opciones financieras requieren una fecha futura de vencimiento.`
+      );
+    }
+    return Number((diffDays / 365).toFixed(4));
+  }
   const d = new Date(expirationDate);
   if (isNaN(d.getTime())) return 0.1;
   const now = new Date();
   const diffDays = (d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
-  return Number((Math.max(1, diffDays) / 365).toFixed(4));
+  if (diffDays <= 0) {
+    throw boom.badRequest(
+      `La fecha de expiración '${expirationDate}' ya ha vencido. Las opciones financieras requieren una fecha futura de vencimiento.`
+    );
+  }
+  return Number((diffDays / 365).toFixed(4));
 };
 
 export const listStrategies = async (filter = {}, dbTarget = 'mongodb') => {
@@ -60,6 +112,8 @@ export const createProtectivePut = async (payload, dbTarget = 'mongodb') => {
     expirationDate = '2026-10-16T00:00:00.000Z',
     volatility = 0.22,
   } = payload;
+
+  validateFutureExpirationDate(expirationDate);
 
   const count = Number(payload.sharesCount || payload.sharesQuantity || 100);
   if (count <= 0) {
@@ -182,6 +236,8 @@ export const createCollarSpread = async (payload, dbTarget = 'mongodb') => {
     expirationDate = '2026-10-16T00:00:00.000Z',
     volatility = 0.15,
   } = payload;
+
+  validateFutureExpirationDate(expirationDate);
 
   const count = Number(payload.sharesCount || payload.sharesQuantity || 100);
   if (count <= 0) {
@@ -322,6 +378,7 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
     throw boom.badRequest('El símbolo del activo (symbol) es requerido para la calibración automática.');
   }
 
+  const cleanExpDate = validateFutureExpirationDate(expirationDate);
   const ticker = symbol.toUpperCase();
   const targetBroker = (broker || config.DEFAULT_BROKER || 'WEBULL').toUpperCase();
 
@@ -704,16 +761,67 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
       errors: executionErrors.length > 0 ? executionErrors : undefined,
     };
 
-    // Si el broker es IBKR y ocurrió algún error o no se emitieron órdenes, ABORTAR sin persistir nada en BD
-    if (targetBroker === 'IBKR' && (executedOrders.length === 0 || executionErrors.length > 0)) {
-      const errSummary = executionErrors.map((e) => `${e.legRole}: ${e.error}`).join(' | ');
+    // 6. Verificación Directa en el Broker (Consulta GET al Broker, NO a la Base de Datos)
+    // Garantiza que la BD refleje única y exclusivamente órdenes admitidas y activas en el broker
+    const liveBrokerOrders = await getBrokerOrders('all', targetBroker);
+    const validLiveStatuses = [
+      'submitted', 'presubmitted', 'pending_new', 'new', 'accepted', 
+      'filled', 'partially_filled', 'open', 'working'
+    ];
+    const unverifiedOrFailedLegs = [];
+
+    for (const leg of executedOrders) {
+      const ordId = String(leg.orderId || '');
+      const clientOrdId = String(leg.details?.order?.clientOrderId || '');
+
+      // Buscar en las órdenes en vivo devueltas por el broker
+      const foundInBroker = liveBrokerOrders.find((bo) => {
+        const boId = String(bo.id || '');
+        const boClient = String(bo.clientOrderId || '');
+        return (ordId && (boId === ordId || boClient === ordId)) ||
+               (clientOrdId && (boId === clientOrdId || boClient === clientOrdId));
+      });
+
+      const liveStatus = foundInBroker 
+        ? String(foundInBroker.status || '').toLowerCase() 
+        : String(leg.status || '').toLowerCase();
+
+      if (['cancelled', 'canceled', 'rejected', 'inactive', 'failed', 'expired'].includes(liveStatus)) {
+        unverifiedOrFailedLegs.push({
+          legRole: leg.legRole,
+          symbol: leg.contractSymbol || leg.symbol,
+          orderId: leg.orderId,
+          status: liveStatus,
+          reason: `Orden ${leg.orderId} cancelada o rechazada en ${targetBroker} (${liveStatus}).`,
+        });
+      } else if (!validLiveStatuses.includes(liveStatus)) {
+        unverifiedOrFailedLegs.push({
+          legRole: leg.legRole,
+          symbol: leg.contractSymbol || leg.symbol,
+          orderId: leg.orderId,
+          status: liveStatus,
+          reason: `Orden ${leg.orderId} con estado no operable '${liveStatus}'.`,
+        });
+      } else if (foundInBroker) {
+        leg.status = liveStatus;
+        leg.verifiedInBroker = true;
+      }
+    }
+
+    // SI EL BROKER RECHAZÓ O CANCELÓ ALGUNA PATA: ABORTAR SIN PERSISTIR NADA EN LA BASE DE DATOS
+    if (unverifiedOrFailedLegs.length > 0 || executionErrors.length > 0) {
+      const issues = [
+        ...executionErrors.map((e) => `[${e.legRole}: ${e.error}]`),
+        ...unverifiedOrFailedLegs.map((f) => `[${f.legRole}: ${f.reason}]`),
+      ].join(' | ');
+
       throw boom.serverUnavailable(
-        `Operación rechazada para Interactive Brokers (IBKR): Falla al emitir órdenes en TWS (${errSummary || 'Túnel o socket desconectado'}). ` +
-        `Por política estricta de consistencia e integridad transaccional, NO se insertó ningún cambio en la base de datos (${dbTarget.toUpperCase()}).`
+        `Falla de validación en vivo con ${targetBroker}: Las órdenes no fueron confirmadas activas por el broker (${issues}). ` +
+        `Por política estricta de fidelidad e integridad transaccional, NINGÚN dato fue insertado en la base de datos (${dbTarget.toUpperCase()}).`
       );
     }
 
-    // Si se ejecutaron órdenes y autoPersist está activo, persistir la estrategia con los IDs reales ya asignados
+    // Si todas las órdenes fueron verificadas activas en el broker y autoPersist está activo, persistir en BD
     if (autoPersist) {
       const stockOrder = executedOrders.find((o) => o.legRole === 'UNDERLYING');
       const putOrder = executedOrders.find((o) => o.legRole === 'HEDGE_FLOOR');
@@ -730,7 +838,7 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
         callStrike: optimalCall.strike,
         putPremium: optimalPut.premium,
         callPremium: optimalCall.premium,
-        expirationDate: `${expirationDate}T00:00:00.000Z`,
+        expirationDate: `${cleanExpDate}T00:00:00.000Z`,
         volatility: quote.volatility || 0.2,
         stockOrderId: stockOrder?.orderId || null,
         putOrderId: putOrder?.orderId || null,
@@ -740,31 +848,22 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
       createdStrategy = await createCollarSpread(collarPayload, dbTarget);
     }
   } else {
-    // Si no se ejecutan órdenes pero se solicita persistencia analítica
-    if (autoPersist) {
-      const collarPayload = {
-        portfolioId,
+    // Modo Simulación / Cálculo Cuantitativo: executeOrders === false
+    // Por estricta fidelidad con el broker, NO se simulan órdenes falsas en la base de datos
+    return {
+      message: `Recomendación cuantitativa para ${ticker} calibrada con Black-Scholes F0 exitosamente. Para emitir órdenes reales al broker y persistir la estrategia verificada en ${dbTarget.toUpperCase()}, envíe 'executeOrders': true.`,
+      analysis: analysisReport,
+      strategy: null,
+      brokerExecution: {
         broker: targetBroker,
-        symbol: ticker,
-        companyName: quote.companyName || `${ticker} Corporation`,
-        spotPrice,
-        sharesCount,
-        putStrike: optimalPut.strike,
-        callStrike: optimalCall.strike,
-        putPremium: optimalPut.premium,
-        callPremium: optimalCall.premium,
-        expirationDate: `${expirationDate}T00:00:00.000Z`,
-        volatility: quote.volatility || 0.2,
-      };
-
-      createdStrategy = await createCollarSpread(collarPayload, dbTarget);
-    }
+        executed: false,
+        note: `Modo cálculo/simulación. No se insertó ningún registro en ${dbTarget.toUpperCase()} para mantener sincronía 100% fiel con ${targetBroker}.`,
+      },
+    };
   }
 
   return {
-    message: brokerExecution && brokerExecution.executed
-      ? `Estrategia Zero-Cost Collar calibrada, persistida en ${dbTarget.toUpperCase()} y emitida a ${broker.toUpperCase()} (${brokerExecution.orders.length} órdenes bursátiles generadas).`
-      : `Estrategia Zero-Cost Collar calibrada, optimizada con F0 y persistida en ${dbTarget.toUpperCase()} exitosamente.`,
+    message: `Estrategia Zero-Cost Collar verificada en vivo en ${targetBroker}, confirmada con ${executedOrders.length} órdenes bursátiles activas y persistida en ${dbTarget.toUpperCase()}.`,
     analysis: analysisReport,
     strategy: createdStrategy,
     brokerExecution: brokerExecution || {
@@ -921,6 +1020,8 @@ export const recommendOption = async (params) => {
   if (!symbol) {
     throw boom.badRequest('El símbolo del activo (symbol) es requerido.');
   }
+
+  validateFutureExpirationDate(expirationDate);
 
   const optType = (type || optionType || 'PUT').toUpperCase();
   if (!['PUT', 'CALL'].includes(optType)) {

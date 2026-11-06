@@ -15,7 +15,7 @@ def clean_url_string(u):
     u = u.replace("{{baseUrl}}", f"{TUNNEL_URL}/api/v1")
     u = u.replace("{{symbol}}", "NVDA")
     u = u.replace("{{symbolAlpaca}}", "AAPL")
-    u = u.replace("{{expiration}}", "2026-10-16")
+    u = u.replace("{{expiration}}", "2026-12-18")
     u = u.replace("{{strategyIdMongo}}", "670d7e684fb65a25032b43a1")
     u = u.replace("{{strategyIdSupabase}}", "c0000000-0000-0000-0000-000000000001")
     u = u.replace("{{webullOrderId}}", "b058af6bc909445781016e62e3a98c06")
@@ -238,7 +238,7 @@ def build_complete_collection():
             },
             {
                 "key": "expiration",
-                "value": "2026-10-16",
+                "value": "2026-12-18",
                 "type": "string"
             }
         ],

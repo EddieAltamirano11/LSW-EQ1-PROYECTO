@@ -134,7 +134,16 @@ def cmd_orders(args):
     if ib and ib.isConnected():
         try:
             trades = ib.trades()
-            for t in trades:
+            open_trades = []
+            try:
+                open_trades = ib.reqAllOpenOrders()
+            except Exception:
+                pass
+            all_dict = {}
+            for t in (trades + open_trades):
+                key = str(t.order.orderId or t.order.permId)
+                all_dict[key] = t
+            for t in all_dict.values():
                 orders.append({
                     'id': str(t.order.orderId or t.order.permId),
                     'permId': str(t.order.permId),
@@ -227,6 +236,21 @@ def cmd_quote(args):
 def cmd_options_chain(args):
     symbol = args.symbol.upper()
     expiration_input = getattr(args, 'expiration', None) or '2026-10-16'
+
+    # Validar que la fecha de expiración no haya pasado
+    try:
+        clean_exp = expiration_input.split('T')[0]
+        exp_dt = datetime.strptime(clean_exp, '%Y-%m-%d')
+        if exp_dt.date() <= datetime.now().date():
+            print(json.dumps({
+                'success': False,
+                'broker': 'IBKR',
+                'symbol': symbol,
+                'error': f'La fecha de expiración {expiration_input} es inválida porque ya ha vencido o vence hoy. Las opciones requieren vencimiento futuro.'
+            }))
+            return
+    except ValueError:
+        pass
     
     # 1. Obtener precio spot
     spot = 220.0
@@ -338,6 +362,22 @@ def cmd_place_order(args):
 
                 order_id = str(trade.order.orderId or trade.order.permId or client_order_id)
                 status = trade.orderStatus.status.lower() if trade.orderStatus else 'submitted'
+                err_msgs = [entry.message for entry in trade.log if entry.message]
+
+                if status in ['cancelled', 'canceled', 'inactive', 'rejected']:
+                    ib.disconnect()
+                    err_txt = err_msgs[-1] if err_msgs else f"TWS canceló la orden con estado {status}"
+                    print(json.dumps({
+                        'success': False,
+                        'mode': 'ORDER_REJECTED',
+                        'orderId': order_id,
+                        'clientOrderId': client_order_id,
+                        'symbol': symbol,
+                        'instrumentType': 'EQUITY',
+                        'status': status,
+                        'error': f"Orden bursátil no admitida o cancelada por Interactive Brokers TWS ({status}): {err_txt}"
+                    }))
+                    return
 
                 ib.disconnect()
                 print(json.dumps({
@@ -392,6 +432,22 @@ def cmd_place_order(args):
 
                 order_id = str(trade.order.orderId or trade.order.permId or client_order_id)
                 status = trade.orderStatus.status.lower() if trade.orderStatus else 'submitted'
+                err_msgs = [entry.message for entry in trade.log if entry.message]
+
+                if status in ['cancelled', 'canceled', 'inactive', 'rejected']:
+                    ib.disconnect()
+                    err_txt = err_msgs[-1] if err_msgs else f"TWS canceló la orden con estado {status}"
+                    print(json.dumps({
+                        'success': False,
+                        'mode': 'ORDER_REJECTED',
+                        'orderId': order_id,
+                        'clientOrderId': client_order_id,
+                        'symbol': symbol,
+                        'instrumentType': 'EQUITY',
+                        'status': status,
+                        'error': f"Orden bursátil no admitida o cancelada por Interactive Brokers TWS ({status}): {err_txt}"
+                    }))
+                    return
 
                 ib.disconnect()
                 print(json.dumps({

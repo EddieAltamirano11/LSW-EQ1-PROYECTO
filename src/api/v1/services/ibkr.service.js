@@ -372,6 +372,12 @@ export const createIBKROrder = async (orderData) => {
   const bridgeRes = runBridge('place_order', bridgeArgs);
 
   if (bridgeRes && bridgeRes.success && bridgeRes.mode === 'LIVE_TWS_ORDER') {
+    const liveStatus = String(bridgeRes.status || 'submitted').toLowerCase();
+    if (['cancelled', 'canceled', 'rejected', 'inactive'].includes(liveStatus)) {
+      throw boom.badRequest(
+        `Orden no admitida o cancelada por Interactive Brokers TWS (${liveStatus}): ${bridgeRes.error || 'Contrato inválido o fuera de mercado'}`
+      );
+    }
     const liveOrder = {
       broker: 'IBKR',
       id: String(bridgeRes.orderId || bridgeRes.clientOrderId),
