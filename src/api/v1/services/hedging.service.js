@@ -822,21 +822,24 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
 
     // SI EL BROKER RECHAZÓ O CANCELÓ ALGUNA PATA: ABORTAR SIN PERSISTIR NADA EN LA BASE DE DATOS
     if (unverifiedOrFailedLegs.length > 0 || executionErrors.length > 0) {
+      const cleanBrokerMsg = (str) => String(str || '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/Orden (?:bursátil )?no admitida o cancelada por Interactive Brokers TWS \([^)]+\):\s*/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
       const issues = [
-        ...executionErrors.map((e) => `[${e.legRole}: ${e.error}]`),
-        ...unverifiedOrFailedLegs.map((f) => `[${f.legRole}: ${f.reason}]`),
+        ...executionErrors.map((e) => `[${e.legRole}]: Mensaje textual de ${targetBroker} (TWS): "${cleanBrokerMsg(e.error)}"`),
+        ...unverifiedOrFailedLegs.map((f) => `[${f.legRole}]: Mensaje textual de ${targetBroker} (TWS): "${cleanBrokerMsg(f.reason)}"`),
       ].join(' | ');
 
       throw boom.serverUnavailable(
-        `Falla de validación en vivo con ${targetBroker}: Las órdenes no fueron confirmadas activas por el broker.
-` +
-        `Diagnóstico detallado: ${issues}
-` +
+        `Falla de validación en vivo con ${targetBroker}. ` +
+        `${issues}. ` +
         `Por política estricta de fidelidad e integridad transaccional, NINGÚN dato fue insertado en la base de datos (${dbTarget.toUpperCase()}).`
       );
     }
 
-    // Si todas las órdenes fueron verificadas activas en el broker y autoPersist está activo, persistir en BD
     if (autoPersist) {
       const stockOrder = executedOrders.find((o) => o.legRole === 'UNDERLYING');
       const putOrder = executedOrders.find((o) => o.legRole === 'HEDGE_FLOOR');

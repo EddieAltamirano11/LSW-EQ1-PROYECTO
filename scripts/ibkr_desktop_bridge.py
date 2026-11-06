@@ -399,7 +399,7 @@ def cmd_place_order(args):
                         'symbol': symbol,
                         'instrumentType': 'EQUITY',
                         'status': status,
-                        'error': f"Orden bursátil no admitida o cancelada por Interactive Brokers TWS ({status}): {err_txt}"
+                        'error': err_txt
                     }))
                     return
 
@@ -479,7 +479,7 @@ def cmd_place_order(args):
                         'symbol': symbol,
                         'instrumentType': 'OPTION',
                         'status': status,
-                        'error': f"Orden bursátil no admitida o cancelada por Interactive Brokers TWS ({status}): {err_txt}"
+                        'error': err_txt
                     }))
                     return
 
