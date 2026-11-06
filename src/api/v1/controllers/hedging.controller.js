@@ -47,7 +47,7 @@ export const createCollarSpread = async (req, res, next) => {
 export const autoCalibrateCollar = async (req, res, next) => {
   try {
     const symbol = req.params.symbol || req.body.symbol;
-    const broker = req.body?.broker || req.query?.broker || req.broker;
+    const broker = req.broker || req.headers['x-broker-selection']?.toUpperCase() || req.query?.broker?.toUpperCase() || 'WEBULL';
     const executeOrdersRaw = req.body?.executeOrders ?? req.query?.executeOrders ?? req.body?.executeOnBroker ?? false;
     const executeOrders = executeOrdersRaw === true || executeOrdersRaw === 'true' || executeOrdersRaw === 1;
 
@@ -67,7 +67,7 @@ export const recommendOption = async (req, res, next) => {
   try {
     const symbol = req.params.symbol || req.query.symbol;
     const type = req.query.type || req.params.type || req.body?.type || 'PUT';
-    const broker = req.body?.broker || req.query?.broker || req.broker;
+    const broker = req.broker || req.headers['x-broker-selection']?.toUpperCase() || req.query?.broker?.toUpperCase() || 'WEBULL';
     const expirationDate = req.query.expiration || req.query.expirationDate || '2026-10-16';
     const moneyness = req.query.moneyness || 'OTM';
     const volatility = req.query.volatility ? Number(req.query.volatility) : undefined;

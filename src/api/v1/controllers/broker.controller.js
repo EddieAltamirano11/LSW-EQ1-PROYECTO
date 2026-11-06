@@ -1,8 +1,8 @@
 import * as BrokerService from '../services/broker.service.js';
 
-// Helper para extraer la selección de broker con resolución en cascada (body > query > header/middleware > default)
+// Helper unificado: El contexto institucional x-broker-selection es la autoridad rectora
 const resolveBroker = (req) => {
-  return req.body?.broker || req.query?.broker || req.broker || 'WEBULL';
+  return req.broker || req.headers['x-broker-selection']?.toUpperCase() || req.query?.broker?.toUpperCase() || 'WEBULL';
 };
 
 // Consulta de balance, poder de compra y estado de cuenta del broker
