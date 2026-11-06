@@ -68,7 +68,7 @@ export const recommendOption = async (req, res, next) => {
     const symbol = req.params.symbol || req.query.symbol;
     const type = req.query.type || req.params.type || req.body?.type || 'PUT';
     const broker = req.broker || req.headers['x-broker-selection']?.toUpperCase() || req.query?.broker?.toUpperCase() || 'WEBULL';
-    const expirationDate = req.query.expiration || req.query.expirationDate || '2026-10-16';
+    const expirationDate = req.query.expiration || req.query.expirationDate || '2026-12-18';
     const moneyness = req.query.moneyness || 'OTM';
     const volatility = req.query.volatility ? Number(req.query.volatility) : undefined;
 

@@ -120,3 +120,4 @@ for r in results:
 if failed:
     sys.exit(1)
 print("\nTodas las pruebas en Render operaron satisfactoriamente bajo la Arquitectura de Headers Unificada.")
+

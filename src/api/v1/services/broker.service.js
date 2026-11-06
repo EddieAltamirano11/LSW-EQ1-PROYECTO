@@ -192,7 +192,7 @@ export const getBrokerQuote = async (symbol, broker = 'WEBULL') => {
 /**
  * Consulta de cadena de opciones desde el broker seleccionado
  */
-export const getBrokerOptionsChain = async (symbol, expirationDate = '2026-10-16', broker = 'WEBULL') => {
+export const getBrokerOptionsChain = async (symbol, expirationDate = '2026-12-18', broker = 'WEBULL') => {
   const targetBroker = (broker || config.DEFAULT_BROKER || 'WEBULL').toUpperCase();
 
   if (targetBroker === 'WEBULL') {

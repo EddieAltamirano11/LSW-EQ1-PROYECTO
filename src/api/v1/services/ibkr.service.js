@@ -168,7 +168,7 @@ export const getIBKRQuote = async (symbol) => {
 /**
  * Consulta de cadena de opciones financieras desde Interactive Brokers
  */
-export const getIBKROptionsChain = async (symbol, expirationDate = '2026-10-16') => {
+export const getIBKROptionsChain = async (symbol, expirationDate = '2026-12-18') => {
   const ticker = symbol.toUpperCase();
 
   const bridgeRes = runBridge('options_chain', ['--symbol', ticker, '--expiration', expirationDate]);
@@ -349,16 +349,18 @@ export const createIBKROrder = async (orderData) => {
   if (instrumentType === 'OPTION') {
     let strike = strikePrice;
     let optType = optionType;
-    let expDate = expirationDate || '2026-10-16';
+    let expDate = expirationDate || '2026-12-18';
 
-    // Parsear contractSymbol OCC si está presente (ej. AAPL261016C00360000)
+    // Parsear contractSymbol OCC si está presente (ej. AAPL261218C00360000)
     if (contractSymbol && contractSymbol.length >= 18) {
       const match = contractSymbol.match(/^([A-Z]+)(\d{6})([CP])(\d{8})$/);
       if (match) {
-        optType = match[3] === 'C' ? 'CALL' : 'PUT';
-        strike = parseFloat(match[4]) / 1000;
-        const rawDate = match[2];
-        expDate = `20${rawDate.slice(0, 2)}-${rawDate.slice(2, 4)}-${rawDate.slice(4, 6)}`;
+        optType = optType || (match[3] === 'C' ? 'CALL' : 'PUT');
+        strike = strike || (parseFloat(match[4]) / 1000);
+        if (!expirationDate) {
+          const rawDate = match[2];
+          expDate = `20${rawDate.slice(0, 2)}-${rawDate.slice(2, 4)}-${rawDate.slice(4, 6)}`;
+        }
       }
     }
 

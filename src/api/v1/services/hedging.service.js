@@ -109,7 +109,7 @@ export const createProtectivePut = async (payload, dbTarget = 'mongodb') => {
     sharesCount = 100,
     putStrike,
     putPremium,
-    expirationDate = '2026-10-16T00:00:00.000Z',
+    expirationDate = '2026-12-18T00:00:00.000Z',
     volatility = 0.22,
   } = payload;
 
@@ -233,7 +233,7 @@ export const createCollarSpread = async (payload, dbTarget = 'mongodb') => {
     callStrike,
     putPremium = 6.5,
     callPremium = 6.6,
-    expirationDate = '2026-10-16T00:00:00.000Z',
+    expirationDate = '2026-12-18T00:00:00.000Z',
     volatility = 0.15,
   } = payload;
 
@@ -367,7 +367,7 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
     symbol,
     sharesCount = 10,
     portfolioId = 'PORT-01',
-    expirationDate = '2026-10-16',
+    expirationDate = '2026-12-18',
     autoPersist = true,
     broker = config.DEFAULT_BROKER || 'WEBULL',
     executeOrders = false,
@@ -522,12 +522,12 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
   // 5. Flujo transaccional seguro: Ejecución en broker ANTES de persistir en BD
   let createdStrategy = null;
   let brokerExecution = null;
+  const executedOrders = [];
+  const executionErrors = [];
   const shouldExecute = executeOrders === true || executeOrders === 'true' || params.executeOnBroker === true;
 
   if (shouldExecute) {
     const contracts = Number(params.contracts) || Math.max(1, Math.ceil(sharesCount / 100));
-    const executedOrders = [];
-    const executionErrors = [];
 
     if (targetBroker === 'WEBULL') {
       // 1. Pata Acciones Subyacentes (Compra en Webull OpenAPI)
@@ -1011,7 +1011,7 @@ export const recommendOption = async (params) => {
     symbol,
     type,
     optionType,
-    expirationDate = '2026-10-16',
+    expirationDate = '2026-12-18',
     broker = config.DEFAULT_BROKER || 'WEBULL',
     moneyness = 'OTM',
     volatility,

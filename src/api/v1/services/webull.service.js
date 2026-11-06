@@ -155,7 +155,7 @@ export const getWebullQuote = async (symbol) => {
 /**
  * Consulta de cadena de opciones desde Webull
  */
-export const getWebullOptionsChain = async (symbol, expirationDate = '2026-10-16') => {
+export const getWebullOptionsChain = async (symbol, expirationDate = '2026-12-18') => {
   const quote = await getWebullQuote(symbol);
   const spot = quote.lastPrice;
 
@@ -309,7 +309,7 @@ export const createWebullOrder = async (orderPayload) => {
   if (isOptionOrder) {
     const optType = (optionType || option_type || 'CALL').toUpperCase();
     const strike = strikePrice || strike_price || 230.0;
-    const expDate = expirationDate || expire_date || '2026-10-16';
+    const expDate = expirationDate || expire_date || '2026-12-18';
     const stockPrice = orderPayload.stockPrice || orderPayload.spotPrice || 221.30;
 
     const bridgeRes = runBridge('place_option', [

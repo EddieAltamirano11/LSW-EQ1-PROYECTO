@@ -235,7 +235,7 @@ def cmd_quote(args):
 
 def cmd_options_chain(args):
     symbol = args.symbol.upper()
-    expiration_input = getattr(args, 'expiration', None) or '2026-10-16'
+    expiration_input = getattr(args, 'expiration', None) or '2026-12-18'
 
     # Validar que la fecha de expiración no haya pasado
     try:
@@ -340,7 +340,7 @@ def cmd_place_order(args):
     instrument_type = getattr(args, 'instrument_type', 'EQUITY').upper()
     option_type = getattr(args, 'option_type', 'CALL').upper()
     strike_price = float(getattr(args, 'strike_price', 0.0) or 0.0)
-    expire_date = getattr(args, 'expire_date', '2026-10-16')
+    expire_date = getattr(args, 'expire_date', '2026-12-18')
     client_order_id = uuid.uuid4().hex
 
     ib = get_ib_connection()
@@ -414,9 +414,11 @@ def cmd_place_order(args):
 
                 exp_clean = expire_date.replace('-', '')
                 opt_right = 'C' if option_type == 'CALL' else 'P'
-                contract = Option(symbol, exp_clean, strike_price, opt_right, 'SMART', currency='USD')
+                contract = Option(symbol, exp_clean, strike_price, opt_right, 'SMART', multiplier='100', currency='USD')
                 try:
-                    ib.qualifyContracts(contract)
+                    qualified = ib.qualifyContracts(contract)
+                    if qualified:
+                        contract = qualified[0]
                 except Exception:
                     pass
 
