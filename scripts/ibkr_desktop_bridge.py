@@ -411,24 +411,21 @@ def cmd_place_order(args):
             if ib.isConnected():
                 ib.disconnect()
 
-    # Fallback de simulación en memoria (si TWS está en descanso)
-    sim_id = f"IBKR-{uuid.uuid4().hex[:12].upper()}"
+    # Si TWS no está conectado, reportar error explícito de túnel/socket no disponible
     print(json.dumps({
-        'success': True,
-        'mode': 'SIMULATED_TWS_FALLBACK',
-        'orderId': sim_id,
-        'clientOrderId': client_order_id,
-        'symbol': symbol,
-        'instrumentType': instrument_type,
-        'optionType': option_type if instrument_type == 'OPTION' else None,
-        'strikePrice': strike_price if instrument_type == 'OPTION' else None,
-        'expirationDate': expire_date if instrument_type == 'OPTION' else None,
-        'action': action,
-        'quantity': qty,
-        'price': price,
-        'status': 'submitted',
-        'account': ACCOUNT_ID
+        'success': False,
+        'mode': 'TUNNEL_UNAVAILABLE',
+        'error': f'Socket TCP no disponible. No fue posible conectar con Trader Workstation (TWS) en {TWS_HOST}:{TWS_PORT}. Compruebe que la PC host tenga TWS abierto y el túnel TCP activo.'
     }))
+
+
+def cmd_ping(args):
+    ib = get_ib_connection()
+    if ib and ib.isConnected():
+        ib.disconnect()
+        print(json.dumps({'success': True, 'connected': True, 'host': TWS_HOST, 'port': TWS_PORT}))
+    else:
+        print(json.dumps({'success': False, 'connected': False, 'host': TWS_HOST, 'port': TWS_PORT, 'error': f'Socket TCP cerrado. TWS no está disponible en {TWS_HOST}:{TWS_PORT}.'}))
 
 
 def cmd_cancel_order(args):
@@ -463,6 +460,7 @@ def main():
     subparsers.add_parser('account')
     subparsers.add_parser('positions')
     subparsers.add_parser('orders')
+    subparsers.add_parser('ping')
 
     p_quote = subparsers.add_parser('quote')
     p_quote.add_argument('--symbol', required=True)
@@ -491,6 +489,7 @@ def main():
         sys.exit(1)
 
     cmds = {
+        'ping': cmd_ping,
         'account': cmd_account,
         'positions': cmd_positions,
         'orders': cmd_orders,

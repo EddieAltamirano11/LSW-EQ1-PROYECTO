@@ -5,6 +5,7 @@ import { calculateBlackScholes } from './quant.service.js';
 import { getBrokerQuote, getBrokerOptionsChain, createBrokerOrder } from './broker.service.js';
 import { randomUUID } from 'crypto';
 import config from '../../../config/config.js';
+import { assertBrokerAndDatabasesReadiness } from './preflight.service.js';
 
 export const formatOccSymbol = (symbol, expirationDate, type, strike) => {
   const sym = String(symbol || '').toUpperCase().trim();
@@ -44,6 +45,10 @@ export const getStrategyById = async (id, dbTarget = 'mongodb') => {
 
 // ESTRUCTURACIÓN Y CREACIÓN DE PROTECTIVE PUT (F2 PARTE B)
 export const createProtectivePut = async (payload, dbTarget = 'mongodb') => {
+  const targetBroker = (payload.broker || config.DEFAULT_BROKER || 'WEBULL').toUpperCase();
+  if (targetBroker === 'IBKR') {
+    await assertBrokerAndDatabasesReadiness({ dbTarget, broker: 'IBKR' });
+  }
   const {
     portfolioId = 'PORT-01',
     symbol,
@@ -160,6 +165,10 @@ export const createProtectivePut = async (payload, dbTarget = 'mongodb') => {
 
 // ESTRUCTURACIÓN Y CREACIÓN DE ZERO-COST COLLAR SPREAD (F2 PARTE B)
 export const createCollarSpread = async (payload, dbTarget = 'mongodb') => {
+  const targetBroker = (payload.broker || config.DEFAULT_BROKER || 'WEBULL').toUpperCase();
+  if (targetBroker === 'IBKR') {
+    await assertBrokerAndDatabasesReadiness({ dbTarget, broker: 'IBKR' });
+  }
   const {
     portfolioId = 'PORT-01',
     symbol,
@@ -238,6 +247,8 @@ export const createCollarSpread = async (payload, dbTarget = 'mongodb') => {
         legId: `LEG-${symbol.toUpperCase()}-STOCK`,
         legRole: 'UNDERLYING',
         assetType: 'EQUITY',
+        contractSymbol: null,
+        brokerOrderId: payload.stockOrderId || null,
         quantity: count,
         entryPrice: S,
         delta: 1.0,
@@ -250,6 +261,7 @@ export const createCollarSpread = async (payload, dbTarget = 'mongodb') => {
         legRole: 'HEDGE_FLOOR',
         assetType: 'OPTION',
         contractSymbol: `${symbol.toUpperCase()}261016P${String(K_put * 1000).padStart(8, '0')}`,
+        brokerOrderId: payload.putOrderId || null,
         optionType: 'PUT',
         strike: K_put,
         expirationDate: new Date(expirationDate),
@@ -265,6 +277,7 @@ export const createCollarSpread = async (payload, dbTarget = 'mongodb') => {
         legRole: 'FINANCE_CEILING',
         assetType: 'OPTION',
         contractSymbol: `${symbol.toUpperCase()}261016C${String(K_call * 1000).padStart(8, '0')}`,
+        brokerOrderId: payload.callOrderId || null,
         optionType: 'CALL',
         strike: K_call,
         expirationDate: new Date(expirationDate),
@@ -310,6 +323,13 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
   }
 
   const ticker = symbol.toUpperCase();
+  const targetBroker = (broker || config.DEFAULT_BROKER || 'WEBULL').toUpperCase();
+
+  // 0. Pre-vuelo estricto de consistencia transaccional:
+  // Valida BDs y, si el broker es IBKR, verifica que el túnel TCP esté activo antes de calcular o persistir nada
+  if (targetBroker === 'IBKR' || autoPersist) {
+    await assertBrokerAndDatabasesReadiness({ dbTarget, broker: targetBroker });
+  }
 
   // 1. Obtener precio spot del broker
   const quote = await getBrokerQuote(ticker, broker);
@@ -442,31 +462,13 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
     };
   }
 
-  // 5. Persistencia directa en base de datos seleccionada (MongoDB Atlas o Supabase)
-  const collarPayload = {
-    portfolioId,
-    broker,
-    symbol: ticker,
-    companyName: quote.companyName || `${ticker} Corporation`,
-    spotPrice,
-    sharesCount,
-    putStrike: optimalPut.strike,
-    callStrike: optimalCall.strike,
-    putPremium: optimalPut.premium,
-    callPremium: optimalCall.premium,
-    expirationDate: `${expirationDate}T00:00:00.000Z`,
-    volatility: quote.volatility || 0.2,
-  };
-
-  const createdStrategy = await createCollarSpread(collarPayload, dbTarget);
-
-  // 6. Ejecución opcional de órdenes bursátiles en el Broker activo (Webull o Alpaca)
+  // 5. Flujo transaccional seguro: Ejecución en broker ANTES de persistir en BD
+  let createdStrategy = null;
   let brokerExecution = null;
   const shouldExecute = executeOrders === true || executeOrders === 'true' || params.executeOnBroker === true;
 
   if (shouldExecute) {
     const contracts = Number(params.contracts) || Math.max(1, Math.ceil(sharesCount / 100));
-    const targetBroker = (broker || config.DEFAULT_BROKER || 'WEBULL').toUpperCase();
     const executedOrders = [];
     const executionErrors = [];
 
@@ -702,26 +704,60 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
       errors: executionErrors.length > 0 ? executionErrors : undefined,
     };
 
-    // Vincular orderId de broker a las patas persistidas en BD
-    if (createdStrategy && createdStrategy.legs && executedOrders.length > 0) {
-      try {
-        const updatedLegs = createdStrategy.legs.map((leg) => {
-          const matched = executedOrders.find((eo) => eo.legRole === leg.legRole);
-          if (matched && matched.orderId) {
-            return typeof leg.toObject === 'function'
-              ? { ...leg.toObject(), brokerOrderId: matched.orderId }
-              : { ...leg, brokerOrderId: matched.orderId };
-          }
-          return leg;
-        });
+    // Si el broker es IBKR y ocurrió algún error o no se emitieron órdenes, ABORTAR sin persistir nada en BD
+    if (targetBroker === 'IBKR' && (executedOrders.length === 0 || executionErrors.length > 0)) {
+      const errSummary = executionErrors.map((e) => `${e.legRole}: ${e.error}`).join(' | ');
+      throw boom.serverUnavailable(
+        `Operación rechazada para Interactive Brokers (IBKR): Falla al emitir órdenes en TWS (${errSummary || 'Túnel o socket desconectado'}). ` +
+        `Por política estricta de consistencia e integridad transaccional, NO se insertó ningún cambio en la base de datos (${dbTarget.toUpperCase()}).`
+      );
+    }
 
-        const repo = getHedgingRepo(dbTarget);
-        const stratId = createdStrategy.id || createdStrategy._id;
-        await repo.update(stratId, { legs: updatedLegs });
-        createdStrategy.legs = updatedLegs;
-      } catch (updErr) {
-        console.warn(`[AutoCollar] Advertencia al vincular brokerOrderId en ${dbTarget}: ${updErr.message}`);
-      }
+    // Si se ejecutaron órdenes y autoPersist está activo, persistir la estrategia con los IDs reales ya asignados
+    if (autoPersist) {
+      const stockOrder = executedOrders.find((o) => o.legRole === 'UNDERLYING');
+      const putOrder = executedOrders.find((o) => o.legRole === 'HEDGE_FLOOR');
+      const callOrder = executedOrders.find((o) => o.legRole === 'FINANCE_CEILING');
+
+      const collarPayload = {
+        portfolioId,
+        broker: targetBroker,
+        symbol: ticker,
+        companyName: quote.companyName || `${ticker} Corporation`,
+        spotPrice,
+        sharesCount,
+        putStrike: optimalPut.strike,
+        callStrike: optimalCall.strike,
+        putPremium: optimalPut.premium,
+        callPremium: optimalCall.premium,
+        expirationDate: `${expirationDate}T00:00:00.000Z`,
+        volatility: quote.volatility || 0.2,
+        stockOrderId: stockOrder?.orderId || null,
+        putOrderId: putOrder?.orderId || null,
+        callOrderId: callOrder?.orderId || null,
+      };
+
+      createdStrategy = await createCollarSpread(collarPayload, dbTarget);
+    }
+  } else {
+    // Si no se ejecutan órdenes pero se solicita persistencia analítica
+    if (autoPersist) {
+      const collarPayload = {
+        portfolioId,
+        broker: targetBroker,
+        symbol: ticker,
+        companyName: quote.companyName || `${ticker} Corporation`,
+        spotPrice,
+        sharesCount,
+        putStrike: optimalPut.strike,
+        callStrike: optimalCall.strike,
+        putPremium: optimalPut.premium,
+        callPremium: optimalCall.premium,
+        expirationDate: `${expirationDate}T00:00:00.000Z`,
+        volatility: quote.volatility || 0.2,
+      };
+
+      createdStrategy = await createCollarSpread(collarPayload, dbTarget);
     }
   }
 
