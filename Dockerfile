@@ -1,4 +1,4 @@
-FROM node:20-slim
+FROM node:22-slim
 
 # Instalar Python 3 y herramientas de compilacion
 RUN apt-get update && apt-get install -y --no-install-recommends \

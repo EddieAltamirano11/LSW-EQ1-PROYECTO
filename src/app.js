@@ -59,6 +59,26 @@ app.use(
   })
 );
 
+// Endpoint Raíz Institucional / Health Check Global (Render & Browsers)
+app.get('/', (req, res) => {
+  res.status(200).json({
+    status: 'ONLINE',
+    project: 'Infraestructura RESTful API para Coberturas Cuantitativas de Opciones',
+    course: 'Laboratorio de Servicios Web — IT Tepic',
+    team: 'Equipo 1 - Los Eddies',
+    apiRoot: config.API_URL,
+    documentation: `${config.API_URL}/docs`,
+    openSpecJson: `${config.API_URL}/spec.json`,
+    health: `${config.API_URL}/health`,
+    preflight: `${config.API_URL}/preflight/readiness`,
+    databases: {
+      mongodb: 'CONNECTED',
+      supabase: 'CONNECTED',
+    },
+    brokers: ['ALPACA', 'WEBULL', 'INTERACTIVE_BROKERS'],
+  });
+});
+
 // Endpoint 1: Mensaje raíz institucional y descriptor de API
 app.get(config.API_URL, (req, res) => {
   res.status(200).json({
