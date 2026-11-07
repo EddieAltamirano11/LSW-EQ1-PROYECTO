@@ -1,1 +1,5 @@
-/*    /index.html   200
+# Proxy de API hacia el microservicio en Render
+/api/*  https://lsw-eq1-proyecto.onrender.com/api/:splat  200
+
+# Regla SPA para React Router / Vite
+/*      /index.html                                       200

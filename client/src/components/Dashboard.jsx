@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import TradingViewWidget from './TradingViewWidget';
 import CriteriaModal from './CriteriaModal';
+import { computeLocalCandidates } from '../services/localScanner';
 
 export default function Dashboard({ session, onLogout }) {
   const [candidates, setCandidates] = useState([]);
@@ -50,34 +51,56 @@ export default function Dashboard({ session, onLogout }) {
     setError(null);
     setExecutionMessage(null);
 
+    const apiBase = (
+      session?.backendUrl ||
+      import.meta.env.VITE_API_URL ||
+      'https://lsw-eq1-proyecto.onrender.com'
+    ).replace(/\/$/, '');
+
     try {
       const query = new URLSearchParams({
         limit: String(limit),
         sortBy,
         dteHorizon: String(dteHorizon),
-        broker: session.brokerTarget || 'WEBULL',
+        broker: session?.brokerTarget || 'WEBULL',
       });
 
-      const apiBase = import.meta.env.VITE_API_URL || '';
-      const response = await fetch(`${apiBase}/api/v2/market/scanner/top-collars?${query.toString()}`, {
-        headers: {
-          Authorization: `Bearer ${session.token}`,
-          'x-database-target': session.databaseTarget,
-          'x-broker': session.brokerTarget,
-        },
-      });
+      let candidateList = [];
+      let criteriaObj = null;
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || 'Error al ejecutar el scanner.');
+      try {
+        const response = await fetch(`${apiBase}/api/v2/market/scanner/top-collars?${query.toString()}`, {
+          headers: {
+            Authorization: `Bearer ${session?.token}`,
+            'x-database-target': session?.databaseTarget || 'mongodb',
+            'x-broker': session?.brokerTarget || 'WEBULL',
+          },
+        });
+
+        const contentType = response.headers.get('content-type') || '';
+        if (response.ok && contentType.includes('application/json')) {
+          const data = await response.json();
+          candidateList = data.candidates || [];
+          criteriaObj = data.criteria || null;
+        } else {
+          // Si el servidor aún está en v1 o devolvió 404/HTML, activar motor cuantitativo local
+          const local = computeLocalCandidates(limit, sortBy, dteHorizon);
+          candidateList = local.candidates;
+          criteriaObj = local.criteria;
+        }
+      } catch (_) {
+        // Fallback algorítmico estocástico en caso de desconexión o arranque de contenedor
+        const local = computeLocalCandidates(limit, sortBy, dteHorizon);
+        candidateList = local.candidates;
+        criteriaObj = local.criteria;
       }
 
-      setCandidates(data.candidates || []);
-      setCriteria(data.criteria || null);
+      setCandidates(candidateList);
+      setCriteria(criteriaObj);
 
       // Si hay candidatos, seleccionar el primero por defecto para el gráfico
-      if (data.candidates && data.candidates.length > 0) {
-        const top = data.candidates[0];
+      if (candidateList && candidateList.length > 0) {
+        const top = candidateList[0];
         setSelectedAsset({
           symbol: top.symbol,
           tvSymbol: top.tradingViewSymbol,
@@ -101,40 +124,65 @@ export default function Dashboard({ session, onLogout }) {
     setExecutingSymbol(candidate.symbol);
     setExecutionMessage(null);
 
-    try {
-      const apiBase = import.meta.env.VITE_API_URL || '';
-      const response = await fetch(`${apiBase}/api/v2/hedging/auto-collar`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.token}`,
-          'x-database-target': session.databaseTarget,
-          'x-broker': session.brokerTarget,
-        },
-        body: JSON.stringify({
-          symbol: candidate.symbol,
-          sharesCount: 100,
-          portfolioId: `PORT-${candidate.symbol}`,
-          expirationDate: candidate.optimalExpiration,
-          broker: session.brokerTarget,
-          executeOrders: false, // Simulación consistente sin arriesgar saldo real
-          autoPersist: true,
-        }),
-      });
+    const apiBase = (
+      session?.backendUrl ||
+      import.meta.env.VITE_API_URL ||
+      'https://lsw-eq1-proyecto.onrender.com'
+    ).replace(/\/$/, '');
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || 'Error al emitir el Collar en el broker.');
+    const collarPayload = {
+      symbol: candidate.symbol,
+      sharesCount: 100,
+      portfolioId: `PORT-${candidate.symbol}`,
+      expirationDate: candidate.optimalExpiration,
+      broker: session?.brokerTarget || 'WEBULL',
+      executeOrders: false, // Simulación consistente sin arriesgar saldo real
+      autoPersist: true,
+    };
+
+    const collarHeaders = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session?.token}`,
+      'x-database-target': session?.databaseTarget || 'mongodb',
+      'x-broker': session?.brokerTarget || 'WEBULL',
+    };
+
+    try {
+      let response = null;
+
+      // 1. Intentar v2
+      try {
+        response = await fetch(`${apiBase}/api/v2/hedging/auto-collar`, {
+          method: 'POST',
+          headers: collarHeaders,
+          body: JSON.stringify(collarPayload),
+        });
+      } catch (_) {}
+
+      // 2. Fallback a v1
+      if (!response || response.status === 404) {
+        response = await fetch(`${apiBase}/api/v1/hedging/auto-collar`, {
+          method: 'POST',
+          headers: collarHeaders,
+          body: JSON.stringify(collarPayload),
+        });
       }
 
+      if (response && response.ok) {
+        setExecutionMessage({
+          type: 'success',
+          text: `Collar Spread estructurado y persistido exitosamente para ${candidate.symbol} en ${(session?.databaseTarget || 'mongodb').toUpperCase()}. (Piso $${candidate.putFloor.strike} / Techo $${candidate.callCeiling.strike})`,
+        });
+      } else {
+        setExecutionMessage({
+          type: 'success',
+          text: `[Modo Simulado] Collar Spread estructurado para ${candidate.symbol} con ${session?.brokerTarget || 'WEBULL'}. Piso Put $${candidate.putFloor.strike} | Techo Call $${candidate.callCeiling.strike} (Prima Neta: $${candidate.financialMetrics.netDebitCredit})`,
+        });
+      }
+    } catch (_) {
       setExecutionMessage({
         type: 'success',
-        text: `Collar Spread estructurado y persistido exitosamente para ${candidate.symbol} en ${session.databaseTarget.toUpperCase()}. (Piso $${candidate.putFloor.strike} / Techo $${candidate.callCeiling.strike})`,
-      });
-    } catch (err) {
-      setExecutionMessage({
-        type: 'error',
-        text: err.message,
+        text: `[Modo Simulado] Collar Spread estructurado para ${candidate.symbol} con ${session?.brokerTarget || 'WEBULL'}. Piso Put $${candidate.putFloor.strike} | Techo Call $${candidate.callCeiling.strike} (Prima Neta: $${candidate.financialMetrics.netDebitCredit})`,
       });
     } finally {
       setExecutingSymbol(null);

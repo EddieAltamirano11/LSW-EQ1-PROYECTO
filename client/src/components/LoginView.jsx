@@ -1,51 +1,147 @@
 import React, { useState } from 'react';
-import { Database, ShieldCheck, TrendingUp, Lock, User, ArrowRight, Server, Globe } from 'lucide-react';
+import {
+  Database,
+  ShieldCheck,
+  TrendingUp,
+  Lock,
+  User,
+  ArrowRight,
+  Server,
+  Globe,
+  Settings,
+  AlertTriangle,
+  RefreshCw,
+  Zap,
+} from 'lucide-react';
+
+const getDefaultBackendUrl = () => {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('hedging_backend_url');
+    if (saved && saved.trim()) return saved.trim();
+
+    if (import.meta.env.VITE_API_URL) {
+      return import.meta.env.VITE_API_URL.replace(/\/$/, '');
+    }
+
+    const { hostname, port } = window.location;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      if (port === '3050') return ''; // Servido directamente por Express en /dashboard
+      return 'http://localhost:3050'; // Servidor Vite en desarrollo
+    }
+  }
+  // Valor por defecto en Cloudflare Pages u hosting externo
+  return 'https://lsw-eq1-proyecto.onrender.com';
+};
 
 export default function LoginView({ onLoginSuccess }) {
   const [username, setUsername] = useState('demo.trader');
   const [password, setPassword] = useState('demo1234');
   const [databaseTarget, setDatabaseTarget] = useState('mongodb');
   const [brokerTarget, setBrokerTarget] = useState('WEBULL');
+  const [backendUrl, setBackendUrl] = useState(getDefaultBackendUrl);
+  const [showServerSettings, setShowServerSettings] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const cleanBackendUrl = (url) => (url ? url.trim().replace(/\/$/, '') : '');
+
+  const handleSetUrlPreset = (preset) => {
+    setBackendUrl(preset);
+    try {
+      localStorage.setItem('hedging_backend_url', preset);
+    } catch (_) {}
+  };
+
+  const tryLoginEndpoint = async (url) => {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-database-target': databaseTarget,
+        'x-broker': brokerTarget,
+      },
+      body: JSON.stringify({
+        username: username.trim(),
+        password,
+        databaseTarget,
+      }),
+    });
+
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      const rawText = await res.text();
+      if (rawText.includes('<!DOCTYPE') || rawText.includes('<html')) {
+        const htmlErr = new Error(
+          'El host respondió con una página HTML en lugar de una API JSON. ' +
+          'Si estás en Cloudflare Pages, asegúrate de apuntar el Servidor Backend a https://lsw-eq1-proyecto.onrender.com'
+        );
+        htmlErr.isHtml = true;
+        throw htmlErr;
+      }
+      throw new Error(`Respuesta no JSON del servidor (código ${res.status}).`);
+    }
+
+    const data = await res.json();
+    return { ok: res.ok, status: res.status, data };
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
+    const base = cleanBackendUrl(backendUrl);
     try {
-      const apiBase = import.meta.env.VITE_API_URL || '';
-      const response = await fetch(`${apiBase}/api/v2/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-database-target': databaseTarget,
-          'x-broker': brokerTarget,
-        },
-        body: JSON.stringify({
-          username,
-          password,
-          databaseTarget,
-        }),
-      });
+      localStorage.setItem('hedging_backend_url', base);
+    } catch (_) {}
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || 'Error al autenticar en el microservicio.');
+    try {
+      let result = null;
+
+      // 1. Intentar endpoint oficial v2
+      try {
+        result = await tryLoginEndpoint(`${base}/api/v2/auth/login`);
+      } catch (err) {
+        if (err.isHtml) throw err;
+        // Si falló por red o 404, continuaremos con v1
       }
 
+      // 2. Fallback a v1 si v2 responde 404 o no respondió
+      if (!result || result.status === 404) {
+        result = await tryLoginEndpoint(`${base}/api/v1/auth/login`);
+      }
+
+      if (!result.ok) {
+        throw new Error(result.data?.message || 'Error al autenticar en el microservicio.');
+      }
+
+      const data = result.data;
       onLoginSuccess({
         token: data.token,
         user: data.user || { username, role: 'QUANT_TRADER' },
         databaseTarget,
         brokerTarget,
+        backendUrl: base,
       });
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Error de conexión con el backend.');
     } finally {
       setLoading(false);
     }
+  };
+
+  // Modo offline / presentación rápida sin bloqueo
+  const handleOfflineDemoLogin = () => {
+    const demoToken = 'demo-jwt-simulated-token-equipo1';
+    const base = cleanBackendUrl(backendUrl);
+    onLoginSuccess({
+      token: demoToken,
+      user: { userId: `usr-${username.toLowerCase()}`, username, role: 'QUANT_INVESTOR' },
+      databaseTarget,
+      brokerTarget,
+      backendUrl: base,
+      isOfflineDemo: true,
+    });
   };
 
   return (
@@ -68,8 +164,27 @@ export default function LoginView({ onLoginSuccess }) {
         </div>
 
         {error && (
-          <div className="mb-6 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-xs text-red-400">
-            {error}
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-300 space-y-2">
+            <div className="flex items-start gap-2 font-semibold">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-red-400 mt-0.5" />
+              <span>{error}</span>
+            </div>
+            <div className="pt-2 border-t border-red-500/20 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => handleSetUrlPreset('https://lsw-eq1-proyecto.onrender.com')}
+                className="text-[11px] text-indigo-300 hover:underline"
+              >
+                Apuntar a Render Cloud
+              </button>
+              <button
+                type="button"
+                onClick={handleOfflineDemoLogin}
+                className="text-[11px] font-medium bg-red-500/20 hover:bg-red-500/30 text-white px-2 py-1 rounded"
+              >
+                Acceso Rápido Demo
+              </button>
+            </div>
           </div>
         )}
 
@@ -185,6 +300,49 @@ export default function LoginView({ onLoginSuccess }) {
             </div>
           </div>
 
+          {/* Panel Desplegable de Ajustes de Servidor */}
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={() => setShowServerSettings(!showServerSettings)}
+              className="text-xs text-slate-400 hover:text-indigo-300 flex items-center gap-1.5 transition"
+            >
+              <Settings className="w-3.5 h-3.5" />
+              <span>{showServerSettings ? 'Ocultar ajustes de servidor' : 'Ajustes de Servidor Backend'}</span>
+            </button>
+
+            {showServerSettings && (
+              <div className="mt-3 p-3.5 bg-[#0b0f19] border border-slate-800 rounded-xl space-y-2.5 animate-in fade-in">
+                <label className="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider">
+                  URL del Microservicio Backend
+                </label>
+                <input
+                  type="text"
+                  value={backendUrl}
+                  onChange={(e) => setBackendUrl(e.target.value)}
+                  placeholder="https://lsw-eq1-proyecto.onrender.com"
+                  className="w-full bg-[#111827] border border-slate-700 rounded px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-indigo-500"
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleSetUrlPreset('https://lsw-eq1-proyecto.onrender.com')}
+                    className="flex-1 py-1 px-2 text-[10px] rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/20"
+                  >
+                    Render Cloud
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSetUrlPreset('http://localhost:3050')}
+                    className="flex-1 py-1 px-2 text-[10px] rounded bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700"
+                  >
+                    Local (3050)
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Botón de Envío */}
           <button
             type="submit"
@@ -192,7 +350,10 @@ export default function LoginView({ onLoginSuccess }) {
             className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 transition disabled:opacity-50"
           >
             {loading ? (
-              <span className="text-xs">Conectando al Microservicio...</span>
+              <div className="flex items-center gap-2">
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                <span className="text-xs">Conectando al Microservicio...</span>
+              </div>
             ) : (
               <>
                 <span className="text-sm">Acceder al Dashboard Cuantitativo</span>
