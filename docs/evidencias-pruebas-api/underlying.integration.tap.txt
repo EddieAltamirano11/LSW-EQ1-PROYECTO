@@ -1,0 +1,108 @@
+TAP version 13
+# POST /api/v1/underlyings 201 19.823 ms - 119
+# GET /api/v1/underlyings/AUDIT-01 200 1.791 ms - 119
+# PUT /api/v1/underlyings/AUDIT-01 200 1.060 ms - 119
+# DELETE /api/v1/underlyings/AUDIT-01 200 0.843 ms - 182
+# [API Error Detail]: Error: No se encontró el activo subyacente con ID 'AUDIT-01' en MONGODB.
+#     at Module.getUnderlyingById (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/services/underlying.service.js:13:16)
+#     at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+#     at async getUnderlyingById (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/underlying.controller.js:15:18) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 404,
+#     payload: {
+#       statusCode: 404,
+#       error: 'Not Found',
+#       message: "No se encontró el activo subyacente con ID 'AUDIT-01' en MONGODB."
+#     },
+#     headers: {}
+#   }
+# }
+# GET /api/v1/underlyings/AUDIT-01 404 2.534 ms - 221
+# Subtest: [integración] CRUD HTTP con repositorio en memoria para mongodb
+ok 1 - [integración] CRUD HTTP con repositorio en memoria para mongodb
+  ---
+  duration_ms: 542.8331
+  type: 'test'
+  ...
+# POST /api/v1/underlyings 201 0.571 ms - 120
+# GET /api/v1/underlyings/AUDIT-01 200 0.329 ms - 120
+# PUT /api/v1/underlyings/AUDIT-01 200 0.692 ms - 120
+# DELETE /api/v1/underlyings/AUDIT-01 200 0.546 ms - 183
+# [API Error Detail]: Error: No se encontró el activo subyacente con ID 'AUDIT-01' en SUPABASE.
+#     at Module.getUnderlyingById (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/services/underlying.service.js:13:16)
+#     at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+#     at async getUnderlyingById (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/underlying.controller.js:15:18) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 404,
+#     payload: {
+#       statusCode: 404,
+#       error: 'Not Found',
+#       message: "No se encontró el activo subyacente con ID 'AUDIT-01' en SUPABASE."
+#     },
+#     headers: {}
+#   }
+# }
+# GET /api/v1/underlyings/AUDIT-01 404 1.154 ms - 223
+# Subtest: [integración] CRUD HTTP con repositorio en memoria para supabase
+ok 2 - [integración] CRUD HTTP con repositorio en memoria para supabase
+  ---
+  duration_ms: 17.8318
+  type: 'test'
+  ...
+# [API Error Detail]: Error: Ya existe un subyacente registrado con el ticker 'AUDIT'.
+#     at Module.createUnderlying (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/services/underlying.service.js:31:16)
+#     at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+#     at async createUnderlying (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/underlying.controller.js:34:21) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 409,
+#     payload: {
+#       statusCode: 409,
+#       error: 'Conflict',
+#       message: "Ya existe un subyacente registrado con el ticker 'AUDIT'."
+#     },
+#     headers: {}
+#   }
+# }
+# POST /api/v1/underlyings 409 1.086 ms - 202
+# Subtest: [integración] duplicado devuelve 409 sin llamar a create
+ok 3 - [integración] duplicado devuelve 409 sin llamar a create
+  ---
+  duration_ms: 4.3168
+  type: 'test'
+  ...
+# [API Error Detail]: Error: Fallo sintético del repositorio
+#     at UnderlyingMongoRepository.<anonymous> (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/test/underlying.integration.test.js:48:77)
+#     at Object.apply (node:internal/test_runner/mock/mock:757:20)
+#     at Module.listUnderlyings (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/services/underlying.service.js:6:21)
+#     at getAllUnderlyings (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/underlying.controller.js:5:42)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+# GET /api/v1/underlyings 500 1.320 ms - 191
+# Subtest: [integración] fallo de repositorio llega al manejador de errores como 500
+ok 4 - [integración] fallo de repositorio llega al manejador de errores como 500
+  ---
+  duration_ms: 5.1681
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2516.234

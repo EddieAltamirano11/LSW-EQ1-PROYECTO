@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: [unitaria] CALL coincide con la referencia independiente 10.4506
+ok 1 - [unitaria] CALL coincide con la referencia independiente 10.4506
+  ---
+  duration_ms: 2.9121
+  type: 'test'
+  ...
+# Subtest: [unitaria] CALL y PUT cumplen paridad con tolerancia de redondeo
+ok 2 - [unitaria] CALL y PUT cumplen paridad con tolerancia de redondeo
+  ---
+  duration_ms: 0.6794
+  type: 'test'
+  ...
+# Subtest: [unitaria] el precio CALL aumenta con el precio del subyacente
+ok 3 - [unitaria] el precio CALL aumenta con el precio del subyacente
+  ---
+  duration_ms: 0.3544
+  type: 'test'
+  ...
+# Subtest: [unitaria] volatilidad implícita recupera el 20 por ciento de una referencia
+ok 4 - [unitaria] volatilidad implícita recupera el 20 por ciento de una referencia
+  ---
+  duration_ms: 0.7366
+  type: 'test'
+  ...
+# Subtest: [unitaria] collar limita pérdidas y ganancias en tres escenarios
+ok 5 - [unitaria] collar limita pérdidas y ganancias en tres escenarios
+  ---
+  duration_ms: 3.4285
+  type: 'test'
+  ...
+# Subtest: [unitaria] validador normaliza sin modificar el objeto original
+ok 6 - [unitaria] validador normaliza sin modificar el objeto original
+  ---
+  duration_ms: 2.5412
+  type: 'test'
+  ...
+# Subtest: [unitaria] controlador aislado devuelve 200 mediante mocks de respuesta
+ok 7 - [unitaria] controlador aislado devuelve 200 mediante mocks de respuesta
+  ---
+  duration_ms: 1.677
+  type: 'test'
+  ...
+# Subtest: [unitaria] controlador deriva el error a next sin responder éxito
+ok 8 - [unitaria] controlador deriva el error a next sin responder éxito
+  ---
+  duration_ms: 1.107
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 300.0419

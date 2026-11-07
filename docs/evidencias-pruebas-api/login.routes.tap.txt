@@ -1,0 +1,49 @@
+TAP version 13
+# GET /login 200 6.889 ms - 3901
+# Subtest: publica /login sin token con el prefijo configurado
+ok 1 - publica /login sin token con el prefijo configurado
+  ---
+  duration_ms: 1158.8415
+  type: 'test'
+  ...
+# GET /login/assets/login.css 200 3.395 ms - 11273
+# GET /login/assets/login.js 200 1.805 ms - 5753
+# GET /login/assets/investment-charts.png 200 1.090 ms - 1584127
+# GET /login/assets/index.html 404 3.303 ms - 162
+# Subtest: publica CSS, JavaScript e imagen, sin exponer la plantilla como recurso
+ok 2 - publica CSS, JavaScript e imagen, sin exponer la plantilla como recurso
+  ---
+  duration_ms: 45.735
+  type: 'test'
+  ...
+# GET /api/v1 200 1.000 ms - 389
+# GET /api/v1/docs 200 3.785 ms - 1039
+# GET /api/v1/spec.json 200 42.629 ms - 37946
+# Subtest: conserva el descriptor, Scalar y el contrato JSON de la API
+ok 3 - conserva el descriptor, Scalar y el contrato JSON de la API
+  ---
+  duration_ms: 59.4381
+  type: 'test'
+  ...
+# Subtest: respeta un prefijo alternativo para la página y el flujo de sesión
+ok 4 - respeta un prefijo alternativo para la página y el flujo de sesión
+  ---
+  duration_ms: 1281.4151
+  type: 'test'
+  ...
+# GET /login 200 1.232 ms - 3923
+# Subtest: escapa el prefijo de API al insertarlo en un atributo HTML
+ok 5 - escapa el prefijo de API al insertarlo en un atributo HTML
+  ---
+  duration_ms: 6.7176
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3146.0803

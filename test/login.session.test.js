@@ -17,8 +17,8 @@ for (const database of ['mongodb', 'supabase']) {
   test(`login y sesión conservan ${database} desde el JWT sin sobrescribir el destino`, async () => {
     const response = await login(database);
     assert.equal(response.status, 200);
-    // El middleware corre antes de leer el destino del cuerpo del login.
-    assert.equal(response.headers.get('x-active-database'), 'mongodb');
+    // El middleware también reconoce databaseTarget en el cuerpo del login.
+    assert.equal(response.headers.get('x-active-database'), database);
     const body = await response.json();
     assert.equal(body.activeDatabase, database);
     assert.equal(typeof body.token, 'string');

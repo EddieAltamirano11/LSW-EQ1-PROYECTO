@@ -1,0 +1,598 @@
+{
+  "startedAt": "2026-11-07T05:18:28.427Z",
+  "finishedAt": "2026-11-07T05:18:44.210Z",
+  "environment": {
+    "node": "v24.14.1",
+    "platform": "win32",
+    "release": "10.0.26300",
+    "architecture": "x64",
+    "cpuModel": "11th Gen Intel(R) Core(TM) i5-11300H @ 3.10GHz",
+    "logicalCpus": 8,
+    "systemMemoryGiB": 15.788383483886719,
+    "target": "http://127.0.0.1:53064",
+    "apiBase": "/api/v1",
+    "mode": "local sin conexiones a bases ni operaciones bursátiles"
+  },
+  "suites": [
+    {
+      "file": "test/api.contract-functional.test.js",
+      "exitCode": 0,
+      "passed": 10,
+      "failed": 0,
+      "cases": [
+        {
+          "name": "[contrato] las referencias internas del OpenAPI publicado se resuelven",
+          "passed": true
+        },
+        {
+          "name": "[contrato] respuesta Black Scholes cumple los campos y tipos del consumidor",
+          "passed": true
+        },
+        {
+          "name": "[contrato] error de entrada cumple el contrato de error y el estado documentado",
+          "passed": true
+        },
+        {
+          "name": "[funcional] cliente inicia sesión confirma contexto y calcula precio",
+          "passed": true
+        },
+        {
+          "name": "[seguridad] rechaza JWT con expirado",
+          "passed": true
+        },
+        {
+          "name": "[seguridad] rechaza JWT con firma incorrecta",
+          "passed": true
+        },
+        {
+          "name": "[seguridad] rechaza JWT con algoritmo none",
+          "passed": true
+        },
+        {
+          "name": "[seguridad] rechaza objeto de inyección en parámetro numérico",
+          "passed": true
+        },
+        {
+          "name": "[seguridad] JSON truncado produce 400 sin exponer stack",
+          "passed": true
+        },
+        {
+          "name": "[smoke] health documentación y cálculo responden con contenido esperado",
+          "passed": true
+        }
+      ],
+      "logFile": "api.contract-functional.tap.txt",
+      "error": null
+    },
+    {
+      "file": "test/black-scholes.validation.test.js",
+      "exitCode": 0,
+      "passed": 22,
+      "failed": 0,
+      "cases": [
+        {
+          "name": "conserva exactamente el PUT y sus valores predeterminados en otro prefijo",
+          "passed": true
+        },
+        {
+          "name": "conserva exactamente el CALL explícito y sus cinco griegas",
+          "passed": true
+        },
+        {
+          "name": "conserva cadenas numéricas, minúsculas y tolerancia de metadatos adicionales",
+          "passed": true
+        },
+        {
+          "name": "admite tasas cero y negativas finitas con resultados representables",
+          "passed": true
+        },
+        {
+          "name": "rechaza cuerpos que no sean objetos de parámetros",
+          "passed": true
+        },
+        {
+          "name": "rechaza la ausencia de spotPrice",
+          "passed": true
+        },
+        {
+          "name": "rechaza la ausencia de strikePrice",
+          "passed": true
+        },
+        {
+          "name": "rechaza la ausencia de timeToExpirationYears",
+          "passed": true
+        },
+        {
+          "name": "rechaza valores no numéricos y coerciones inválidas en spotPrice",
+          "passed": true
+        },
+        {
+          "name": "rechaza valores no numéricos y coerciones inválidas en strikePrice",
+          "passed": true
+        },
+        {
+          "name": "rechaza valores no numéricos y coerciones inválidas en timeToExpirationYears",
+          "passed": true
+        },
+        {
+          "name": "rechaza valores no numéricos y coerciones inválidas en volatility",
+          "passed": true
+        },
+        {
+          "name": "rechaza valores no numéricos y coerciones inválidas en riskFreeRate",
+          "passed": true
+        },
+        {
+          "name": "rechaza cero y negativos en spotPrice",
+          "passed": true
+        },
+        {
+          "name": "rechaza cero y negativos en strikePrice",
+          "passed": true
+        },
+        {
+          "name": "rechaza cero y negativos en timeToExpirationYears",
+          "passed": true
+        },
+        {
+          "name": "rechaza cero y negativos en volatility",
+          "passed": true
+        },
+        {
+          "name": "rechaza números JSON que desbordan a infinito",
+          "passed": true
+        },
+        {
+          "name": "rechaza optionType nulo, no textual o desconocido con un error de entrada",
+          "passed": true
+        },
+        {
+          "name": "rechaza resultados no finitos en lugar de responder cálculos null",
+          "passed": true
+        },
+        {
+          "name": "conserva la respuesta existente de volatilidad implícita",
+          "passed": true
+        },
+        {
+          "name": "publica el contrato Black-Scholes con sus valores predeterminados y error 400",
+          "passed": true
+        }
+      ],
+      "logFile": "black-scholes.validation.tap.txt",
+      "error": null
+    },
+    {
+      "file": "test/context.unit.test.js",
+      "exitCode": 0,
+      "passed": 6,
+      "failed": 0,
+      "cases": [
+        {
+          "name": "[unitaria] encabezado de BD prevalece sobre JWT query y cuerpo",
+          "passed": true
+        },
+        {
+          "name": "[unitaria] JWT selecciona BD cuando el encabezado es inválido",
+          "passed": true
+        },
+        {
+          "name": "[unitaria] sin selección válida se usa MongoDB",
+          "passed": true
+        },
+        {
+          "name": "[unitaria] encabezado de broker prevalece sobre query y cuerpo",
+          "passed": true
+        },
+        {
+          "name": "[unitaria] middleware verifica un JWT válido sin consultas externas",
+          "passed": true
+        },
+        {
+          "name": "[unitaria] middleware rechaza un JWT con firma incorrecta",
+          "passed": true
+        }
+      ],
+      "logFile": "context.unit.tap.txt",
+      "error": null
+    },
+    {
+      "file": "test/login.routes.test.js",
+      "exitCode": 0,
+      "passed": 5,
+      "failed": 0,
+      "cases": [
+        {
+          "name": "publica /login sin token con el prefijo configurado",
+          "passed": true
+        },
+        {
+          "name": "publica CSS, JavaScript e imagen, sin exponer la plantilla como recurso",
+          "passed": true
+        },
+        {
+          "name": "conserva el descriptor, Scalar y el contrato JSON de la API",
+          "passed": true
+        },
+        {
+          "name": "respeta un prefijo alternativo para la página y el flujo de sesión",
+          "passed": true
+        },
+        {
+          "name": "escapa el prefijo de API al insertarlo en un atributo HTML",
+          "passed": true
+        }
+      ],
+      "logFile": "login.routes.tap.txt",
+      "error": null
+    },
+    {
+      "file": "test/login.session.test.js",
+      "exitCode": 0,
+      "passed": 5,
+      "failed": 0,
+      "cases": [
+        {
+          "name": "login y sesión conservan mongodb desde el JWT sin sobrescribir el destino",
+          "passed": true
+        },
+        {
+          "name": "login y sesión conservan supabase desde el JWT sin sobrescribir el destino",
+          "passed": true
+        },
+        {
+          "name": "los clientes existentes pueden sobrescribir el JWT con un encabezado válido",
+          "passed": true
+        },
+        {
+          "name": "conserva MongoDB y el acceso anónimo predeterminados de la API",
+          "passed": true
+        },
+        {
+          "name": "rechaza un Bearer inválido sin devolver un usuario confirmado",
+          "passed": true
+        }
+      ],
+      "logFile": "login.session.tap.txt",
+      "error": null
+    },
+    {
+      "file": "test/quant.unit.test.js",
+      "exitCode": 0,
+      "passed": 8,
+      "failed": 0,
+      "cases": [
+        {
+          "name": "[unitaria] CALL coincide con la referencia independiente 10.4506",
+          "passed": true
+        },
+        {
+          "name": "[unitaria] CALL y PUT cumplen paridad con tolerancia de redondeo",
+          "passed": true
+        },
+        {
+          "name": "[unitaria] el precio CALL aumenta con el precio del subyacente",
+          "passed": true
+        },
+        {
+          "name": "[unitaria] volatilidad implícita recupera el 20 por ciento de una referencia",
+          "passed": true
+        },
+        {
+          "name": "[unitaria] collar limita pérdidas y ganancias en tres escenarios",
+          "passed": true
+        },
+        {
+          "name": "[unitaria] validador normaliza sin modificar el objeto original",
+          "passed": true
+        },
+        {
+          "name": "[unitaria] controlador aislado devuelve 200 mediante mocks de respuesta",
+          "passed": true
+        },
+        {
+          "name": "[unitaria] controlador deriva el error a next sin responder éxito",
+          "passed": true
+        }
+      ],
+      "logFile": "quant.unit.tap.txt",
+      "error": null
+    },
+    {
+      "file": "test/underlying.integration.test.js",
+      "exitCode": 0,
+      "passed": 4,
+      "failed": 0,
+      "cases": [
+        {
+          "name": "[integración] CRUD HTTP con repositorio en memoria para mongodb",
+          "passed": true
+        },
+        {
+          "name": "[integración] CRUD HTTP con repositorio en memoria para supabase",
+          "passed": true
+        },
+        {
+          "name": "[integración] duplicado devuelve 409 sin llamar a create",
+          "passed": true
+        },
+        {
+          "name": "[integración] fallo de repositorio llega al manejador de errores como 500",
+          "passed": true
+        }
+      ],
+      "logFile": "underlying.integration.tap.txt",
+      "error": null
+    }
+  ],
+  "totals": {
+    "passed": 60,
+    "failed": 0
+  },
+  "smoke": [
+    {
+      "endpoint": "/api/v1/health",
+      "status": 200,
+      "elapsedMs": 86.22399999999834,
+      "passed": true
+    },
+    {
+      "endpoint": "/api/v1/spec.json",
+      "status": 200,
+      "elapsedMs": 34.3184999999994,
+      "passed": true
+    },
+    {
+      "endpoint": "/api/v1/docs",
+      "status": 200,
+      "elapsedMs": 7.688199999998687,
+      "passed": true
+    },
+    {
+      "endpoint": "/api/v1/quant/black-scholes",
+      "status": 200,
+      "elapsedMs": 27.049199999999473,
+      "passed": true,
+      "response": {
+        "message": "Valuación analítica Black-Scholes y Griegas calculadas.",
+        "spotPrice": 100,
+        "strikePrice": 100,
+        "timeToExpirationYears": 1,
+        "riskFreeRate": 0.045,
+        "volatility": 0.2,
+        "optionType": "PUT",
+        "theoreticalPrice": 5.7858,
+        "greeks": {
+          "delta": -0.3726,
+          "gamma": 0.018921,
+          "theta": -0.0051,
+          "vega": 0.3784,
+          "rho": -0.4304
+        }
+      }
+    }
+  ],
+  "load": [
+    {
+      "concurrency": 1,
+      "requests": 40,
+      "completed": 40,
+      "errors": 0,
+      "elapsedMs": 89.27369999999974,
+      "requestsPerSecond": 448.0602909927573,
+      "p50Ms": 2.1450000000004366,
+      "p95Ms": 2.7939000000005763,
+      "p99Ms": 2.8968000000004395,
+      "maxMs": 2.8968000000004395,
+      "serverRssMiB": 100.90625,
+      "serverCpuMs": 16,
+      "passed": true
+    },
+    {
+      "concurrency": 5,
+      "requests": 100,
+      "completed": 100,
+      "errors": 0,
+      "elapsedMs": 148.26989999999932,
+      "requestsPerSecond": 674.44572364317,
+      "p50Ms": 6.600000000000364,
+      "p95Ms": 12.175300000000789,
+      "p99Ms": 13.180200000000696,
+      "maxMs": 13.674700000001394,
+      "serverRssMiB": 100.97265625,
+      "serverCpuMs": 93,
+      "passed": true
+    },
+    {
+      "concurrency": 20,
+      "requests": 400,
+      "completed": 400,
+      "errors": 0,
+      "elapsedMs": 512.3155000000006,
+      "requestsPerSecond": 780.7688816754511,
+      "p50Ms": 23.797300000000178,
+      "p95Ms": 45.60059999999976,
+      "p99Ms": 57.554700000000594,
+      "maxMs": 58.4471999999987,
+      "serverRssMiB": 109.53515625,
+      "serverCpuMs": 453,
+      "passed": true
+    },
+    {
+      "concurrency": 50,
+      "requests": 500,
+      "completed": 500,
+      "errors": 0,
+      "elapsedMs": 527.5967,
+      "requestsPerSecond": 947.6935697285445,
+      "p50Ms": 46.989700000000084,
+      "p95Ms": 88.15920000000006,
+      "p99Ms": 91.79609999999957,
+      "maxMs": 104.39760000000024,
+      "serverRssMiB": 110.796875,
+      "serverCpuMs": 312,
+      "passed": true
+    },
+    {
+      "concurrency": 100,
+      "requests": 1000,
+      "completed": 1000,
+      "errors": 0,
+      "elapsedMs": 1032.2713999999996,
+      "requestsPerSecond": 968.7374851226143,
+      "p50Ms": 93.28009999999995,
+      "p95Ms": 204.59779999999955,
+      "p99Ms": 223.60410000000047,
+      "maxMs": 228.22869999999966,
+      "serverRssMiB": 112.35546875,
+      "serverCpuMs": 813,
+      "passed": true
+    }
+  ],
+  "synthetic": [
+    {
+      "cycle": 1,
+      "timestamp": "2026-11-07T05:18:42.882Z",
+      "healthStatus": 200,
+      "sessionStatus": 200,
+      "calculationStatus": 200,
+      "activeDatabase": "supabase",
+      "elapsedMs": 19.612199999999575,
+      "uptimeSeconds": 3.7364167,
+      "rssMiB": 112.609375,
+      "passed": true
+    },
+    {
+      "cycle": 2,
+      "timestamp": "2026-11-07T05:18:43.150Z",
+      "healthStatus": 200,
+      "sessionStatus": 200,
+      "calculationStatus": 200,
+      "activeDatabase": "supabase",
+      "elapsedMs": 9.490300000001298,
+      "uptimeSeconds": 4.0133331,
+      "rssMiB": 112.67578125,
+      "passed": true
+    },
+    {
+      "cycle": 3,
+      "timestamp": "2026-11-07T05:18:43.416Z",
+      "healthStatus": 200,
+      "sessionStatus": 200,
+      "calculationStatus": 200,
+      "activeDatabase": "supabase",
+      "elapsedMs": 8.948099999999613,
+      "uptimeSeconds": 4.2797648,
+      "rssMiB": 112.6953125,
+      "passed": true
+    },
+    {
+      "cycle": 4,
+      "timestamp": "2026-11-07T05:18:43.680Z",
+      "healthStatus": 200,
+      "sessionStatus": 200,
+      "calculationStatus": 200,
+      "activeDatabase": "supabase",
+      "elapsedMs": 8.652899999999136,
+      "uptimeSeconds": 4.5443864,
+      "rssMiB": 112.6953125,
+      "passed": true
+    },
+    {
+      "cycle": 5,
+      "timestamp": "2026-11-07T05:18:43.945Z",
+      "healthStatus": 200,
+      "sessionStatus": 200,
+      "calculationStatus": 200,
+      "activeDatabase": "supabase",
+      "elapsedMs": 7.805900000001202,
+      "uptimeSeconds": 4.8091878,
+      "rssMiB": 112.7109375,
+      "passed": true
+    }
+  ],
+  "findings": [
+    {
+      "id": "H01",
+      "category": "Seguridad",
+      "observation": "La sesión anónima devuelve AUTHENTICATED",
+      "status": 200,
+      "evidence": {
+        "user": {
+          "role": "ANONYMOUS"
+        },
+        "activeDatabase": "mongodb",
+        "status": "AUTHENTICATED"
+      },
+      "confirmed": true
+    },
+    {
+      "id": "H02",
+      "category": "Seguridad",
+      "observation": "El login de demostración acepta credenciales arbitrarias no vacías",
+      "status": 200,
+      "evidence": {
+        "tokenIssued": true,
+        "activeDatabase": "mongodb"
+      },
+      "confirmed": true
+    },
+    {
+      "id": "H03",
+      "category": "Monitoreo",
+      "observation": "La raíz anuncia ambas BD conectadas sin abrir conexiones durante esta ejecución",
+      "status": 200,
+      "evidence": {
+        "mongodb": "CONNECTED",
+        "supabase": "CONNECTED"
+      },
+      "confirmed": true
+    },
+    {
+      "id": "H04",
+      "category": "Monitoreo",
+      "observation": "La ruta de readiness anunciada no está implementada",
+      "status": 404,
+      "evidence": {
+        "advertised": "/api/v1/preflight/readiness"
+      },
+      "confirmed": true
+    },
+    {
+      "id": "H05",
+      "category": "Seguridad",
+      "observation": "CORS permite cualquier origen",
+      "status": 200,
+      "evidence": {
+        "allowOrigin": "*"
+      },
+      "confirmed": true
+    },
+    {
+      "id": "H06",
+      "category": "Analítica",
+      "observation": "No se observó limitación de tasa en la carga local de Black Scholes",
+      "evidence": {
+        "requests": 2040,
+        "errors": 0,
+        "sourceReview": "No existe middleware de rate limiting en src/app.js ni dependencia en package.json"
+      },
+      "confirmed": true
+    }
+  ],
+  "sourceHashes": {
+    "src/app.js": "67a59e312644d6674786bfaa6cbd91c145987b7469b9e0b6633eee8619f10e22",
+    "src/api/v1/routes/index.js": "e15f1fcdafe5e1a7b2082cd2a1880b97d8ffd89edd9d1b8df7be42fc987679cf",
+    "src/middlewares/auth.middleware.js": "9f26a32fee602d292206cf600ea7e84750f62ee0410e45b6485d955d50c427f2",
+    "src/middlewares/databaseContext.middleware.js": "12983966a01b0020780235cf629c5954ab5db6f50168a8125d4b657b50529226",
+    "src/api/v1/services/auth.service.js": "9f6ad64a84624ff8314a82f98ddd1d31a5155f03a38ebebef5e59617aa305045",
+    "src/api/v1/services/quant.service.js": "64581694a0a37a39cd1d78170d3666cd46d6a5edbc12c0b77638525b0a3c505f",
+    "test/api.contract-functional.test.js": "7438c84ec66775cbe4af36aa00a9f199e5472ae33a3bacdd45e0352f9fa5af92",
+    "test/black-scholes.validation.test.js": "d3e3cb02f8d5a9c996a45f4bab0967b4935e9c59adb3818ba984b683e449b10b",
+    "test/context.unit.test.js": "304f1e7bb1fe4aecb46d16355913d80ee370e64fab4f22bd9bfae37bb534adbd",
+    "test/login.routes.test.js": "d9d6f6f217c74f0603633e4bcd6c73658ab80256bc45eca8528bbd8e460eb2fb",
+    "test/login.session.test.js": "5f48e4bf8d3be214c4727062bee7ceda0179deb46b75df92d7b20a9815f3de6f",
+    "test/quant.unit.test.js": "740eb801d6b9cdff9aa3a4d0d0a083f4f19cf9565bc12883601c9f6785894632",
+    "test/underlying.integration.test.js": "30318647c03258c2e089b268219fdced9fdff87e2f717c7235d202225708bf3e"
+  }
+}

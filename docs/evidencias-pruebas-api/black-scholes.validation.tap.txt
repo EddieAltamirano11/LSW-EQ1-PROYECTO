@@ -1,0 +1,2275 @@
+TAP version 13
+# POST /pruebas/v2/quant/black-scholes 200 16.070 ms - 302
+# Subtest: conserva exactamente el PUT y sus valores predeterminados en otro prefijo
+ok 1 - conserva exactamente el PUT y sus valores predeterminados en otro prefijo
+  ---
+  duration_ms: 678.4259
+  type: 'test'
+  ...
+# POST /pruebas/v2/quant/black-scholes 200 0.856 ms - 301
+# Subtest: conserva exactamente el CALL explícito y sus cinco griegas
+ok 2 - conserva exactamente el CALL explícito y sus cinco griegas
+  ---
+  duration_ms: 6.018
+  type: 'test'
+  ...
+# POST /pruebas/v2/quant/black-scholes 200 0.719 ms - 302
+# POST /pruebas/v2/quant/black-scholes 200 0.400 ms - 301
+# Subtest: conserva cadenas numéricas, minúsculas y tolerancia de metadatos adicionales
+ok 3 - conserva cadenas numéricas, minúsculas y tolerancia de metadatos adicionales
+  ---
+  duration_ms: 5.9917
+  type: 'test'
+  ...
+# POST /pruebas/v2/quant/black-scholes 200 0.425 ms - 297
+# POST /pruebas/v2/quant/black-scholes 200 0.399 ms - 302
+# Subtest: admite tasas cero y negativas finitas con resultados representables
+ok 4 - admite tasas cero y negativas finitas con resultados representables
+  ---
+  duration_ms: 5.5693
+  type: 'test'
+  ...
+# [API Error Detail]: Error: El cuerpo debe ser un objeto JSON.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:8:16)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'El cuerpo debe ser un objeto JSON.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 2.224 ms - 194
+# [API Error Detail]: Error: spotPrice es obligatorio.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:16:20)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'spotPrice es obligatorio.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.819 ms - 185
+# Subtest: rechaza cuerpos que no sean objetos de parámetros
+ok 5 - rechaza cuerpos que no sean objetos de parámetros
+  ---
+  duration_ms: 9.1286
+  type: 'test'
+  ...
+# [API Error Detail]: Error: spotPrice es obligatorio.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:16:20)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'spotPrice es obligatorio.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.863 ms - 185
+# Subtest: rechaza la ausencia de spotPrice
+ok 6 - rechaza la ausencia de spotPrice
+  ---
+  duration_ms: 3.7656
+  type: 'test'
+  ...
+# [API Error Detail]: Error: strikePrice es obligatorio.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:16:20)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'strikePrice es obligatorio.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 1.084 ms - 187
+# Subtest: rechaza la ausencia de strikePrice
+ok 7 - rechaza la ausencia de strikePrice
+  ---
+  duration_ms: 4.5303
+  type: 'test'
+  ...
+# [API Error Detail]: Error: timeToExpirationYears es obligatorio.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:16:20)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'timeToExpirationYears es obligatorio.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.696 ms - 197
+# Subtest: rechaza la ausencia de timeToExpirationYears
+ok 8 - rechaza la ausencia de timeToExpirationYears
+  ---
+  duration_ms: 4.0801
+  type: 'test'
+  ...
+# [API Error Detail]: Error: spotPrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'spotPrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.843 ms - 197
+# [API Error Detail]: Error: spotPrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'spotPrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.602 ms - 197
+# [API Error Detail]: Error: spotPrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'spotPrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.871 ms - 197
+# [API Error Detail]: Error: spotPrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'spotPrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.869 ms - 197
+# [API Error Detail]: Error: spotPrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'spotPrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.801 ms - 197
+# [API Error Detail]: Error: spotPrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'spotPrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.489 ms - 197
+# [API Error Detail]: Error: spotPrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'spotPrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.495 ms - 197
+# [API Error Detail]: Error: spotPrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'spotPrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.617 ms - 197
+# [API Error Detail]: Error: spotPrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'spotPrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.595 ms - 197
+# [API Error Detail]: Error: spotPrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'spotPrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.855 ms - 197
+# [API Error Detail]: Error: spotPrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'spotPrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.775 ms - 197
+# Subtest: rechaza valores no numéricos y coerciones inválidas en spotPrice
+ok 9 - rechaza valores no numéricos y coerciones inválidas en spotPrice
+  ---
+  duration_ms: 29.0017
+  type: 'test'
+  ...
+# [API Error Detail]: Error: strikePrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'strikePrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 1.129 ms - 199
+# [API Error Detail]: Error: strikePrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'strikePrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.603 ms - 199
+# [API Error Detail]: Error: strikePrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'strikePrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.671 ms - 199
+# [API Error Detail]: Error: strikePrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'strikePrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.553 ms - 199
+# [API Error Detail]: Error: strikePrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'strikePrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.715 ms - 199
+# [API Error Detail]: Error: strikePrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'strikePrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.735 ms - 199
+# [API Error Detail]: Error: strikePrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'strikePrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.613 ms - 199
+# [API Error Detail]: Error: strikePrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'strikePrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.739 ms - 199
+# [API Error Detail]: Error: strikePrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'strikePrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.652 ms - 199
+# [API Error Detail]: Error: strikePrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'strikePrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.830 ms - 199
+# [API Error Detail]: Error: strikePrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'strikePrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.639 ms - 199
+# Subtest: rechaza valores no numéricos y coerciones inválidas en strikePrice
+ok 10 - rechaza valores no numéricos y coerciones inválidas en strikePrice
+  ---
+  duration_ms: 28.7932
+  type: 'test'
+  ...
+# [API Error Detail]: Error: timeToExpirationYears debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'timeToExpirationYears debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.584 ms - 209
+# [API Error Detail]: Error: timeToExpirationYears debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'timeToExpirationYears debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.507 ms - 209
+# [API Error Detail]: Error: timeToExpirationYears debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'timeToExpirationYears debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.553 ms - 209
+# [API Error Detail]: Error: timeToExpirationYears debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'timeToExpirationYears debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.493 ms - 209
+# [API Error Detail]: Error: timeToExpirationYears debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'timeToExpirationYears debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.569 ms - 209
+# [API Error Detail]: Error: timeToExpirationYears debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'timeToExpirationYears debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.945 ms - 209
+# [API Error Detail]: Error: timeToExpirationYears debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'timeToExpirationYears debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.645 ms - 209
+# [API Error Detail]: Error: timeToExpirationYears debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'timeToExpirationYears debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.625 ms - 209
+# [API Error Detail]: Error: timeToExpirationYears debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'timeToExpirationYears debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 1.158 ms - 209
+# [API Error Detail]: Error: timeToExpirationYears debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'timeToExpirationYears debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.725 ms - 209
+# [API Error Detail]: Error: timeToExpirationYears debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'timeToExpirationYears debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.839 ms - 209
+# Subtest: rechaza valores no numéricos y coerciones inválidas en timeToExpirationYears
+ok 11 - rechaza valores no numéricos y coerciones inválidas en timeToExpirationYears
+  ---
+  duration_ms: 30.4128
+  type: 'test'
+  ...
+# [API Error Detail]: Error: volatility debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'volatility debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.682 ms - 198
+# [API Error Detail]: Error: volatility debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'volatility debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.778 ms - 198
+# [API Error Detail]: Error: volatility debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'volatility debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.600 ms - 198
+# [API Error Detail]: Error: volatility debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'volatility debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.924 ms - 198
+# [API Error Detail]: Error: volatility debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'volatility debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.687 ms - 198
+# [API Error Detail]: Error: volatility debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'volatility debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.566 ms - 198
+# [API Error Detail]: Error: volatility debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'volatility debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.500 ms - 198
+# [API Error Detail]: Error: volatility debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'volatility debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.893 ms - 198
+# [API Error Detail]: Error: volatility debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'volatility debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.825 ms - 198
+# [API Error Detail]: Error: volatility debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'volatility debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.644 ms - 198
+# [API Error Detail]: Error: volatility debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'volatility debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.615 ms - 198
+# Subtest: rechaza valores no numéricos y coerciones inválidas en volatility
+ok 12 - rechaza valores no numéricos y coerciones inválidas en volatility
+  ---
+  duration_ms: 30.1912
+  type: 'test'
+  ...
+# [API Error Detail]: Error: riskFreeRate debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'riskFreeRate debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.525 ms - 200
+# [API Error Detail]: Error: riskFreeRate debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'riskFreeRate debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.494 ms - 200
+# [API Error Detail]: Error: riskFreeRate debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'riskFreeRate debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.515 ms - 200
+# [API Error Detail]: Error: riskFreeRate debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'riskFreeRate debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.461 ms - 200
+# [API Error Detail]: Error: riskFreeRate debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'riskFreeRate debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.535 ms - 200
+# [API Error Detail]: Error: riskFreeRate debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'riskFreeRate debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.488 ms - 200
+# [API Error Detail]: Error: riskFreeRate debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'riskFreeRate debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.695 ms - 200
+# [API Error Detail]: Error: riskFreeRate debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'riskFreeRate debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.712 ms - 200
+# [API Error Detail]: Error: riskFreeRate debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'riskFreeRate debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.616 ms - 200
+# [API Error Detail]: Error: riskFreeRate debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'riskFreeRate debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.556 ms - 200
+# [API Error Detail]: Error: riskFreeRate debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'riskFreeRate debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.464 ms - 200
+# Subtest: rechaza valores no numéricos y coerciones inválidas en riskFreeRate
+ok 13 - rechaza valores no numéricos y coerciones inválidas en riskFreeRate
+  ---
+  duration_ms: 21.4523
+  type: 'test'
+  ...
+# [API Error Detail]: Error: spotPrice debe ser mayor que cero.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'spotPrice debe ser mayor que cero.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.495 ms - 194
+# [API Error Detail]: Error: spotPrice debe ser mayor que cero.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'spotPrice debe ser mayor que cero.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.478 ms - 194
+# [API Error Detail]: Error: spotPrice debe ser mayor que cero.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'spotPrice debe ser mayor que cero.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.869 ms - 194
+# [API Error Detail]: Error: spotPrice debe ser mayor que cero.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'spotPrice debe ser mayor que cero.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.700 ms - 194
+# Subtest: rechaza cero y negativos en spotPrice
+ok 14 - rechaza cero y negativos en spotPrice
+  ---
+  duration_ms: 9.7368
+  type: 'test'
+  ...
+# [API Error Detail]: Error: strikePrice debe ser mayor que cero.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'strikePrice debe ser mayor que cero.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.627 ms - 196
+# [API Error Detail]: Error: strikePrice debe ser mayor que cero.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'strikePrice debe ser mayor que cero.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.564 ms - 196
+# [API Error Detail]: Error: strikePrice debe ser mayor que cero.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'strikePrice debe ser mayor que cero.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.496 ms - 196
+# [API Error Detail]: Error: strikePrice debe ser mayor que cero.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'strikePrice debe ser mayor que cero.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.524 ms - 196
+# Subtest: rechaza cero y negativos en strikePrice
+ok 15 - rechaza cero y negativos en strikePrice
+  ---
+  duration_ms: 8.4291
+  type: 'test'
+  ...
+# [API Error Detail]: Error: timeToExpirationYears debe ser mayor que cero.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'timeToExpirationYears debe ser mayor que cero.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.625 ms - 206
+# [API Error Detail]: Error: timeToExpirationYears debe ser mayor que cero.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'timeToExpirationYears debe ser mayor que cero.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.546 ms - 206
+# [API Error Detail]: Error: timeToExpirationYears debe ser mayor que cero.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'timeToExpirationYears debe ser mayor que cero.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.555 ms - 206
+# [API Error Detail]: Error: timeToExpirationYears debe ser mayor que cero.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'timeToExpirationYears debe ser mayor que cero.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.505 ms - 206
+# Subtest: rechaza cero y negativos en timeToExpirationYears
+ok 16 - rechaza cero y negativos en timeToExpirationYears
+  ---
+  duration_ms: 8.1245
+  type: 'test'
+  ...
+# [API Error Detail]: Error: volatility debe ser mayor que cero.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'volatility debe ser mayor que cero.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.517 ms - 195
+# [API Error Detail]: Error: volatility debe ser mayor que cero.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'volatility debe ser mayor que cero.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.616 ms - 195
+# [API Error Detail]: Error: volatility debe ser mayor que cero.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'volatility debe ser mayor que cero.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.496 ms - 195
+# [API Error Detail]: Error: volatility debe ser mayor que cero.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'volatility debe ser mayor que cero.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.473 ms - 195
+# Subtest: rechaza cero y negativos en volatility
+ok 17 - rechaza cero y negativos en volatility
+  ---
+  duration_ms: 7.712
+  type: 'test'
+  ...
+# [API Error Detail]: Error: spotPrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'spotPrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.730 ms - 197
+# Subtest: rechaza números JSON que desbordan a infinito
+ok 18 - rechaza números JSON que desbordan a infinito
+  ---
+  duration_ms: 2.8706
+  type: 'test'
+  ...
+# [API Error Detail]: Error: optionType debe ser CALL o PUT.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:37:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'optionType debe ser CALL o PUT.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.624 ms - 191
+# [API Error Detail]: Error: optionType debe ser CALL o PUT.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:37:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'optionType debe ser CALL o PUT.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.666 ms - 191
+# [API Error Detail]: Error: optionType debe ser CALL o PUT.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:37:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'optionType debe ser CALL o PUT.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.553 ms - 191
+# [API Error Detail]: Error: optionType debe ser CALL o PUT.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:37:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'optionType debe ser CALL o PUT.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.612 ms - 191
+# [API Error Detail]: Error: optionType debe ser CALL o PUT.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:37:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'optionType debe ser CALL o PUT.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.588 ms - 191
+# [API Error Detail]: Error: optionType debe ser CALL o PUT.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:37:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'optionType debe ser CALL o PUT.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.706 ms - 191
+# [API Error Detail]: Error: optionType debe ser CALL o PUT.
+#     at validateBlackScholesInput (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:37:18)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'optionType debe ser CALL o PUT.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.689 ms - 191
+# Subtest: rechaza optionType nulo, no textual o desconocido con un error de entrada
+ok 19 - rechaza optionType nulo, no textual o desconocido con un error de entrada
+  ---
+  duration_ms: 16.9111
+  type: 'test'
+  ...
+# [API Error Detail]: Error: Los parámetros exceden el rango numérico admitido para Black-Scholes.
+#     at assertFiniteBlackScholesResult (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:48:16)
+#     at valuateBlackScholes (file:///C:/Users/jesus/Desktop/Git/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:8:5)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:149:13)
+#     at Route.dispatch (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\route.js:119:3)
+#     at Layer.handle [as handle_request] (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\layer.js:95:5)
+#     at C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:284:15
+#     at router.process_params (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:346:12)
+#     at next (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:280:10)
+#     at router.handle (C:\\Users\\jesus\\Desktop\\Git\\LSW-EQ1-PROYECTO\\node_modules\\express\\lib\\router\\index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'Los parámetros exceden el rango numérico admitido para Black-Scholes.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.998 ms - 231
+# Subtest: rechaza resultados no finitos en lugar de responder cálculos null
+ok 20 - rechaza resultados no finitos en lugar de responder cálculos null
+  ---
+  duration_ms: 4.2766
+  type: 'test'
+  ...
+# POST /pruebas/v2/quant/implied-volatility 200 0.673 ms - 148
+# Subtest: conserva la respuesta existente de volatilidad implícita
+ok 21 - conserva la respuesta existente de volatilidad implícita
+  ---
+  duration_ms: 2.7894
+  type: 'test'
+  ...
+# GET /pruebas/v2/spec.json 200 35.588 ms - 37946
+# Subtest: publica el contrato Black-Scholes con sus valores predeterminados y error 400
+ok 22 - publica el contrato Black-Scholes con sus valores predeterminados y error 400
+  ---
+  duration_ms: 39.6851
+  type: 'test'
+  ...
+1..22
+# tests 22
+# suites 0
+# pass 22
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1297.5732

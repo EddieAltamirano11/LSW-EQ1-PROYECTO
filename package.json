@@ -8,6 +8,7 @@
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
     "test": "node --test",
+    "test:api-quality": "node scripts/run_api_quality_checks.mjs",
     "tunnel": "..\\tools\\cloudflared.exe tunnel --url http://localhost:3050"
   },
   "keywords": [
