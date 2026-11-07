@@ -58,7 +58,8 @@ export default function Dashboard({ session, onLogout }) {
         broker: session.brokerTarget || 'WEBULL',
       });
 
-      const response = await fetch(`/api/v2/market/scanner/top-collars?${query.toString()}`, {
+      const apiBase = import.meta.env.VITE_API_URL || '';
+      const response = await fetch(`${apiBase}/api/v2/market/scanner/top-collars?${query.toString()}`, {
         headers: {
           Authorization: `Bearer ${session.token}`,
           'x-database-target': session.databaseTarget,
@@ -101,7 +102,8 @@ export default function Dashboard({ session, onLogout }) {
     setExecutionMessage(null);
 
     try {
-      const response = await fetch('/api/v2/hedging/auto-collar', {
+      const apiBase = import.meta.env.VITE_API_URL || '';
+      const response = await fetch(`${apiBase}/api/v2/hedging/auto-collar`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

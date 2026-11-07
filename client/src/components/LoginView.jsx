@@ -15,7 +15,8 @@ export default function LoginView({ onLoginSuccess }) {
     setError(null);
 
     try {
-      const response = await fetch('/api/v2/auth/login', {
+      const apiBase = import.meta.env.VITE_API_URL || '';
+      const response = await fetch(`${apiBase}/api/v2/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
