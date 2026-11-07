@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import TradingViewWidget from './TradingViewWidget';
 import CriteriaModal from './CriteriaModal';
+import BrokerExecutionModal from './BrokerExecutionModal';
 import { computeLocalCandidates } from '../services/localScanner';
 
 export default function Dashboard({ session, onLogout }) {
@@ -42,6 +43,10 @@ export default function Dashboard({ session, onLogout }) {
 
   // Modal de criterios
   const [isCriteriaOpen, setIsCriteriaOpen] = useState(false);
+
+  // Modal de respuesta del broker
+  const [brokerModalData, setBrokerModalData] = useState(null);
+  const [isBrokerModalOpen, setIsBrokerModalOpen] = useState(false);
 
   // Interruptor de Modo de Ejecución: false = Simulación Segura, true = Órdenes Reales al Broker
   const [liveExecutionMode, setLiveExecutionMode] = useState(false);
@@ -240,6 +245,18 @@ export default function Dashboard({ session, onLogout }) {
             text: `[MODO SIMULACIÓN] Collar Spread a Costo Cero estructurado y calibrado exitosamente para ${candidate.symbol} con ${session?.brokerTarget || 'WEBULL'}. (Piso Put: $${candidate.putFloor.strike} | Techo Call: $${candidate.callCeiling.strike} | Prima Neta: $${candidate.financialMetrics.netDebitCredit}/acc). No se arriesgó saldo real.`,
           });
         }
+
+        // Abrir Modal de Respuesta Detallada
+        setBrokerModalData({
+          candidate,
+          liveMode: liveExecutionMode,
+          broker: session?.brokerTarget || 'WEBULL',
+          databaseTarget: session?.databaseTarget || 'mongodb',
+          status: response.status,
+          ok: true,
+          data,
+        });
+        setIsBrokerModalOpen(true);
       } else if (response) {
         const errJson = await response.json().catch(() => ({}));
         const rawMsg = errJson.message || `El broker devolvió código HTTP ${response.status}.`;
@@ -249,13 +266,39 @@ export default function Dashboard({ session, onLogout }) {
             ? `[RESPUESTA DEL BROKER ${session?.brokerTarget || 'WEBULL'}]: ${rawMsg}`
             : `[MODO SIMULACIÓN] Calibración analítica completada para ${candidate.symbol}. Piso $${candidate.putFloor.strike} / Techo $${candidate.callCeiling.strike}.`,
         });
+
+        // Abrir Modal con diagnóstico de error del broker
+        setBrokerModalData({
+          candidate,
+          liveMode: liveExecutionMode,
+          broker: session?.brokerTarget || 'WEBULL',
+          databaseTarget: session?.databaseTarget || 'mongodb',
+          status: response.status,
+          ok: false,
+          data: errJson,
+          rawError: rawMsg,
+        });
+        setIsBrokerModalOpen(true);
       } else {
+        const defaultMsg = 'No se pudo contactar al microservicio para emitir órdenes al broker.';
         setExecutionMessage({
           type: liveExecutionMode ? 'error' : 'success',
           text: liveExecutionMode
-            ? `[ERROR DE CONEXIÓN] No se pudo contactar al microservicio en ${apiBase} para emitir órdenes reales al broker.`
+            ? `[ERROR DE CONEXIÓN] ${defaultMsg}`
             : `[MODO SIMULACIÓN] Collar Spread estructurado para ${candidate.symbol} con ${session?.brokerTarget || 'WEBULL'}. (Piso $${candidate.putFloor.strike} / Techo $${candidate.callCeiling.strike})`,
         });
+
+        setBrokerModalData({
+          candidate,
+          liveMode: liveExecutionMode,
+          broker: session?.brokerTarget || 'WEBULL',
+          databaseTarget: session?.databaseTarget || 'mongodb',
+          status: 500,
+          ok: false,
+          data: { message: defaultMsg },
+          rawError: defaultMsg,
+        });
+        setIsBrokerModalOpen(true);
       }
     } catch (err) {
       setExecutionMessage({
@@ -264,6 +307,18 @@ export default function Dashboard({ session, onLogout }) {
           ? `[ERROR] ${err.message}`
           : `[MODO SIMULACIÓN] Collar Spread estructurado para ${candidate.symbol}. (Piso $${candidate.putFloor.strike} / Techo $${candidate.callCeiling.strike})`,
       });
+
+      setBrokerModalData({
+        candidate,
+        liveMode: liveExecutionMode,
+        broker: session?.brokerTarget || 'WEBULL',
+        databaseTarget: session?.databaseTarget || 'mongodb',
+        status: 500,
+        ok: false,
+        data: { message: err.message },
+        rawError: err.message,
+      });
+      setIsBrokerModalOpen(true);
     } finally {
       setExecutingSymbol(null);
     }
@@ -777,6 +832,13 @@ export default function Dashboard({ session, onLogout }) {
 
       {/* Modal de Criterios Oficiales */}
       <CriteriaModal isOpen={isCriteriaOpen} onClose={() => setIsCriteriaOpen(false)} />
+
+      {/* Modal de Respuesta Detallada del Broker */}
+      <BrokerExecutionModal
+        isOpen={isBrokerModalOpen}
+        onClose={() => setIsBrokerModalOpen(false)}
+        modalData={brokerModalData}
+      />
     </div>
   );
 }
