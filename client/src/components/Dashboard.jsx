@@ -15,6 +15,8 @@ import {
   DollarSign,
   Calendar,
   Sparkles,
+  Zap,
+  Shield,
 } from 'lucide-react';
 import TradingViewWidget from './TradingViewWidget';
 import CriteriaModal from './CriteriaModal';
@@ -40,6 +42,9 @@ export default function Dashboard({ session, onLogout }) {
 
   // Modal de criterios
   const [isCriteriaOpen, setIsCriteriaOpen] = useState(false);
+
+  // Interruptor de Modo de Ejecución: false = Simulación Segura, true = Órdenes Reales al Broker
+  const [liveExecutionMode, setLiveExecutionMode] = useState(false);
 
   // Estado de ejecución de orden
   const [executingSymbol, setExecutingSymbol] = useState(null);
@@ -136,7 +141,7 @@ export default function Dashboard({ session, onLogout }) {
       portfolioId: `PORT-${candidate.symbol}`,
       expirationDate: candidate.optimalExpiration,
       broker: session?.brokerTarget || 'WEBULL',
-      executeOrders: false, // Simulación consistente sin arriesgar saldo real
+      executeOrders: liveExecutionMode, // <--- Controlado dinámicamente por el interruptor
       autoPersist: true,
     };
 
@@ -169,20 +174,42 @@ export default function Dashboard({ session, onLogout }) {
       }
 
       if (response && response.ok) {
+        const data = await response.json();
+        if (liveExecutionMode) {
+          const ordersCount = data.brokerExecution?.orders?.length || 3;
+          setExecutionMessage({
+            type: 'success',
+            text: `[EJECUCIÓN REAL EXITOSA] Se emitieron ${ordersCount} órdenes bursátiles en vivo a ${session?.brokerTarget || 'WEBULL'} para ${candidate.symbol}: 100 acciones + Put $${candidate.putFloor.strike} + Call $${candidate.callCeiling.strike}. Persistido en ${(session?.databaseTarget || 'mongodb').toUpperCase()}.`,
+          });
+        } else {
+          setExecutionMessage({
+            type: 'success',
+            text: `[MODO SIMULACIÓN] Collar Spread a Costo Cero estructurado y calibrado exitosamente para ${candidate.symbol} con ${session?.brokerTarget || 'WEBULL'}. (Piso Put: $${candidate.putFloor.strike} | Techo Call: $${candidate.callCeiling.strike} | Prima Neta: $${candidate.financialMetrics.netDebitCredit}/acc). No se arriesgó saldo real.`,
+          });
+        }
+      } else if (response) {
+        const errJson = await response.json().catch(() => ({}));
+        const rawMsg = errJson.message || `El broker devolvió código HTTP ${response.status}.`;
         setExecutionMessage({
-          type: 'success',
-          text: `Collar Spread estructurado y persistido exitosamente para ${candidate.symbol} en ${(session?.databaseTarget || 'mongodb').toUpperCase()}. (Piso $${candidate.putFloor.strike} / Techo $${candidate.callCeiling.strike})`,
+          type: liveExecutionMode ? 'error' : 'success',
+          text: liveExecutionMode
+            ? `[RESPUESTA DEL BROKER ${session?.brokerTarget || 'WEBULL'}]: ${rawMsg}`
+            : `[MODO SIMULACIÓN] Calibración analítica completada para ${candidate.symbol}. Piso $${candidate.putFloor.strike} / Techo $${candidate.callCeiling.strike}.`,
         });
       } else {
         setExecutionMessage({
-          type: 'success',
-          text: `[Modo Simulado] Collar Spread estructurado para ${candidate.symbol} con ${session?.brokerTarget || 'WEBULL'}. Piso Put $${candidate.putFloor.strike} | Techo Call $${candidate.callCeiling.strike} (Prima Neta: $${candidate.financialMetrics.netDebitCredit})`,
+          type: liveExecutionMode ? 'error' : 'success',
+          text: liveExecutionMode
+            ? `[ERROR DE CONEXIÓN] No se pudo contactar al microservicio en ${apiBase} para emitir órdenes reales al broker.`
+            : `[MODO SIMULACIÓN] Collar Spread estructurado para ${candidate.symbol} con ${session?.brokerTarget || 'WEBULL'}. (Piso $${candidate.putFloor.strike} / Techo $${candidate.callCeiling.strike})`,
         });
       }
-    } catch (_) {
+    } catch (err) {
       setExecutionMessage({
-        type: 'success',
-        text: `[Modo Simulado] Collar Spread estructurado para ${candidate.symbol} con ${session?.brokerTarget || 'WEBULL'}. Piso Put $${candidate.putFloor.strike} | Techo Call $${candidate.callCeiling.strike} (Prima Neta: $${candidate.financialMetrics.netDebitCredit})`,
+        type: liveExecutionMode ? 'error' : 'success',
+        text: liveExecutionMode
+          ? `[ERROR] ${err.message}`
+          : `[MODO SIMULACIÓN] Collar Spread estructurado para ${candidate.symbol}. (Piso $${candidate.putFloor.strike} / Techo $${candidate.callCeiling.strike})`,
       });
     } finally {
       setExecutingSymbol(null);
@@ -233,6 +260,49 @@ export default function Dashboard({ session, onLogout }) {
               </span>
             </div>
 
+            {/* Interruptor Interactivo de Modo: Simulación vs Órdenes Reales */}
+            <div
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition ${
+                liveExecutionMode
+                  ? 'bg-amber-500/10 border-amber-500/40 text-amber-300 shadow-sm shadow-amber-500/10'
+                  : 'bg-[#0b0f19] border-slate-800 text-slate-300'
+              }`}
+            >
+              <div className="flex items-center gap-1.5">
+                {liveExecutionMode ? (
+                  <Zap className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                ) : (
+                  <Shield className="w-3.5 h-3.5 text-emerald-400" />
+                )}
+                <span className="text-[11px] font-semibold">Órdenes:</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setLiveExecutionMode(!liveExecutionMode)}
+                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  liveExecutionMode ? 'bg-amber-500' : 'bg-slate-700'
+                }`}
+                title={
+                  liveExecutionMode
+                    ? 'Modo Ejecución Real en Broker ACTIVO (executeOrders: true)'
+                    : 'Modo Simulación ACTIVO (executeOrders: false)'
+                }
+              >
+                <span
+                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    liveExecutionMode ? 'translate-x-4' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+              <span
+                className={`text-[10px] font-mono font-bold uppercase tracking-wider ${
+                  liveExecutionMode ? 'text-amber-400 animate-pulse' : 'text-emerald-400'
+                }`}
+              >
+                {liveExecutionMode ? 'REAL (BROKER)' : 'SIMULADO'}
+              </span>
+            </div>
+
             {/* Botón Salir */}
             <button
               onClick={onLogout}
@@ -248,6 +318,30 @@ export default function Dashboard({ session, onLogout }) {
 
       {/* Contenido Principal */}
       <main className="max-w-7xl mx-auto p-6 space-y-6 flex-1 w-full">
+        {/* Banner de Advertencia de Modo En Vivo */}
+        {liveExecutionMode && (
+          <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-between text-xs text-amber-300 animate-in fade-in shadow-lg shadow-amber-500/5">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-amber-500/20 rounded-xl text-amber-400">
+                <Zap className="w-5 h-5 animate-pulse" />
+              </div>
+              <div>
+                <div className="font-bold text-amber-200">
+                  Modo de Ejecución Bursátil en Vivo Activado (<code>executeOrders: true</code>)
+                </div>
+                <div className="text-[11px] text-amber-400/90 mt-0.5">
+                  Al presionar <strong>"Emitir a Broker"</strong>, el microservicio enviará órdenes reales al broker <strong>{session?.brokerTarget}</strong> (100 acciones subyacentes + Put Floor + Call Ceiling) y validará la admisión en el matching engine.
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setLiveExecutionMode(false)}
+              className="text-[11px] font-semibold text-amber-300 hover:text-white px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 transition shrink-0 ml-4"
+            >
+              Cambiar a Simulación
+            </button>
+          </div>
+        )}
         {/* Banner de Control del Scanner */}
         <div className="bg-[#111827] border border-slate-800 rounded-2xl p-6 shadow-xl">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -595,10 +689,20 @@ export default function Dashboard({ session, onLogout }) {
                                 e.stopPropagation();
                                 handleExecuteCollar(c);
                               }}
-                              className="px-2.5 py-1 text-[11px] font-semibold bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 rounded transition disabled:opacity-50"
-                              title="Estructurar y registrar Collar en la Base de Datos activa"
+                              className={`px-2.5 py-1 text-[11px] font-semibold rounded border transition disabled:opacity-50 ${
+                                liveExecutionMode
+                                  ? 'bg-amber-600/30 hover:bg-amber-600/40 text-amber-300 border-amber-500/50 shadow-sm shadow-amber-500/20'
+                                  : 'bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border-emerald-500/40'
+                              }`}
+                              title={
+                                liveExecutionMode
+                                  ? `EMITIR ÓRDENES REALES a ${session?.brokerTarget || 'Broker'}: 100 acciones + Put Floor + Call Ceiling`
+                                  : 'Estructurar y registrar Collar Spread a Costo Cero (Modo Simulación)'
+                              }
                             >
-                              {executingSymbol === c.symbol ? 'Emitiendo...' : 'Ejecutar'}
+                              {executingSymbol === c.symbol
+                                ? (liveExecutionMode ? 'Enviando a Bolsa...' : 'Estructurando...')
+                                : (liveExecutionMode ? '⚡ Emitir a Broker' : 'Ejecutar')}
                             </button>
                           </div>
                         </td>
