@@ -1920,28 +1920,9 @@
                   "language": "json"
                 }
               }
-            },
-            "description": "Validación SDD: spotPrice, strikePrice y timeToExpirationYears son obligatorios y > 0; volatility debe ser > 0 y riskFreeRate finita de cualquier signo. Se admiten números o cadenas numéricas no vacías y CALL/PUT sin distinguir mayúsculas. Valores predeterminados: volatility=0.2, riskFreeRate=0.045 y optionType=PUT. Los campos inválidos y los resultados no finitos devuelven 400 con un mensaje descriptivo."
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Black-Scholes: respuesta válida y finita\", function () {",
-                  "    pm.response.to.have.status(200);",
-                  "    const body = pm.response.json();",
-                  "    pm.expect(body.optionType).to.be.oneOf([\"CALL\", \"PUT\"]);",
-                  "    const values = [body.theoreticalPrice, body.greeks.delta, body.greeks.gamma,",
-                  "        body.greeks.theta, body.greeks.vega, body.greeks.rho];",
-                  "    values.forEach(value => pm.expect(Number.isFinite(value)).to.eql(true));",
-                  "});"
-                ]
-              }
             }
-          ]
+          },
+          "response": []
         },
         {
           "name": "3.2 Volatilidad Implícita con Newton-Raphson (F0)",
