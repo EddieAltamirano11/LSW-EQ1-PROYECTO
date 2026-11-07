@@ -2,6 +2,8 @@ import json
 import re
 import os
 import shutil
+import argparse
+from pathlib import Path
 
 TUNNEL_URL = "https://lsw-eq1-proyecto.onrender.com"
 HOST_PARTS = ["lsw-eq1-proyecto", "onrender", "com"]
@@ -279,5 +281,71 @@ def build_complete_collection():
     count_reqs(items)
     print(f"\n>>> PROCESO FINALIZADO: {len(items)} carpetas principales con un total de {total_reqs} peticiones REST calibradas.")
 
+def sync_black_scholes_only():
+    """Sincroniza esta petición sin regenerar otros flujos ni copias externas."""
+    repo_root = Path(__file__).resolve().parent.parent
+
+    def requests_in(items):
+        for item in items:
+            if "request" in item:
+                yield item
+            yield from requests_in(item.get("item", []))
+
+    def is_black_scholes(item):
+        request = item.get("request", {})
+        url = request.get("url", "")
+        raw = url.get("raw", "") if isinstance(url, dict) else url
+        return request.get("method") == "POST" and raw.split("?")[0].endswith("/quant/black-scholes")
+
+    sections = parse_http_file(repo_root / "request" / "test_api.http")
+    sources = [item for item in requests_in(sections) if is_black_scholes(item)]
+    if len(sources) != 1:
+        raise ValueError("Se esperaba una petición Black-Scholes en request/test_api.http")
+
+    description = (
+        "Validación SDD: spotPrice, strikePrice y timeToExpirationYears son obligatorios y > 0; "
+        "volatility debe ser > 0 y riskFreeRate finita de cualquier signo. Se admiten números "
+        "o cadenas numéricas no vacías y CALL/PUT sin distinguir mayúsculas. "
+        "Valores predeterminados: volatility=0.2, riskFreeRate=0.045 y optionType=PUT. "
+        "Los campos inválidos y los resultados no finitos devuelven 400 con un mensaje descriptivo."
+    )
+    assertions = [
+        'pm.test("Black-Scholes: respuesta válida y finita", function () {',
+        '    pm.response.to.have.status(200);',
+        '    const body = pm.response.json();',
+        '    pm.expect(body.optionType).to.be.oneOf(["CALL", "PUT"]);',
+        '    const values = [body.theoreticalPrice, body.greeks.delta, body.greeks.gamma,',
+        '        body.greeks.theta, body.greeks.vega, body.greeks.rho];',
+        '    values.forEach(value => pm.expect(Number.isFinite(value)).to.eql(true));',
+        '});',
+    ]
+
+    for name in ["LSW_Cloudflare_Postman_Collection.json", "LSW_Render_Postman_Collection.json"]:
+        path = repo_root / name
+        collection = json.loads(path.read_text(encoding="utf-8"))
+        matches = [item for item in requests_in(collection.get("item", [])) if is_black_scholes(item)]
+        if len(matches) != 1:
+            raise ValueError(f"Se esperaba una petición Black-Scholes en {name}")
+        item = matches[0]
+        item["request"]["body"] = sources[0]["request"]["body"]
+        item["request"]["description"] = description
+        events = item.setdefault("event", [])
+        test_event = next((event for event in events if event.get("listen") == "test"), None)
+        if test_event is None:
+            test_event = {"listen": "test", "script": {"type": "text/javascript", "exec": []}}
+            events.append(test_event)
+        lines = test_event["script"]["exec"]
+        if assertions[0] not in lines:
+            lines.extend(assertions)
+        path.write_text(json.dumps(collection, indent=2, ensure_ascii=False), encoding="utf-8")
+        print(f"Black-Scholes sincronizado en {path.name}")
+
+
 if __name__ == "__main__":
-    build_complete_collection()
+    parser = argparse.ArgumentParser(description="Generar o sincronizar la colección Postman")
+    parser.add_argument("--black-scholes-only", action="store_true", help="Actualizar solo Black-Scholes en las colecciones del repositorio")
+    args = parser.parse_args()
+    if args.black_scholes_only:
+        sync_black_scholes_only()
+    else:
+        build_complete_collection()

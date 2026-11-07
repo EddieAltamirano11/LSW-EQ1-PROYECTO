@@ -1,8 +1,11 @@
 import * as QuantService from '../services/quant.service.js';
+import { validateBlackScholesInput, assertFiniteBlackScholesResult } from '../validators/black-scholes.validator.js';
 
 export const valuateBlackScholes = async (req, res, next) => {
   try {
-    const result = QuantService.calculateBlackScholes(req.body);
+    const input = validateBlackScholesInput(req.body);
+    const result = QuantService.calculateBlackScholes(input);
+    assertFiniteBlackScholesResult(result);
     res.status(200).json({
       message: 'Valuación analítica Black-Scholes y Griegas calculadas.',
       ...result,

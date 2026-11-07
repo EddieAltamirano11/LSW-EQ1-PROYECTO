@@ -91,3 +91,11 @@ ni ejecutar operaciones con brokers:
 ```bash
 node --test test/login.routes.test.js test/login.session.test.js
 ```
+
+## Mejora de Black-Scholes con OpenSpec
+
+La validación de `POST /api/v1/quant/black-scholes` se desarrolla mediante el cambio
+OpenSpec `validar-entrada-black-scholes`. La [evidencia SDD](docs/EVIDENCIA_SDD_BLACK_SCHOLES.md)
+reúne los artefactos, la comparación antes/después, la atribución del trabajo
+asistido por IA y los comandos de verificación. La optimización manual se registra
+por separado cuando el equipo la realice y pueda acreditarla.

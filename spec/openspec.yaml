@@ -758,23 +758,71 @@ paths:
     post:
       tags: [Cuantitativo F0]
       summary: Valuación analítica Black-Scholes y cálculo de 5 Griegas (F0)
+      description: >
+        Valida los parámetros antes de calcular. Admite números finitos y cadenas no vacías
+        convertibles a números finitos. Precios, tiempo y volatilidad deben ser mayores que cero;
+        la tasa puede ser cero o negativa. Conserva los valores predeterminados y admite campos
+        adicionales. Datos inválidos o resultados no finitos producen 400.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [spotPrice, strikePrice, timeToExpirationYears, optionType]
+              required: [spotPrice, strikePrice, timeToExpirationYears]
               properties:
-                spotPrice: { type: number, example: 565.0 }
-                strikePrice: { type: number, example: 550.0 }
-                timeToExpirationYears: { type: number, example: 0.08 }
-                volatility: { type: number, example: 0.15 }
-                riskFreeRate: { type: number, example: 0.045 }
-                optionType: { type: string, enum: [CALL, PUT], example: PUT }
+                spotPrice:
+                  description: Número finito mayor que cero o cadena numérica equivalente.
+                  oneOf:
+                    - { type: number, minimum: 0, exclusiveMinimum: true }
+                    - { type: string, minLength: 1 }
+                  example: 565.0
+                strikePrice:
+                  description: Número finito mayor que cero o cadena numérica equivalente.
+                  oneOf:
+                    - { type: number, minimum: 0, exclusiveMinimum: true }
+                    - { type: string, minLength: 1 }
+                  example: 550.0
+                timeToExpirationYears:
+                  description: Número finito mayor que cero o cadena numérica equivalente.
+                  oneOf:
+                    - { type: number, minimum: 0, exclusiveMinimum: true }
+                    - { type: string, minLength: 1 }
+                  example: 0.08
+                volatility:
+                  description: Número finito mayor que cero o cadena numérica equivalente.
+                  oneOf:
+                    - { type: number, minimum: 0, exclusiveMinimum: true }
+                    - { type: string, minLength: 1 }
+                  default: 0.2
+                  example: 0.15
+                riskFreeRate:
+                  description: Número finito de cualquier signo o cadena numérica equivalente.
+                  oneOf:
+                    - { type: number }
+                    - { type: string, minLength: 1 }
+                  default: 0.045
+                  example: 0.045
+                optionType:
+                  type: string
+                  description: CALL o PUT sin distinguir mayúsculas y minúsculas.
+                  pattern: '^([Cc][Aa][Ll][Ll]|[Pp][Uu][Tt])$'
+                  default: PUT
+                  example: PUT
       responses:
         '200':
-          description: Precio teórico y telemetría analítica de Griegas
+          description: Precio teórico y cinco griegas finitos, con el formato y precisión existentes.
+        '400':
+          description: Cuerpo, campo o rango numérico inválido; el mensaje identifica el problema.
+          content:
+            application/json:
+              example:
+                statusCode: 400
+                error: Bad Request
+                message: spotPrice debe ser un número finito.
+                timestamp: '2026-11-06T12:00:00.000Z'
+                path: /api/v1/quant/black-scholes
+                activeDatabase: mongodb
 
   /quant/implied-volatility:
     post:

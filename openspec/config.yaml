@@ -1,32 +1,34 @@
 schema: spec-driven
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  API REST de coberturas financieras del Equipo 1 para Laboratorio de Servicios Web.
+  Stack: Node.js con módulos ESM, Express 4, MongoDB/Mongoose y Supabase/PostgreSQL.
+  Integraciones de brokers: Alpaca, Webull e Interactive Brokers.
+  Arquitectura actual: rutas, controladores, servicios y repositorios en src/api/v1/.
+  El contrato OpenAPI está en spec/openspec.yaml; el proceso SDD vive en openspec/.
+  Las pruebas locales usan node:test e importan src/app.js sin iniciar conexiones.
+  Evaluar la estructura existente antes de implementar. Si no es óptima para el
+  requisito, proponer y generar una estructura propia, justificar sus ventajas
+  en el diseño y limitar los cambios a los archivos relacionados con el alcance.
+  Conservar los contratos válidos existentes y verificar los consumidores afectados.
+  La evidencia académica debe distinguir implementación asistida por IA,
+  optimización manual acreditada y trabajo cuya autoría no está documentada.
+  Registrar antes/después, responsables, herramientas y verificaciones reales;
+  nunca presentar una modificación generada por IA como optimización manual.
+  No realizar commits ni push sin instrucción explícita del usuario.
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
-
-# Per-operation guidance (optional)
-# Add advisory guidance for how apply and archive work should be conducted.
-# This is separate from artifact rules above.
-# Example:
-#   operations:
-#     apply:
-#       guidance:
-#         - Keep test summaries concise
-#     archive:
-#       guidance:
-#         - Summarize the archive outcome before finishing
+rules:
+  proposal:
+    - Identificar los endpoints afectados y el alcance de compatibilidad.
+    - Indicar qué evidencia permitirá distinguir desarrollo con IA y trabajo manual.
+  specs:
+    - Definir entradas, salidas, errores y escenarios verificables por endpoint.
+    - Clarificar que se puede proponer una estructura propia si la actual no es óptima, justificándola en el diseño dentro del alcance.
+    - Expresar los criterios de compatibilidad y trazabilidad sin imponer detalles internos innecesarios.
+  design:
+    - Comparar la estructura existente con la propuesta y justificar las alternativas.
+    - Identificar servicios compartidos y limitar el impacto sobre otros endpoints.
+  tasks:
+    - Incluir pruebas proporcionales al riesgo y documentación del contrato afectado.
+    - Registrar la evidencia IA/manual sin marcar como realizado trabajo manual pendiente.
+    - Sincronizar OpenAPI y los ejemplos Postman relacionados cuando cambie un contrato HTTP.
