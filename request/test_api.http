@@ -588,3 +588,24 @@ x-database-selection: supabase
   "expirationDate": "2026-10-16",
   "executeOrders": true
 }
+
+### ==============================================================================
+### SECCIÓN 9: SCREENER CUANTITATIVO, RANKING & TRADINGVIEW (API v2)
+### ==============================================================================
+
+### 9.1 Escanear Top 5 Candidatos por Probabilidad (Piso Seguro)
+GET {{baseUrl}}/market/scanner/top-collars?limit=5&sortBy=probability&dteHorizon=45
+Content-Type: application/json
+
+### 9.2 Escanear Top 10 Candidatos por Mayor Crédito Neto de Prima
+GET {{baseUrl}}/market/scanner/top-collars?limit=10&sortBy=netCredit&dteHorizon=45
+Content-Type: application/json
+
+### 9.3 Consultar Protocolo Oficial y Criterios de Selección de Empresas
+GET {{baseUrl}}/market/scanner/company-criteria
+Content-Type: application/json
+
+### 9.4 Consultar Configuración del Widget de TradingView para un Activo
+GET {{baseUrl}}/market/scanner/tradingview/NVDA
+Content-Type: application/json
+

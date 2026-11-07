@@ -9,6 +9,7 @@ import { apiReference } from '@scalar/express-api-reference';
 
 import config from './config/config.js';
 import routerAPI from './api/v1/routes/index.js';
+import routerAPIv2 from './api/v2/routes/index.js';
 import loginRoutes from './web/login.routes.js';
 import { authMiddleware } from './middlewares/auth.middleware.js';
 import { databaseContextMiddleware } from './middlewares/databaseContext.middleware.js';
@@ -27,8 +28,16 @@ app.use(morgan('dev'));
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: false }));
 
-// Pantalla pública de acceso de demostración
+// Pantalla pública de acceso de demostración y cliente React SPA
 app.use(loginRoutes);
+
+const clientDistPath = path.join(__dirname, '../client/dist');
+if (fs.existsSync(clientDistPath)) {
+  app.use('/dashboard', express.static(clientDistPath));
+  app.get('/dashboard*', (req, res) => {
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+}
 
 // Inyección de contexto de persistencia, autenticación y broker
 app.use(authMiddleware);
@@ -37,15 +46,17 @@ app.use(brokerContextMiddleware);
 // Carga y publicación dinámica del contrato OpenSpec
 const specPath = path.join(__dirname, '../spec/openspec.yaml');
 
-// Endpoint 2: Especificación OpenAPI / OpenSpec en JSON crudo
-app.get(`${config.API_URL}/spec.json`, (req, res) => {
+// Endpoint 2: Especificación OpenAPI / OpenSpec en JSON crudo (v1 y v2)
+const handleSpecJson = (req, res) => {
   try {
     const dynamicSpec = yaml.load(specPath);
     res.status(200).json(dynamicSpec);
   } catch (err) {
     res.status(500).json({ error: 'Error cargando la especificación OpenSpec', details: err.message });
   }
-});
+};
+app.get(`${config.API_URL}/spec.json`, handleSpecJson);
+app.get('/api/v2/spec.json', handleSpecJson);
 
 // Visor interactivo moderno OpenSpec (Scalar API Reference)
 app.use(
@@ -56,6 +67,16 @@ app.use(
     },
     theme: 'purple',
     pageTitle: 'API REST Coberturas Financieras — OpenSpec',
+  })
+);
+app.use(
+  '/api/v2/docs',
+  apiReference({
+    spec: {
+      url: '/api/v2/spec.json',
+    },
+    theme: 'purple',
+    pageTitle: 'API REST Coberturas Financieras v2 — OpenSpec',
   })
 );
 
@@ -93,8 +114,9 @@ app.get(config.API_URL, (req, res) => {
   });
 });
 
-// Enrutador modular de la API
+// Enrutadores modulares de la API (v1 retrocompatible y v2 oficial)
 routerAPI(app);
+routerAPIv2(app);
 
 // Middleware centralizado de errores
 app.use(errorHandler);

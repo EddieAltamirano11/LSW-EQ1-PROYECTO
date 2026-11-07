@@ -40,6 +40,8 @@ tags:
     description: Motores cuantitativos analíticos de Black-Scholes y Newton-Raphson
   - name: Brokers Bursátiles
     description: Conexión multi-broker en tiempo real con Webull OpenAPI, Alpaca Markets e Interactive Brokers (TWS Socket) (Paper Trading, feeds de cotización, cadena de opciones y enrutamiento de órdenes)
+  - name: Screener & TradingView
+    description: Motor algorítmico de selección de empresas Top 5 / Top 10 y widgets de TradingView (API v2)
 
 paths:
   # ==========================================================
@@ -998,6 +1000,76 @@ paths:
       responses:
         '200':
           description: Subyacente sincronizado en la base de datos seleccionada con el broker activo
+
+  # ==========================================================
+  # 9. SCREENER CUANTITATIVO & TRADINGVIEW (API v2)
+  # ==========================================================
+  /market/scanner/top-collars:
+    get:
+      tags: [Screener & TradingView]
+      summary: Escaneo y ranking de las 5 o 10 mejores empresas para Collar Spreads
+      description: >
+        Evalúa la canasta de mercado calculando la probabilidad estocástica de piso seguro N(d2),
+        el balance de primas a costo cero y el retorno potencial para diferentes horizontes temporales.
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 5
+            minimum: 1
+            maximum: 10
+          description: Cantidad de activos a retornar en el ranking
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [probability, netCredit, maxReturn]
+            default: probability
+          description: Criterio principal de ordenamiento del ranking
+        - name: dteHorizon
+          in: query
+          schema:
+            type: integer
+            enum: [30, 45, 60]
+            default: 45
+          description: Horizonte de vencimiento en días (Days To Expiration)
+        - name: broker
+          in: query
+          schema:
+            type: string
+            enum: [IBKR, ALPACA, WEBULL]
+          description: Broker bursátil para cotizaciones vivas
+      responses:
+        '200':
+          description: Ranking de candidatos calculado exitosamente
+        '400':
+          description: Parámetro de consulta inválido
+
+  /market/scanner/company-criteria:
+    get:
+      tags: [Screener & TradingView]
+      summary: Protocolo oficial y criterios cuantitativos de admisión de empresas
+      description: Retorna los 4 pilares obligatorios (Tendencia técnica, Liquidez, Volatilidad y Calendario corporativo).
+      responses:
+        '200':
+          description: Criterios y umbrales normativos
+
+  /market/scanner/tradingview/{symbol}:
+    get:
+      tags: [Screener & TradingView]
+      summary: Configuración y metadatos para widgets de TradingView
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+            example: NVDA
+          description: Ticker del activo (ej. AAPL, NVDA)
+      responses:
+        '200':
+          description: Parámetros del gráfico y velocímetro de análisis técnico
 
 components:
   securitySchemes:

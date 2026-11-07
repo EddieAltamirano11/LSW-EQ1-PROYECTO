@@ -3778,6 +3778,156 @@
       ]
     },
     {
+      "name": "SECCIÓN 9: SCREENER CUANTITATIVO, RANKING & TRADINGVIEW (API v2)",
+      "item": [
+        {
+          "name": "9.1 Escanear Top 5 Candidatos por Probabilidad (Piso Seguro)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/market/scanner/top-collars?limit=5&sortBy=probability&dteHorizon=45",
+              "protocol": "https",
+              "host": [
+                "lsw-eq1-proyecto",
+                "onrender",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "market",
+                "scanner",
+                "top-collars"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "probability"
+                },
+                {
+                  "key": "dteHorizon",
+                  "value": "45"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "9.2 Escanear Top 10 Candidatos por Mayor Crédito Neto de Prima",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/market/scanner/top-collars?limit=10&sortBy=netCredit&dteHorizon=45",
+              "protocol": "https",
+              "host": [
+                "lsw-eq1-proyecto",
+                "onrender",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "market",
+                "scanner",
+                "top-collars"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "netCredit"
+                },
+                {
+                  "key": "dteHorizon",
+                  "value": "45"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "9.3 Consultar Protocolo Oficial y Criterios de Selección de Empresas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/market/scanner/company-criteria",
+              "protocol": "https",
+              "host": [
+                "lsw-eq1-proyecto",
+                "onrender",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "market",
+                "scanner",
+                "company-criteria"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "9.4 Consultar Configuración del Widget de TradingView para un Activo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/market/scanner/tradingview/NVDA",
+              "protocol": "https",
+              "host": [
+                "lsw-eq1-proyecto",
+                "onrender",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "market",
+                "scanner",
+                "tradingview",
+                "NVDA"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "U1 (Servicios Base)",
       "item": [
         {
