@@ -36,10 +36,10 @@ export const validateFutureExpirationDate = (expirationDate) => {
   const expYear = parseInt(parts[0], 10);
   const expMonth = parseInt(parts[1], 10) - 1;
   const expDay = parseInt(parts[2], 10);
-  const expDateObj = new Date(expYear, expMonth, expDay);
+  let expDateObj = new Date(Date.UTC(expYear, expMonth, expDay));
 
   const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
   if (isNaN(expDateObj.getTime()) || expDateObj <= today) {
     throw boom.badRequest(
@@ -47,7 +47,25 @@ export const validateFutureExpirationDate = (expirationDate) => {
       `Las opciones financieras requieren una fecha futura de vencimiento para poder cotizarse y emitirse en el broker.`
     );
   }
-  return cleanDate;
+
+  // Alineación estricta al primer viernes hábil (las opciones en Wall Street vencen en viernes)
+  const dayOfWeek = expDateObj.getUTCDay(); // 0=Dom, 1=Lun, ..., 5=Vie, 6=Sáb
+  if (dayOfWeek !== 5) {
+    const daysUntilFriday = (5 - dayOfWeek + 7) % 7;
+    expDateObj = new Date(expDateObj.getTime() + daysUntilFriday * 86400000);
+  }
+
+  // Salvaguarda de feriados bursátiles CBOE/NYSE (Navidad / Año Nuevo)
+  if (expDateObj.getUTCMonth() === 11 && expDateObj.getUTCDate() === 25) {
+    expDateObj = new Date(Date.UTC(expDateObj.getUTCFullYear(), 11, 18));
+  } else if (expDateObj.getUTCMonth() === 0 && expDateObj.getUTCDate() === 1) {
+    expDateObj = new Date(Date.UTC(expDateObj.getUTCFullYear() - 1, 11, 31));
+  }
+
+  const yyyy = expDateObj.getUTCFullYear();
+  const mm = String(expDateObj.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(expDateObj.getUTCDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 };
 
 export const calculateTimeToExpirationYears = (expirationDate) => {

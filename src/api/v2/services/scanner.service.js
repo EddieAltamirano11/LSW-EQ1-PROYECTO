@@ -139,27 +139,27 @@ export const MARKET_BASKET = [
 
 /**
  * Calcula la fecha de expiración estándar para un horizonte en días dado (DTE)
- * Ajusta y alinea estrictamente al 3er viernes del mes (vencimiento mensual estándar CBOE/Webull)
+ * Regla de Oro: Siempre se alinea al primer viernes hábil posterior a la cantidad de días seleccionados,
+ * incorporando salvaguarda para feriados bursátiles de Wall Street (CBOE/NYSE).
  */
 export const calculateTargetExpiration = (days = 45, refDate = new Date()) => {
   const target = new Date(refDate.getTime() + days * 86400000);
-  const year = target.getUTCFullYear();
-  const month = target.getUTCMonth();
-  const firstDay = new Date(Date.UTC(year, month, 1));
-  const firstDayOfWeek = firstDay.getUTCDay(); // 0=Sun, 5=Fri
-  const daysUntilFirstFriday = (5 - firstDayOfWeek + 7) % 7;
-  const firstFriday = 1 + daysUntilFirstFriday;
-  const thirdFridayDate = firstFriday + 14;
-  let chosenDate = new Date(Date.UTC(year, month, thirdFridayDate));
-  const diffDays = Math.round((chosenDate.getTime() - target.getTime()) / 86400000);
-  if (diffDays < -10) {
-    const nextMonth = month + 1;
-    const nextFirstDay = new Date(Date.UTC(year, nextMonth, 1));
-    const nextFirstDayOfWeek = nextFirstDay.getUTCDay();
-    const nextDaysUntilFirstFriday = (5 - nextFirstDayOfWeek + 7) % 7;
-    const nextFirstFriday = 1 + nextDaysUntilFirstFriday;
-    chosenDate = new Date(Date.UTC(year, nextMonth, nextFirstFriday + 14));
+  const dayOfWeek = target.getUTCDay(); // 0=Domingo, 1=Lunes, ..., 5=Viernes, 6=Sábado
+  const daysUntilFriday = (5 - dayOfWeek + 7) % 7;
+  let chosenDate = new Date(target.getTime() + daysUntilFriday * 86400000);
+
+  // Salvaguarda de feriados bursátiles CBOE/NYSE (mercado cerrado en Navidad/Año Nuevo)
+  const month = chosenDate.getUTCMonth(); // 11 = Diciembre, 0 = Enero
+  const date = chosenDate.getUTCDate();
+
+  if (month === 11 && date === 25) {
+    // 25 de diciembre: adelantar al 18 de diciembre (3er viernes mensual con máxima liquidez)
+    chosenDate = new Date(Date.UTC(chosenDate.getUTCFullYear(), 11, 18));
+  } else if (month === 0 && date === 1) {
+    // 1 de enero: adelantar al 31 de diciembre
+    chosenDate = new Date(Date.UTC(chosenDate.getUTCFullYear() - 1, 11, 31));
   }
+
   const yyyy = chosenDate.getUTCFullYear();
   const mm = String(chosenDate.getUTCMonth() + 1).padStart(2, '0');
   const dd = String(chosenDate.getUTCDate()).padStart(2, '0');
