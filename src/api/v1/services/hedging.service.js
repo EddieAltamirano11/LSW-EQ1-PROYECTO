@@ -388,7 +388,7 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
     expirationDate = '2026-12-18',
     autoPersist = true,
     broker = config.DEFAULT_BROKER || 'WEBULL',
-    executeOrders = false,
+    executeOrders = true,
     buyUnderlying = true,
   } = params;
 

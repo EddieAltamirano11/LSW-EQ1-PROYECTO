@@ -48,7 +48,7 @@ export const autoCalibrateCollar = async (req, res, next) => {
   try {
     const symbol = req.params.symbol || req.body.symbol;
     const broker = req.broker || req.headers['x-broker-selection']?.toUpperCase() || req.query?.broker?.toUpperCase() || 'WEBULL';
-    const executeOrdersRaw = req.body?.executeOrders ?? req.query?.executeOrders ?? req.body?.executeOnBroker ?? false;
+    const executeOrdersRaw = req.body?.executeOrders ?? req.query?.executeOrders ?? req.body?.executeOnBroker ?? true;
     const executeOrders = executeOrdersRaw === true || executeOrdersRaw === 'true' || executeOrdersRaw === 1;
 
     const result = await HedgingService.autoCalibrateAndCreateCollar({

@@ -49,7 +49,7 @@ export default function Dashboard({ session, onLogout }) {
   const [isBrokerModalOpen, setIsBrokerModalOpen] = useState(false);
 
   // Interruptor de Modo de Ejecución: false = Simulación Segura, true = Órdenes Reales al Broker
-  const [liveExecutionMode, setLiveExecutionMode] = useState(false);
+  const [liveExecutionMode, setLiveExecutionMode] = useState(true);
 
   // Estado de ejecución de orden
   const [executingSymbol, setExecutingSymbol] = useState(null);
