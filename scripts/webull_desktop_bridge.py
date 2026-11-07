@@ -171,13 +171,7 @@ def cmd_place_order(args):
         }
     ]
 
-    try:
-        res = tc.order_v2.place_order(acc_id, new_simple_orders)
-        if res.status_code == 200:
-            print(json.dumps({'success': True, 'mode': 'LIVE_OPENAPI', 'clientOrderId': client_order_id, 'result': res.json()}))
-            return
-    except Exception as e:
-        err_msg = str(e)
+    if getattr(args, 'preview', False):
         try:
             prev = tc.order_v2.preview_order(acc_id, new_simple_orders)
             prev_data = prev.json() if prev.status_code == 200 else {}
@@ -185,9 +179,36 @@ def cmd_place_order(args):
                 'success': True,
                 'mode': 'SANDBOX_PREVIEW_CONFIRMED',
                 'clientOrderId': client_order_id,
-                'note': 'Mercado bursatil fuera de horario regular. Validado via OpenAPI preview_order.',
+                'note': 'Validado via OpenAPI preview_order.',
                 'preview': prev_data,
                 'order': {
+                    'symbol': symbol,
+                    'instrumentType': 'EQUITY',
+                    'qty': qty,
+                    'side': action,
+                    'type': order_type,
+                    'price': price,
+                    'clientOrderId': client_order_id,
+                    'status': 'previewed'
+                }
+            }))
+            return
+        except Exception as e:
+            print(json.dumps({'success': False, 'mode': 'PREVIEW_ERROR', 'error': str(e)}))
+            return
+
+    try:
+        res = tc.order_v2.place_order(acc_id, new_simple_orders)
+        if res.status_code == 200:
+            res_data = res.json()
+            order_id = res_data.get('order_id') or res_data.get('combo_order_id')
+            print(json.dumps({
+                'success': True,
+                'mode': 'LIVE_OPENAPI',
+                'clientOrderId': client_order_id,
+                'result': res_data,
+                'order': {
+                    'id': order_id,
                     'symbol': symbol,
                     'instrumentType': 'EQUITY',
                     'qty': qty,
@@ -199,10 +220,23 @@ def cmd_place_order(args):
                 }
             }))
             return
-        except Exception:
-            pass
-
-        print(json.dumps({'success': False, 'error': err_msg}))
+        else:
+            print(json.dumps({
+                'success': False,
+                'mode': 'LIVE_OPENAPI',
+                'status': res.status_code,
+                'clientOrderId': client_order_id,
+                'error': res.text
+            }))
+            return
+    except Exception as e:
+        print(json.dumps({
+            'success': False,
+            'mode': 'LIVE_OPENAPI',
+            'clientOrderId': client_order_id,
+            'error': str(e)
+        }))
+        return
 
 def cmd_place_option(args):
     tc, _ = get_clients()
@@ -213,10 +247,122 @@ def cmd_place_option(args):
     order_type = args.type.upper() # LIMIT
     price = str(args.price) if args.price else "5.00"
     strike_price = str(args.strike_price) if args.strike_price else "230.00"
-    expire_date = args.expire_date or "2026-10-16"
+    expire_date = args.expire_date or "2026-12-18"
     option_type = args.option_type.upper() # CALL or PUT
+    strategy = getattr(args, 'strategy', 'SINGLE').upper()
     client_order_id = uuid.uuid4().hex
 
+    # Estrategia Combo COVERED_STOCK (BUY 100 EQUITY + SELL 1 CALL)
+    if strategy == 'COVERED_STOCK' or (action == 'SELL' and option_type == 'CALL' and getattr(args, 'strategy', None) == 'COVERED_STOCK'):
+        stock_quote_price = getattr(args, 'stock_price', 0.0)
+        if not stock_quote_price or stock_quote_price <= 0:
+            try:
+                q_res = tc.trade_instrument.get_instrument_quote('US', symbol)
+                if q_res.status_code == 200:
+                    stock_quote_price = float(q_res.json().get('price', 220.0))
+                else:
+                    stock_quote_price = 220.0
+            except Exception:
+                stock_quote_price = 220.0
+
+        covered_payload = [
+            {
+                "client_order_id": client_order_id,
+                "combo_type": "NORMAL",
+                "order_type": order_type,
+                "quantity": str(qty),
+                "limit_price": str(stock_quote_price),
+                "option_strategy": "COVERED_STOCK",
+                "side": "BUY",
+                "time_in_force": "GTC",
+                "entrust_type": "QTY",
+                "legs": [
+                    {
+                        "side": "BUY",
+                        "quantity": str(qty * 100),
+                        "symbol": symbol,
+                        "instrument_type": "EQUITY",
+                        "market": "US"
+                    },
+                    {
+                        "side": "SELL",
+                        "quantity": str(qty),
+                        "symbol": symbol,
+                        "strike_price": strike_price,
+                        "option_expire_date": expire_date,
+                        "instrument_type": "OPTION",
+                        "option_type": "CALL",
+                        "market": "US"
+                    }
+                ]
+            }
+        ]
+
+        if getattr(args, 'preview', False):
+            try:
+                prev = tc.order_v2.preview_option(acc_id, covered_payload)
+                prev_data = prev.json() if prev.status_code == 200 else {}
+                print(json.dumps({
+                    'success': True,
+                    'mode': 'SANDBOX_PREVIEW_CONFIRMED',
+                    'strategy': 'COVERED_STOCK',
+                    'clientOrderId': client_order_id,
+                    'preview': prev_data
+                }))
+                return
+            except Exception as e:
+                print(json.dumps({'success': False, 'mode': 'PREVIEW_ERROR', 'error': str(e)}))
+                return
+
+        try:
+            res = tc.order_v2.place_option(acc_id, covered_payload)
+            if res.status_code == 200:
+                res_data = res.json()
+                order_id = res_data.get('order_id') or res_data.get('combo_order_id')
+                print(json.dumps({
+                    'success': True,
+                    'mode': 'LIVE_OPENAPI_OPTION',
+                    'strategy': 'COVERED_STOCK',
+                    'clientOrderId': client_order_id,
+                    'result': res_data,
+                    'order': {
+                        'id': order_id,
+                        'symbol': symbol,
+                        'instrumentType': 'OPTION',
+                        'optionType': option_type,
+                        'strikePrice': float(strike_price),
+                        'expirationDate': expire_date,
+                        'qty': qty,
+                        'side': action,
+                        'price': float(price),
+                        'stockPrice': float(stock_quote_price),
+                        'status': 'submitted',
+                        'clientOrderId': client_order_id,
+                        'strategy': 'COVERED_STOCK'
+                    }
+                }))
+                return
+            else:
+                print(json.dumps({
+                    'success': False,
+                    'mode': 'LIVE_OPENAPI_OPTION',
+                    'strategy': 'COVERED_STOCK',
+                    'status': res.status_code,
+                    'clientOrderId': client_order_id,
+                    'error': res.text
+                }))
+                return
+        except Exception as e:
+            print(json.dumps({
+                'success': False,
+                'mode': 'LIVE_OPENAPI_OPTION',
+                'strategy': 'COVERED_STOCK',
+                'clientOrderId': client_order_id,
+                'error': str(e)
+            }))
+            return
+
+    # Orden Simple (SINGLE OPTION: PUT o CALL)
     option_payload = [
         {
             "client_order_id": client_order_id,
@@ -243,103 +389,7 @@ def cmd_place_option(args):
         }
     ]
 
-    try:
-        res = tc.order_v2.place_option(acc_id, option_payload)
-        if res.status_code == 200:
-            print(json.dumps({
-                'success': True,
-                'mode': 'LIVE_OPENAPI_OPTION',
-                'clientOrderId': client_order_id,
-                'result': res.json(),
-                'order': {
-                    'symbol': symbol,
-                    'instrumentType': 'OPTION',
-                    'optionType': option_type,
-                    'strikePrice': float(strike_price),
-                    'expirationDate': expire_date,
-                    'qty': qty,
-                    'side': action,
-                    'price': float(price),
-                    'status': 'submitted',
-                    'clientOrderId': client_order_id
-                }
-            }))
-            return
-    except Exception as e:
-        err_msg = str(e)
-        if 'CAVERED_CALL_STOCK_NO_ENOUGH' in err_msg and action == 'SELL' and option_type == 'CALL':
-            try:
-                stock_quote_price = getattr(args, 'stock_price', 0.0)
-                if not stock_quote_price or stock_quote_price <= 0:
-                    try:
-                        q_res = tc.trade_instrument.get_instrument_quote('US', symbol)
-                        if q_res.status_code == 200:
-                            stock_quote_price = float(q_res.json().get('price', 220.0))
-                        else:
-                            stock_quote_price = 220.0
-                    except Exception:
-                        stock_quote_price = 220.0
-
-                covered_payload = [
-                    {
-                        "client_order_id": client_order_id,
-                        "combo_type": "NORMAL",
-                        "order_type": order_type,
-                        "quantity": str(qty),
-                        "limit_price": str(stock_quote_price),
-                        "option_strategy": "COVERED_STOCK",
-                        "side": "BUY",
-                        "time_in_force": "GTC",
-                        "entrust_type": "QTY",
-                        "legs": [
-                            {
-                                "side": "BUY",
-                                "quantity": str(qty * 100),
-                                "symbol": symbol,
-                                "instrument_type": "EQUITY",
-                                "market": "US"
-                            },
-                            {
-                                "side": "SELL",
-                                "quantity": str(qty),
-                                "symbol": symbol,
-                                "strike_price": strike_price,
-                                "option_expire_date": expire_date,
-                                "instrument_type": "OPTION",
-                                "option_type": "CALL",
-                                "market": "US"
-                            }
-                        ]
-                    }
-                ]
-                res2 = tc.order_v2.place_option(acc_id, covered_payload)
-                if res2.status_code == 200:
-                    res_data = res2.json()
-                    order_id = res_data.get('order_id') or res_data.get('combo_order_id')
-                    print(json.dumps({
-                        'success': True,
-                        'mode': 'LIVE_OPENAPI_OPTION',
-                        'clientOrderId': client_order_id,
-                        'result': res_data,
-                        'order': {
-                            'id': order_id,
-                            'symbol': symbol,
-                            'instrumentType': 'OPTION',
-                            'optionType': option_type,
-                            'strikePrice': float(strike_price),
-                            'expirationDate': expire_date,
-                            'qty': qty,
-                            'side': action,
-                            'price': float(price),
-                            'status': 'submitted',
-                            'clientOrderId': client_order_id,
-                            'strategy': 'COVERED_STOCK'
-                        }
-                    }))
-                    return
-            except Exception as e2:
-                err_msg = str(e2)
-
+    if getattr(args, 'preview', False):
         try:
             prev = tc.order_v2.preview_option(acc_id, option_payload)
             prev_data = prev.json() if prev.status_code == 200 else {}
@@ -347,8 +397,26 @@ def cmd_place_option(args):
                 'success': True,
                 'mode': 'SANDBOX_PREVIEW_CONFIRMED',
                 'clientOrderId': client_order_id,
-                'preview': prev_data,
+                'preview': prev_data
+            }))
+            return
+        except Exception as e:
+            print(json.dumps({'success': False, 'mode': 'PREVIEW_ERROR', 'error': str(e)}))
+            return
+
+    try:
+        res = tc.order_v2.place_option(acc_id, option_payload)
+        if res.status_code == 200:
+            res_data = res.json()
+            order_id = res_data.get('order_id') or res_data.get('combo_order_id')
+            print(json.dumps({
+                'success': True,
+                'mode': 'LIVE_OPENAPI_OPTION',
+                'strategy': 'SINGLE',
+                'clientOrderId': client_order_id,
+                'result': res_data,
                 'order': {
+                    'id': order_id,
                     'symbol': symbol,
                     'instrumentType': 'OPTION',
                     'optionType': option_type,
@@ -362,9 +430,25 @@ def cmd_place_option(args):
                 }
             }))
             return
-        except Exception:
-            pass
-        print(json.dumps({'success': False, 'error': err_msg}))
+        else:
+            print(json.dumps({
+                'success': False,
+                'mode': 'LIVE_OPENAPI_OPTION',
+                'strategy': 'SINGLE',
+                'status': res.status_code,
+                'clientOrderId': client_order_id,
+                'error': res.text
+            }))
+            return
+    except Exception as e:
+        print(json.dumps({
+            'success': False,
+            'mode': 'LIVE_OPENAPI_OPTION',
+            'strategy': 'SINGLE',
+            'clientOrderId': client_order_id,
+            'error': str(e)
+        }))
+        return
 
 def cmd_cancel_order(args):
     tc, _ = get_clients()
@@ -401,18 +485,21 @@ def main():
     p_order.add_argument('--action', default='BUY')
     p_order.add_argument('--price', type=float, default=0.0)
     p_order.add_argument('--type', default='LIMIT')
+    p_order.add_argument('--preview', action='store_true', default=False)
 
     # place_option (calls & puts)
     p_opt = subparsers.add_parser('place_option')
     p_opt.add_argument('--symbol', required=True)
     p_opt.add_argument('--strike_price', type=float, required=True)
     p_opt.add_argument('--option_type', default='CALL')
-    p_opt.add_argument('--expire_date', default='2026-10-16')
+    p_opt.add_argument('--expire_date', default='2026-12-18')
     p_opt.add_argument('--qty', type=int, default=1)
     p_opt.add_argument('--action', default='BUY')
     p_opt.add_argument('--price', type=float, default=5.0)
     p_opt.add_argument('--stock_price', type=float, default=0.0)
+    p_opt.add_argument('--strategy', default='SINGLE', choices=['SINGLE', 'COVERED_STOCK'])
     p_opt.add_argument('--type', default='LIMIT')
+    p_opt.add_argument('--preview', action='store_true', default=False)
 
     # cancel_order
     p_cancel = subparsers.add_parser('cancel_order')

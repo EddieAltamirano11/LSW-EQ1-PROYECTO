@@ -139,13 +139,36 @@ export const normalCDF = (x) => {
   return x > 0 ? 1 - prob : prob;
 };
 
+export const getValidOptionsFriday = (days = 45, refDate = new Date()) => {
+  const target = new Date(refDate.getTime() + days * 86400000);
+  const year = target.getUTCFullYear();
+  const month = target.getUTCMonth();
+  const firstDay = new Date(Date.UTC(year, month, 1));
+  const firstDayOfWeek = firstDay.getUTCDay(); // 0=Sun, 5=Fri
+  const daysUntilFirstFriday = (5 - firstDayOfWeek + 7) % 7;
+  const firstFriday = 1 + daysUntilFirstFriday;
+  const thirdFridayDate = firstFriday + 14;
+  let chosenDate = new Date(Date.UTC(year, month, thirdFridayDate));
+  const diffDays = Math.round((chosenDate.getTime() - target.getTime()) / 86400000);
+  if (diffDays < -10) {
+    const nextMonth = month + 1;
+    const nextFirstDay = new Date(Date.UTC(year, nextMonth, 1));
+    const nextFirstDayOfWeek = nextFirstDay.getUTCDay();
+    const nextDaysUntilFirstFriday = (5 - nextFirstDayOfWeek + 7) % 7;
+    const nextFirstFriday = 1 + nextDaysUntilFirstFriday;
+    chosenDate = new Date(Date.UTC(year, nextMonth, nextFirstFriday + 14));
+  }
+  const yyyy = chosenDate.getUTCFullYear();
+  const mm = String(chosenDate.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(chosenDate.getUTCDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
 export const computeLocalCandidates = (limit = 5, sortBy = 'probability', dteHorizon = 45) => {
   const T = dteHorizon / 365;
   const r = 0.045; // 4.5% tasa libre de riesgo Fed
 
-  const targetDate = new Date();
-  targetDate.setDate(targetDate.getDate() + dteHorizon);
-  const expirationStr = targetDate.toISOString().split('T')[0];
+  const expirationStr = getValidOptionsFriday(dteHorizon);
 
   const evaluated = BASKET.map((asset) => {
     const spot = asset.referenceSpot;

@@ -530,83 +530,107 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
     const contracts = Number(params.contracts) || Math.max(1, Math.ceil(sharesCount / 100));
 
     if (targetBroker === 'WEBULL') {
-      // 1. Pata Acciones Subyacentes (Compra en Webull OpenAPI)
+      // 1. Pata Call Financiador + Acciones (Webull OpenAPI exige combo COVERED_STOCK)
+      // Agrupa atómicamente la compra de acciones y la venta de la Call bajo una única orden
+      // ("Cover Option" en Webull), permitiendo emitir sin rechazo de acciones insuficientes.
       if (buyUnderlying !== false) {
         try {
-          const stockOrder = await createBrokerOrder({
+          const comboOrder = await createBrokerOrder({
             broker: 'WEBULL',
             symbol: ticker,
-            instrumentType: 'EQUITY',
-            qty: sharesCount,
-            side: 'buy',
+            contractSymbol: optimalCall.contractSymbol,
+            instrumentType: 'OPTION',
+            optionType: 'CALL',
+            strategy: 'COVERED_STOCK',
+            strikePrice: optimalCall.strike,
+            spotPrice,
+            stockPrice: spotPrice,
+            expirationDate: cleanExpDate,
+            qty: contracts,
+            side: 'sell',
             type: 'limit',
-            limitPrice: spotPrice,
+            limitPrice: optimalCall.premium,
             timeInForce: 'gtc',
           }, 'WEBULL');
 
+          const comboOrderId = comboOrder.order?.id || comboOrder.id;
+
+          // Pata 1: Acciones vinculadas en el combo
           executedOrders.push({
             legRole: 'UNDERLYING',
             legType: 'EQUITY',
             action: 'BUY',
             symbol: ticker,
-            quantity: sharesCount,
+            quantity: contracts * 100,
             limitPrice: spotPrice,
-            orderId: stockOrder.order?.id || stockOrder.id,
-            status: stockOrder.order?.status || 'submitted',
-            details: stockOrder,
+            orderId: comboOrderId,
+            status: comboOrder.order?.status || 'submitted',
+            details: comboOrder,
+          });
+
+          // Pata 2: Opción Call Financiador vinculada en el combo
+          executedOrders.push({
+            legRole: 'FINANCE_CEILING',
+            legType: 'CALL',
+            action: 'SELL',
+            strike: optimalCall.strike,
+            contractSymbol: optimalCall.contractSymbol,
+            quantity: contracts,
+            limitPrice: optimalCall.premium,
+            orderId: comboOrderId,
+            status: comboOrder.order?.status || 'submitted',
+            details: comboOrder,
           });
         } catch (err) {
           executionErrors.push({
-            legRole: 'UNDERLYING',
-            legType: 'EQUITY',
+            legRole: 'COVERED_STOCK_COMBO',
+            legType: 'COMBO',
+            error: err.message,
+          });
+        }
+      } else {
+        // buyUnderlying === false: El usuario ya posee las 100 acciones en su cuenta
+        try {
+          const callOrder = await createBrokerOrder({
+            broker: 'WEBULL',
+            symbol: ticker,
+            contractSymbol: optimalCall.contractSymbol,
+            instrumentType: 'OPTION',
+            optionType: 'CALL',
+            strategy: 'SINGLE',
+            strikePrice: optimalCall.strike,
+            expirationDate: cleanExpDate,
+            qty: contracts,
+            side: 'sell',
+            type: 'limit',
+            limitPrice: optimalCall.premium,
+            timeInForce: 'gtc',
+          }, 'WEBULL');
+
+          const callOrderId = callOrder.order?.id || callOrder.id;
+
+          executedOrders.push({
+            legRole: 'FINANCE_CEILING',
+            legType: 'CALL',
+            action: 'SELL',
+            strike: optimalCall.strike,
+            contractSymbol: optimalCall.contractSymbol,
+            quantity: contracts,
+            limitPrice: optimalCall.premium,
+            orderId: callOrderId,
+            status: callOrder.order?.status || 'submitted',
+            details: callOrder,
+          });
+        } catch (err) {
+          executionErrors.push({
+            legRole: 'FINANCE_CEILING',
+            legType: 'CALL',
             error: err.message,
           });
         }
       }
 
-      // 2. Pata Call Financiador (Short Call en Webull OpenAPI)
-      try {
-        const callOrder = await createBrokerOrder({
-          broker: 'WEBULL',
-          symbol: ticker,
-          contractSymbol: optimalCall.contractSymbol,
-          instrumentType: 'OPTION',
-          optionType: 'CALL',
-          strikePrice: optimalCall.strike,
-          spotPrice,
-          stockPrice: spotPrice,
-          expirationDate,
-          qty: contracts,
-          side: 'sell',
-          type: 'limit',
-          limitPrice: optimalCall.premium,
-          timeInForce: 'gtc',
-        }, 'WEBULL');
-
-        const callOrderId = callOrder.order?.id || callOrder.id;
-
-        // Pata Opción Call Financiador
-        executedOrders.push({
-          legRole: 'FINANCE_CEILING',
-          legType: 'CALL',
-          action: 'SELL',
-          strike: optimalCall.strike,
-          contractSymbol: optimalCall.contractSymbol,
-          quantity: contracts,
-          limitPrice: optimalCall.premium,
-          orderId: callOrderId,
-          status: callOrder.order?.status || 'submitted',
-          details: callOrder,
-        });
-      } catch (err) {
-        executionErrors.push({
-          legRole: 'FINANCE_CEILING',
-          legType: 'CALL',
-          error: err.message,
-        });
-      }
-
-      // 2. Pata Put Protector (SINGLE PUT en Webull)
+      // 3. Pata Put Protector (SINGLE PUT en Webull)
       try {
         const putOrder = await createBrokerOrder({
           broker: 'WEBULL',
@@ -614,8 +638,9 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
           contractSymbol: optimalPut.contractSymbol,
           instrumentType: 'OPTION',
           optionType: 'PUT',
+          strategy: 'SINGLE',
           strikePrice: optimalPut.strike,
-          expirationDate,
+          expirationDate: cleanExpDate,
           qty: contracts,
           side: 'buy',
           type: 'limit',
@@ -794,8 +819,22 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
         diagExplanation = `Precio límite ($${leg.limitPrice}) rechazado por violar límites NBBO (National Best Bid/Offer). Para vencimientos cercanos (${cleanExpDate}), la bolsa exige precios límites más cercanos al Bid/Ask real.`;
       } else if (cleanErrMsg.toLowerCase().includes('no security definition')) {
         diagExplanation = `Contrato inexistente en bolsa para ${leg.contractSymbol || leg.symbol} (strike $${leg.strike}, vencimiento ${cleanExpDate}).`;
+      } else if (cleanErrMsg.toLowerCase().includes('buying power is insufficient') || cleanErrMsg.toLowerCase().includes('insufficient options buying power')) {
+        diagExplanation = `Poder de compra insuficiente en la cuenta de ${targetBroker} para emitir la orden. Reduzca la cantidad o libere capital cancelando órdenes abiertas.`;
       } else if (rawErrMsg) {
         diagExplanation = cleanErrMsg;
+      }
+
+      // Regla Fundamental Institucional: CERO SIMULACIÓN. Si no está en vivo en el broker, se rechaza de inmediato
+      if (!ordId || ordId.startsWith('WB-SIM-') || ordId.startsWith('SIM-') || (!foundInBroker && process.env.NODE_ENV !== 'test')) {
+        unverifiedOrFailedLegs.push({
+          legRole: leg.legRole,
+          symbol: leg.contractSymbol || leg.symbol,
+          orderId: leg.orderId || 'SIN_ID',
+          status: liveStatus || 'unverified',
+          reason: `Pata ${leg.legRole} (${leg.contractSymbol || leg.symbol}, Orden #${leg.orderId || 'N/A'}): ${diagExplanation || 'Orden no confirmada en vivo en el libro de órdenes del broker.'}`,
+        });
+        continue;
       }
 
       if (['cancelled', 'canceled', 'rejected', 'inactive', 'failed', 'expired'].includes(liveStatus)) {

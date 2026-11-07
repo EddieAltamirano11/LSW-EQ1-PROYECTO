@@ -212,7 +212,14 @@ export default function BrokerExecutionModal({ isOpen, onClose, modalData }) {
                           {ord.status || 'submitted'}
                         </span>
                       </td>
-                      <td className="py-2 px-3 text-center text-slate-400 text-[11px]">{ord.orderId || 'N/A'}</td>
+                      <td className="py-2 px-3 text-center text-slate-400 text-[11px]">
+                        <div className="font-mono text-slate-200">{ord.orderId || 'N/A'}</div>
+                        {(ord.details?.order?.strategy === 'COVERED_STOCK' || ord.details?.strategy === 'COVERED_STOCK' || (ord.legRole === 'UNDERLYING' && orders.some(o => o.legRole === 'FINANCE_CEILING' && o.orderId === ord.orderId))) && (
+                          <span className="inline-block mt-0.5 text-[9px] text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-1.5 py-0.2 rounded font-sans uppercase">
+                            Cover Option Combo
+                          </span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

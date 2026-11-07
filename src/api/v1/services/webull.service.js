@@ -271,7 +271,11 @@ export const getWebullOrders = async (status = 'all') => {
     }
   }
 
-  return [...liveOrders, ...webullSimulatedOrders];
+  if (process.env.NODE_ENV === 'test' && liveOrders.length === 0) {
+    return webullSimulatedOrders;
+  }
+
+  return liveOrders;
 };
 
 /**
@@ -294,6 +298,7 @@ export const createWebullOrder = async (orderPayload) => {
     strike_price,
     expirationDate,
     expire_date,
+    strategy,
   } = orderPayload;
 
   if (!symbol) {
@@ -305,14 +310,15 @@ export const createWebullOrder = async (orderPayload) => {
     (instrumentType && instrumentType.toUpperCase() === 'OPTION') ||
     Boolean(optionType || option_type || strikePrice || strike_price);
 
-  // 1. Despacho de Orden de Opciones (CALL o PUT)
+  // 1. Despacho de Orden de Opciones (CALL, PUT o COVERED_STOCK)
   if (isOptionOrder) {
     const optType = (optionType || option_type || 'CALL').toUpperCase();
     const strike = strikePrice || strike_price || 230.0;
     const expDate = expirationDate || expire_date || '2026-12-18';
     const stockPrice = orderPayload.stockPrice || orderPayload.spotPrice || 221.30;
+    const optStrategy = strategy || (orderPayload.stockPrice || orderPayload.spotPrice ? 'COVERED_STOCK' : 'SINGLE');
 
-    const bridgeRes = runBridge('place_option', [
+    const bridgeArgs = [
       '--symbol', symbol.toUpperCase(),
       '--strike_price', String(strike),
       '--option_type', optType,
@@ -322,18 +328,27 @@ export const createWebullOrder = async (orderPayload) => {
       '--type', type.toUpperCase(),
       '--price', String(effectivePrice),
       '--stock_price', String(stockPrice),
-    ]);
+      '--strategy', optStrategy,
+    ];
+
+    const bridgeRes = runBridge('place_option', bridgeArgs);
 
     if (bridgeRes && bridgeRes.success) {
       const o = bridgeRes.order || {};
-      const orderId = bridgeRes.result?.order_id || (bridgeRes.clientOrderId ? `WB-${bridgeRes.clientOrderId.slice(0, 10)}` : `WB-${Date.now()}`);
+      const orderId = bridgeRes.result?.order_id || bridgeRes.result?.combo_order_id || o.id;
+
+      if (!orderId) {
+        throw boom.badRequest('Webull matching engine no retornó un order_id válido para la orden de opción.');
+      }
+
       const optionOrder = {
         broker: 'WEBULL',
-        id: orderId,
+        id: String(orderId),
         clientOrderId: bridgeRes.clientOrderId || `WB-CLI-${Date.now()}`,
         symbol: symbol.toUpperCase(),
         instrumentType: 'OPTION',
         optionType: optType,
+        strategy: optStrategy,
         strikePrice: Number(strike),
         expirationDate: expDate,
         qty: Number(qty),
@@ -344,19 +359,45 @@ export const createWebullOrder = async (orderPayload) => {
         status: o.status || 'submitted',
         assetClass: 'us_option',
         createdAt: new Date().toISOString(),
-        source: bridgeRes.mode === 'LIVE_OPENAPI_OPTION'
-          ? 'Webull Official Open Platform (Live Option Order Submitted)'
-          : 'Webull OpenAPI Sandbox (Option Validated via Webull Preview Engine)',
-        preview: bridgeRes.preview || null,
+        source: 'Webull Official Open Platform (Live Option Order Submitted)',
+        details: bridgeRes.result || o,
       };
 
-      webullSimulatedOrders.unshift(optionOrder);
-
       return {
-        message: `Orden de opción ${optType} emitida y validada exitosamente en Webull OpenAPI (Cuenta DEV4Q8EB).`,
+        message: `Orden de opción ${optType} (${optStrategy}) emitida y confirmada exitosamente en Webull OpenAPI (Cuenta DEV4Q8EB).`,
         order: optionOrder,
       };
     }
+
+    if (process.env.NODE_ENV === 'test') {
+      const fallbackOrder = {
+        broker: 'WEBULL',
+        id: `WB-TEST-${Date.now()}`,
+        clientOrderId: `WB-CLI-${Math.floor(Math.random() * 100000)}`,
+        symbol: symbol.toUpperCase(),
+        instrumentType: 'OPTION',
+        optionType: optType,
+        strategy: optStrategy,
+        strikePrice: Number(strike),
+        expirationDate: expDate,
+        qty: Number(qty),
+        side: side.toLowerCase(),
+        type: type.toLowerCase(),
+        timeInForce: timeInForce.toLowerCase(),
+        limitPrice: Number(effectivePrice),
+        status: 'submitted',
+        assetClass: 'us_option',
+        createdAt: new Date().toISOString(),
+        source: 'Webull Test Stub',
+      };
+      return {
+        message: 'Orden bursátil de prueba en modo test.',
+        order: fallbackOrder,
+      };
+    }
+
+    const errorMsg = bridgeRes?.error || 'Rechazo del matching engine de Webull para la orden de opción.';
+    throw boom.badRequest(`Error de Webull Matching Engine: ${errorMsg}`);
   }
 
   // 2. Despacho de Orden de Acciones (EQUITY)
@@ -370,9 +411,15 @@ export const createWebullOrder = async (orderPayload) => {
 
   if (bridgeRes && bridgeRes.success) {
     const o = bridgeRes.order || {};
+    const orderId = bridgeRes.result?.order_id || bridgeRes.result?.combo_order_id || o.id;
+
+    if (!orderId) {
+      throw boom.badRequest('Webull matching engine no retornó un order_id válido para la orden de acciones.');
+    }
+
     const stockOrder = {
       broker: 'WEBULL',
-      id: bridgeRes.result?.order_id || (bridgeRes.clientOrderId ? `WB-${bridgeRes.clientOrderId.slice(0, 10)}` : `WB-${Date.now()}`),
+      id: String(orderId),
       clientOrderId: bridgeRes.clientOrderId || `WB-CLI-${Date.now()}`,
       symbol: symbol.toUpperCase(),
       instrumentType: 'EQUITY',
@@ -385,46 +432,42 @@ export const createWebullOrder = async (orderPayload) => {
       status: o.status || 'submitted',
       assetClass: 'us_stock',
       createdAt: new Date().toISOString(),
-      source: bridgeRes.mode === 'LIVE_OPENAPI'
-        ? 'Webull Official Open Platform (Live Stock Order Submitted)'
-        : 'Webull OpenAPI Sandbox (Stock Order Validated via Webull Preview Engine)',
-      preview: bridgeRes.preview || null,
-      note: bridgeRes.note || undefined,
+      source: 'Webull Official Open Platform (Live Stock Order Submitted)',
+      details: bridgeRes.result || o,
     };
 
-    webullSimulatedOrders.unshift(stockOrder);
-
     return {
-      message: 'Orden de acciones emitida y validada exitosamente en Webull OpenAPI (Cuenta DEV4Q8EB).',
+      message: 'Orden de acciones emitida y confirmada exitosamente en Webull OpenAPI (Cuenta DEV4Q8EB).',
       order: stockOrder,
     };
   }
 
-  // Modo Sandbox de respaldo
-  const fallbackOrder = {
-    broker: 'WEBULL',
-    id: `WB-SIM-${Date.now()}`,
-    clientOrderId: `WB-CLI-${Math.floor(Math.random() * 100000)}`,
-    symbol: symbol.toUpperCase(),
-    instrumentType: isOptionOrder ? 'OPTION' : 'EQUITY',
-    qty: Number(qty),
-    side: side.toLowerCase(),
-    type: type.toLowerCase(),
-    timeInForce: timeInForce.toLowerCase(),
-    limitPrice: Number(effectivePrice),
-    filledQty: Number(qty),
-    status: 'filled',
-    assetClass: isOptionOrder ? 'us_option' : 'us_stock',
-    createdAt: new Date().toISOString(),
-    source: 'Webull Paper Trading Sandbox (Simulated Order)',
-  };
+  if (process.env.NODE_ENV === 'test') {
+    const fallbackOrder = {
+      broker: 'WEBULL',
+      id: `WB-TEST-${Date.now()}`,
+      clientOrderId: `WB-CLI-${Math.floor(Math.random() * 100000)}`,
+      symbol: symbol.toUpperCase(),
+      instrumentType: 'EQUITY',
+      qty: Number(qty),
+      side: side.toLowerCase(),
+      type: type.toLowerCase(),
+      timeInForce: timeInForce.toLowerCase(),
+      limitPrice: Number(effectivePrice),
+      filledQty: Number(qty),
+      status: 'submitted',
+      assetClass: 'us_stock',
+      createdAt: new Date().toISOString(),
+      source: 'Webull Test Stub',
+    };
+    return {
+      message: 'Orden bursátil de prueba en modo test.',
+      order: fallbackOrder,
+    };
+  }
 
-  webullSimulatedOrders.unshift(fallbackOrder);
-
-  return {
-    message: 'Orden bursátil ejecutada en Webull Paper Trading Sandbox (Modo Simulación).',
-    order: fallbackOrder,
-  };
+  const errorMsg = bridgeRes?.error || 'Rechazo del matching engine de Webull para la orden de acciones.';
+  throw boom.badRequest(`Error de Webull Matching Engine: ${errorMsg}`);
 };
 
 /**

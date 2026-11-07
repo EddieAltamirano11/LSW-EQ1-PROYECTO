@@ -139,12 +139,30 @@ export const MARKET_BASKET = [
 
 /**
  * Calcula la fecha de expiración estándar para un horizonte en días dado (DTE)
+ * Ajusta y alinea estrictamente al 3er viernes del mes (vencimiento mensual estándar CBOE/Webull)
  */
-export const calculateTargetExpiration = (days) => {
-  const d = new Date(Date.now() + days * 86400000);
-  const yyyy = d.getUTCFullYear();
-  const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
-  const dd = String(d.getUTCDate()).padStart(2, '0');
+export const calculateTargetExpiration = (days = 45, refDate = new Date()) => {
+  const target = new Date(refDate.getTime() + days * 86400000);
+  const year = target.getUTCFullYear();
+  const month = target.getUTCMonth();
+  const firstDay = new Date(Date.UTC(year, month, 1));
+  const firstDayOfWeek = firstDay.getUTCDay(); // 0=Sun, 5=Fri
+  const daysUntilFirstFriday = (5 - firstDayOfWeek + 7) % 7;
+  const firstFriday = 1 + daysUntilFirstFriday;
+  const thirdFridayDate = firstFriday + 14;
+  let chosenDate = new Date(Date.UTC(year, month, thirdFridayDate));
+  const diffDays = Math.round((chosenDate.getTime() - target.getTime()) / 86400000);
+  if (diffDays < -10) {
+    const nextMonth = month + 1;
+    const nextFirstDay = new Date(Date.UTC(year, nextMonth, 1));
+    const nextFirstDayOfWeek = nextFirstDay.getUTCDay();
+    const nextDaysUntilFirstFriday = (5 - nextFirstDayOfWeek + 7) % 7;
+    const nextFirstFriday = 1 + nextDaysUntilFirstFriday;
+    chosenDate = new Date(Date.UTC(year, nextMonth, nextFirstFriday + 14));
+  }
+  const yyyy = chosenDate.getUTCFullYear();
+  const mm = String(chosenDate.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(chosenDate.getUTCDate()).padStart(2, '0');
   return `${yyyy}-${mm}-${dd}`;
 };
 
