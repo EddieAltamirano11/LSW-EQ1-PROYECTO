@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
+    "build": "npm --prefix client install && npm --prefix client run build",
     "test": "node --test",
     "test:api-quality": "node scripts/run_api_quality_checks.mjs",
     "tunnel": "..\\tools\\cloudflared.exe tunnel --url http://localhost:3050"
