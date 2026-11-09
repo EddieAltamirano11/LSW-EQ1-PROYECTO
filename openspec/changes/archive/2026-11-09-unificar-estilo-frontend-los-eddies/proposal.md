@@ -8,8 +8,9 @@ El acceso y el panel de React usan una interfaz oscura que difiere del estilo cl
 
 - Aplicar la paleta verde bosque, los fondos claros y la marca Los Eddies a las pantallas React, siguiendo el login público y la maqueta como referencias visuales.
 - Reorganizar formularios, filtros, tablas y modales para que sus controles sigan visibles, legibles y accesibles por teclado en pantallas estrechas.
-- Aplicar el estilo a las dos vistas de sesión, al escáner y ranking, a los contenedores de TradingView, al selector y avisos de órdenes y a los modales de criterios y respuesta del broker.
-- Conservar los controles, condiciones de visibilidad, valores por defecto, validaciones, estados y acciones existentes. El código vigente prevalece sobre los datos y flujos ilustrativos de la maqueta.
+- Aplicar el estilo a las dos vistas de sesión, al escáner y ranking, a los contenedores de TradingView, al selector de órdenes y los avisos de resultado, y a los modales de criterios y respuesta del broker.
+- Simplificar el panel retirando «Área de trabajo», la etiqueta de versión junto al título, el párrafo descriptivo del escáner y el aviso independiente de ejecución en vivo con su botón «Cambiar a Simulación». El selector «Órdenes» muestra el modo activo y permite cambiarlo.
+- Conservar los controles de los flujos vigentes, sus condiciones de visibilidad, valores por defecto, validaciones, estados y acciones. El código vigente prevalece sobre los datos y flujos ilustrativos de la maqueta.
 
 ## Capabilities
 

@@ -56,11 +56,11 @@ El panel SHALL conservar la acción de escaneo, los filtros Top 5 y Top 10, los 
 
 ### Requirement: Presentación de los modos de órdenes y de la respuesta
 
-El panel SHALL conservar el modo Real inicial, el selector de modo, el aviso de ejecución en vivo, la acción para volver a simulación, la acción por candidato según el modo y el aviso de resultado con su cierre. El modal SHALL presentar los datos y estados que recibe actualmente, incluidos el código HTTP, el contexto, el mensaje, las patas, las métricas y, cuando corresponda, el listado de órdenes. SHALL conservar la expansión, ocultación y copia del JSON con su indicador actual de copia y los dos controles de cierre.
+El panel SHALL iniciar en modo Real y concentrar la indicación y el cambio de modo en el selector «Órdenes». SHALL conservar la acción por candidato según el modo y el aviso de resultado con su cierre. El modal SHALL presentar los datos y estados que recibe actualmente, incluidos el código HTTP, el contexto, el mensaje, las patas, las métricas y, cuando corresponda, el listado de órdenes. SHALL conservar la expansión, ocultación y copia del JSON con su indicador actual de copia y los dos controles de cierre.
 
 #### Scenario: Identificar el modo de órdenes
 - **WHEN** se presenta el panel en su estado inicial o en el modo Simulado existente
-- **THEN** el modo activo se distingue con texto, el aviso de ejecución en vivo aparece en modo Real y la acción de cada fila conserva la etiqueta correspondiente, «Emitir a Broker» o «Ejecutar».
+- **THEN** el selector «Órdenes» muestra el modo activo con texto y permite cambiar entre Real y Simulado, y la acción de cada fila conserva la etiqueta correspondiente, «Emitir a Broker» o «Ejecutar».
 
 #### Scenario: Presentar el detalle de respuesta
 - **WHEN** la aplicación muestra el modal de respuesta en su flujo vigente
@@ -68,7 +68,7 @@ El panel SHALL conservar el modo Real inicial, el selector de modo, el aviso de 
 
 ### Requirement: Compatibilidad de la interfaz con los flujos vigentes
 
-El rediseño SHALL conservar los valores por defecto, las validaciones, los estados, las acciones y las condiciones de visibilidad del cliente. SHALL mantener las rutas de la aplicación y las solicitudes vigentes de autenticación, escaneo y ejecución, con los mismos métodos, parámetros, headers, payloads, respaldos y tratamiento de respuestas y errores. SHALL preservar el almacenamiento de sesión y la integración de TradingView.
+El rediseño SHALL conservar los valores por defecto, las validaciones, los estados y las condiciones de visibilidad de los controles de los flujos vigentes. SHALL mantener las rutas de la aplicación y las solicitudes vigentes de autenticación, escaneo y ejecución, con los mismos métodos, parámetros, headers, payloads, respaldos y tratamiento de respuestas y errores. SHALL preservar el almacenamiento de sesión y la integración de TradingView.
 
 #### Scenario: Revisar los consumidores después del rediseño
 - **WHEN** se compara el código del cliente con la versión anterior
