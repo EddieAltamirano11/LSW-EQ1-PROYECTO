@@ -1,18 +1,13 @@
 import React, { useState } from 'react';
 import {
-  Database,
-  ShieldCheck,
-  TrendingUp,
   Lock,
   User,
   ArrowRight,
-  Server,
-  Globe,
   Settings,
   AlertTriangle,
   RefreshCw,
-  Zap,
 } from 'lucide-react';
+import { brokerOptions, databaseOptions, DEFAULT_BROKER, DEFAULT_DATABASE } from '../sessionTargets';
 
 const getDefaultBackendUrl = () => {
   if (typeof window !== 'undefined') {
@@ -36,8 +31,8 @@ const getDefaultBackendUrl = () => {
 export default function LoginView({ onLoginSuccess }) {
   const [username, setUsername] = useState('demo.trader');
   const [password, setPassword] = useState('demo1234');
-  const [databaseTarget, setDatabaseTarget] = useState('mongodb');
-  const [brokerTarget, setBrokerTarget] = useState('WEBULL');
+  const [databaseTarget, setDatabaseTarget] = useState(DEFAULT_DATABASE);
+  const [brokerTarget, setBrokerTarget] = useState(DEFAULT_BROKER);
   const [backendUrl, setBackendUrl] = useState(getDefaultBackendUrl);
   const [showServerSettings, setShowServerSettings] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -145,234 +140,191 @@ export default function LoginView({ onLoginSuccess }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[#070a12] via-[#0b0f19] to-[#111827]">
-      <div className="max-w-md w-full bg-[#111827] border border-slate-800 rounded-2xl shadow-2xl p-8 backdrop-blur-xl">
-        {/* Header Institucional */}
-        <div className="text-center mb-8">
-          <div className="inline-flex p-3 bg-indigo-600/10 border border-indigo-500/20 rounded-xl mb-3 text-indigo-400">
-            <TrendingUp className="w-8 h-8" />
+    <main className="grid min-h-screen place-items-center px-4 py-6 sm:px-8 sm:py-10">
+      <div className="ui-panel grid w-full max-w-5xl overflow-hidden md:grid-cols-[0.9fr_1.1fr]">
+        <aside className="login-art flex flex-col justify-between gap-5 p-5 text-white sm:p-8 lg:p-10">
+          <div className="flex items-center gap-3">
+            <span className="brand-mark" aria-hidden="true"><span /><span /><span /></span>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ui-accent)]">LSW · Equipo 1</p>
+              <p className="text-xl font-semibold tracking-tight">Los Eddies</p>
+            </div>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">
-            Plataforma Cuantitativa de Coberturas
-          </h1>
-          <p className="text-xs text-indigo-400 font-medium tracking-wide uppercase mt-1">
-            API v2 Microservicio • Equipo 1 Los Eddies
-          </p>
-          <p className="text-xs text-slate-400 mt-2">
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[var(--ui-accent)]">API v2 Microservicio</p>
+            <p className="max-w-xs text-2xl font-semibold leading-tight tracking-tight lg:text-4xl">
+              Plataforma Cuantitativa de Coberturas
+            </p>
+          </div>
+          <p className="hidden max-w-xs text-xs leading-relaxed text-white/90 md:block">
             Laboratorio de Servicios Web • Dr. Francisco Ibarra Carlos
           </p>
-        </div>
+        </aside>
 
-        {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-300 space-y-2">
-            <div className="flex items-start gap-2 font-semibold">
-              <AlertTriangle className="w-4 h-4 shrink-0 text-red-400 mt-0.5" />
-              <span>{error}</span>
-            </div>
-            <div className="pt-2 border-t border-red-500/20 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => handleSetUrlPreset('https://lsw-eq1-proyecto.onrender.com')}
-                className="text-[11px] text-indigo-300 hover:underline"
-              >
-                Apuntar a Render Cloud
-              </button>
-              <button
-                type="button"
-                onClick={handleOfflineDemoLogin}
-                className="text-[11px] font-medium bg-red-500/20 hover:bg-red-500/30 text-white px-2 py-1 rounded"
-              >
-                Acceso Rápido Demo
-              </button>
-            </div>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Campo Usuario */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-              Usuario de Demostración
-            </label>
-            <div className="relative">
-              <User className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                required
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full bg-[#0b0f19] border border-slate-700 rounded-lg pl-10 pr-3 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
-                placeholder="Nombre de usuario"
-              />
-            </div>
+        <section className="min-w-0 p-5 sm:p-8 lg:p-10" aria-labelledby="login-title">
+          <div className="mb-6">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-[var(--ui-green)]">Acceso al sistema</p>
+            <h1 id="login-title" className="text-3xl font-semibold tracking-tight">Iniciar sesión</h1>
           </div>
 
-          {/* Campo Contraseña */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-              Contraseña
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-[#0b0f19] border border-slate-700 rounded-lg pl-10 pr-3 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
-                placeholder="••••••••"
-              />
+          {error && (
+            <div className="mb-5 space-y-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-900">
+              <div className="flex items-start gap-2 break-words" role="alert">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                <span className="min-w-0">{error}</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleSetUrlPreset('https://lsw-eq1-proyecto.onrender.com')}
+                  className="ui-button"
+                >
+                  Apuntar a Render Cloud
+                </button>
+                <button type="button" onClick={handleOfflineDemoLogin} className="ui-button">
+                  Acceso Rápido Demo
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Selector de Persistencia Políglota */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2 flex items-center justify-between">
-              <span>Persistencia Políglota</span>
-              <Database className="w-3.5 h-3.5 text-slate-400" />
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setDatabaseTarget('mongodb')}
-                className={`py-2 px-3 text-xs font-medium rounded-lg border flex items-center justify-center gap-1.5 transition ${
-                  databaseTarget === 'mongodb'
-                    ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400'
-                    : 'bg-[#0b0f19] border-slate-700 text-slate-400 hover:text-white'
-                }`}
-              >
-                <span>MongoDB (NoSQL)</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setDatabaseTarget('supabase')}
-                className={`py-2 px-3 text-xs font-medium rounded-lg border flex items-center justify-center gap-1.5 transition ${
-                  databaseTarget === 'supabase'
-                    ? 'bg-sky-500/10 border-sky-500 text-sky-400'
-                    : 'bg-[#0b0f19] border-slate-700 text-slate-400 hover:text-white'
-                }`}
-              >
-                <span>Supabase (SQL)</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Selector de Broker */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2 flex items-center justify-between">
-              <span>Broker Bursátil Objetivo</span>
-              <Server className="w-3.5 h-3.5 text-slate-400" />
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => setBrokerTarget('IBKR')}
-                className={`py-2 px-2 text-[11px] font-medium rounded-lg border text-center transition ${
-                  brokerTarget === 'IBKR'
-                    ? 'bg-red-500/10 border-red-500 text-red-400'
-                    : 'bg-[#0b0f19] border-slate-700 text-slate-400 hover:text-white'
-                }`}
-              >
-                IBKR (TWS)
-              </button>
-              <button
-                type="button"
-                onClick={() => setBrokerTarget('ALPACA')}
-                className={`py-2 px-2 text-[11px] font-medium rounded-lg border text-center transition ${
-                  brokerTarget === 'ALPACA'
-                    ? 'bg-amber-500/10 border-amber-500 text-amber-400'
-                    : 'bg-[#0b0f19] border-slate-700 text-slate-400 hover:text-white'
-                }`}
-              >
-                Alpaca Markets
-              </button>
-              <button
-                type="button"
-                onClick={() => setBrokerTarget('WEBULL')}
-                className={`py-2 px-2 text-[11px] font-medium rounded-lg border text-center transition ${
-                  brokerTarget === 'WEBULL'
-                    ? 'bg-indigo-500/10 border-indigo-500 text-indigo-400'
-                    : 'bg-[#0b0f19] border-slate-700 text-slate-400 hover:text-white'
-                }`}
-              >
-                Webull
-              </button>
-            </div>
-          </div>
-
-          {/* Panel Desplegable de Ajustes de Servidor */}
-          <div className="pt-1">
-            <button
-              type="button"
-              onClick={() => setShowServerSettings(!showServerSettings)}
-              className="text-xs text-slate-400 hover:text-indigo-300 flex items-center gap-1.5 transition"
-            >
-              <Settings className="w-3.5 h-3.5" />
-              <span>{showServerSettings ? 'Ocultar ajustes de servidor' : 'Ajustes de Servidor Backend'}</span>
-            </button>
-
-            {showServerSettings && (
-              <div className="mt-3 p-3.5 bg-[#0b0f19] border border-slate-800 rounded-xl space-y-2.5 animate-in fade-in">
-                <label className="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider">
-                  URL del Microservicio Backend
-                </label>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="login-username" className="ui-label">Usuario de Demostración</label>
+              <div className="relative">
+                <User className="pointer-events-none absolute left-3.5 top-3.5 h-4 w-4 text-[var(--ui-muted)]" aria-hidden="true" />
                 <input
+                  id="login-username"
                   type="text"
-                  value={backendUrl}
-                  onChange={(e) => setBackendUrl(e.target.value)}
-                  placeholder="https://lsw-eq1-proyecto.onrender.com"
-                  className="w-full bg-[#111827] border border-slate-700 rounded px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-indigo-500"
+                  required
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="ui-field py-2 pl-10 pr-3"
+                  placeholder="Nombre de usuario"
                 />
-                <div className="flex gap-2">
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="login-password" className="ui-label">Contraseña</label>
+              <div className="relative">
+                <Lock className="pointer-events-none absolute left-3.5 top-3.5 h-4 w-4 text-[var(--ui-muted)]" aria-hidden="true" />
+                <input
+                  id="login-password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="ui-field py-2 pl-10 pr-3"
+                  placeholder="••••••••"
+                />
+              </div>
+            </div>
+
+            <fieldset className="min-w-0">
+              <legend className="ui-label">Persistencia Políglota</legend>
+              <div className="ui-segments grid-cols-2">
+                {databaseOptions.map(({ value, label, detail }) => (
                   <button
+                    key={value}
                     type="button"
-                    onClick={() => handleSetUrlPreset('https://lsw-eq1-proyecto.onrender.com')}
-                    className="flex-1 py-1 px-2 text-[10px] rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/20"
+                    onClick={() => setDatabaseTarget(value)}
+                    aria-pressed={databaseTarget === value}
+                    className="ui-option"
                   >
-                    Render Cloud
+                    {label} <small className="whitespace-nowrap">{detail}</small>
                   </button>
+                ))}
+              </div>
+            </fieldset>
+
+            <fieldset className="min-w-0">
+              <legend className="ui-label">Broker Bursátil Objetivo</legend>
+              <div className="ui-segments grid-cols-3">
+                {brokerOptions.map(({ value, label, detail }) => (
                   <button
+                    key={value}
                     type="button"
-                    onClick={() => handleSetUrlPreset('http://localhost:3050')}
-                    className="flex-1 py-1 px-2 text-[10px] rounded bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700"
+                    onClick={() => setBrokerTarget(value)}
+                    aria-pressed={brokerTarget === value}
+                    className="ui-option"
                   >
-                    Local (3050)
+                    {[label, detail].filter(Boolean).join(' ')}
                   </button>
+                ))}
+              </div>
+            </fieldset>
+
+            <div>
+              <button
+                type="button"
+                onClick={() => setShowServerSettings(!showServerSettings)}
+                aria-expanded={showServerSettings}
+                className="ui-button w-full justify-start"
+              >
+                <Settings className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>{showServerSettings ? 'Ocultar ajustes de servidor' : 'Ajustes de Servidor Backend'}</span>
+              </button>
+
+              {showServerSettings && (
+                <div className="mt-2 space-y-3 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-soft)] p-3">
+                  <div>
+                    <label htmlFor="login-backend-url" className="ui-label">URL del Microservicio Backend</label>
+                    <input
+                      id="login-backend-url"
+                      type="text"
+                      value={backendUrl}
+                      onChange={(e) => setBackendUrl(e.target.value)}
+                      placeholder="https://lsw-eq1-proyecto.onrender.com"
+                      className="ui-field px-3 py-2"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleSetUrlPreset('https://lsw-eq1-proyecto.onrender.com')}
+                      className="ui-button"
+                    >
+                      Render Cloud
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSetUrlPreset('http://localhost:3050')}
+                      className="ui-button"
+                    >
+                      Local (3050)
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
-          {/* Botón de Envío */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 transition disabled:opacity-50"
-          >
-            {loading ? (
-              <div className="flex items-center gap-2">
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                <span className="text-xs">Conectando al Microservicio...</span>
-              </div>
-            ) : (
-              <>
-                <span className="text-sm">Acceder al Dashboard Cuantitativo</span>
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
-          </button>
-        </form>
+            <button type="submit" disabled={loading} className="ui-button ui-button--primary w-full">
+              {loading ? (
+                <>
+                  <RefreshCw className="h-4 w-4 shrink-0 motion-safe:animate-spin" aria-hidden="true" />
+                  <span>Conectando al Microservicio...</span>
+                </>
+              ) : (
+                <>
+                  <span>Acceder al Dashboard Cuantitativo</span>
+                  <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+                </>
+              )}
+            </button>
+          </form>
 
-        {/* Footer de Estado */}
-        <div className="mt-6 pt-4 border-t border-slate-800 text-center">
-          <div className="inline-flex items-center gap-2 text-[11px] text-slate-400">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>Microservicio v2.0.0 Activo</span>
-            <span className="text-slate-600">•</span>
-            <span>Render Cloud / Local</span>
-          </div>
-        </div>
+          <footer className="mt-5 border-t border-[var(--ui-border)] pt-4 text-xs text-[var(--ui-muted)]">
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--ui-green)]" aria-hidden="true" />
+              <span>Microservicio v2.0.0 Activo</span>
+              <span aria-hidden="true">•</span>
+              <span>Render Cloud / Local</span>
+            </p>
+            <p className="mt-2 md:hidden">Laboratorio de Servicios Web • Dr. Francisco Ibarra Carlos</p>
+          </footer>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

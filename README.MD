@@ -92,6 +92,12 @@ ni ejecutar operaciones con brokers:
 node --test test/login.routes.test.js test/login.session.test.js
 ```
 
+### Cambiar destinos en el panel React
+
+Después de ingresar al cliente React, usa los selectores **Base de datos** y **Broker** que aparecen junto al control de órdenes. Cambiar el broker vuelve a escanear con los filtros actuales. La base elegida se usa para la persistencia de las próximas coberturas. El panel recuerda ambos destinos al recargar hasta que pulses **Salir**.
+
+En la pantalla pública `/login`, usa **Volver al inicio de sesión** para elegir otra base e ingresar de nuevo.
+
 ## Mejora de Black-Scholes con OpenSpec
 
 La validación de `POST /api/v1/quant/black-scholes` se desarrolla mediante el cambio

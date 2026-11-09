@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import LoginView from './components/LoginView';
 import Dashboard from './components/Dashboard';
 
@@ -12,24 +12,39 @@ export default function App() {
     }
   });
 
-  const handleLoginSuccess = (newSession) => {
-    setSession(newSession);
+  const sessionIdentity = useRef(Symbol());
+  const currentIdentity = sessionIdentity.current;
+
+  useEffect(() => {
     try {
-      localStorage.setItem('hedging_quant_session', JSON.stringify(newSession));
+      if (session) {
+        localStorage.setItem('hedging_quant_session', JSON.stringify(session));
+      } else {
+        localStorage.removeItem('hedging_quant_session');
+      }
     } catch (_) {}
+  }, [session]);
+
+  const handleLoginSuccess = (newSession) => {
+    sessionIdentity.current = Symbol();
+    setSession(newSession);
   };
 
   const handleLogout = () => {
+    sessionIdentity.current = Symbol();
     setSession(null);
-    try {
-      localStorage.removeItem('hedging_quant_session');
-    } catch (_) {}
+  };
+
+  const handleSessionChange = (changes) => {
+    if (currentIdentity !== sessionIdentity.current) return false;
+    setSession((current) => current && { ...current, ...changes });
+    return true;
   };
 
   return (
-    <div className="min-h-screen bg-[#070a12] text-slate-100">
+    <div className="app-shell">
       {session ? (
-        <Dashboard session={session} onLogout={handleLogout} />
+        <Dashboard session={session} onSessionChange={handleSessionChange} onLogout={handleLogout} />
       ) : (
         <LoginView onLoginSuccess={handleLoginSuccess} />
       )}
