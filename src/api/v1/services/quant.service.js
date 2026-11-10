@@ -1,7 +1,7 @@
 import boom from '@hapi/boom';
 
 // Aproximación de la Función de Distribución Normal Estándar Acumulada N(x)
-export const standardNormalCDF = (x) => {
+export const calcularDistribucionNormalEstandarAcumulada = (x) => {
   const b1 = 0.31938153;
   const b2 = -0.356563782;
   const b3 = 1.781477937;
@@ -20,25 +20,25 @@ export const standardNormalCDF = (x) => {
 };
 
 // Función de Densidad Normal Estándar N'(x)
-export const standardNormalPDF = (x) => {
+export const calcularDensidadNormalEstandar = (x) => {
   return (1.0 / Math.sqrt(2.0 * Math.PI)) * Math.exp(-0.5 * x * x);
 };
 
 // Valuación analítica Black-Scholes (1973) y cálculo de las 5 Griegas
-export const calculateBlackScholes = ({
-  spotPrice,
-  strikePrice,
-  timeToExpirationYears,
-  riskFreeRate = 0.045,
-  volatility = 0.2,
-  optionType = 'PUT',
+export const valorarOpcionBlackScholes = ({
+  spotPrice: precioSubyacente,
+  strikePrice: precioEjercicio,
+  timeToExpirationYears: tiempoAlVencimientoEnAnios,
+  riskFreeRate: tasaLibreDeRiesgo = 0.045,
+  volatility: volatilidad = 0.2,
+  optionType: tipoOpcionEntrada = 'PUT',
 }) => {
-  const S = Number(spotPrice);
-  const K = Number(strikePrice);
-  const T = Number(timeToExpirationYears);
-  const r = Number(riskFreeRate);
-  const sigma = Number(volatility);
-  const type = optionType.toUpperCase();
+  const S = Number(precioSubyacente);
+  const K = Number(precioEjercicio);
+  const T = Number(tiempoAlVencimientoEnAnios);
+  const r = Number(tasaLibreDeRiesgo);
+  const sigma = Number(volatilidad);
+  const tipoOpcion = tipoOpcionEntrada.toUpperCase();
 
   if (S <= 0 || K <= 0 || T <= 0 || sigma <= 0) {
     throw boom.badRequest('Parámetros numéricos inválidos para Black-Scholes (S, K, T y sigma deben ser > 0).');
@@ -47,38 +47,40 @@ export const calculateBlackScholes = ({
   const d1 = (Math.log(S / K) + (r + 0.5 * sigma * sigma) * T) / (sigma * Math.sqrt(T));
   const d2 = d1 - sigma * Math.sqrt(T);
 
-  let theoreticalPrice = 0;
+  let precioTeorico = 0;
   let delta = 0;
 
-  if (type === 'CALL') {
-    theoreticalPrice = S * standardNormalCDF(d1) - K * Math.exp(-r * T) * standardNormalCDF(d2);
-    delta = standardNormalCDF(d1);
-  } else if (type === 'PUT') {
-    theoreticalPrice = K * Math.exp(-r * T) * standardNormalCDF(-d2) - S * standardNormalCDF(-d1);
-    delta = standardNormalCDF(d1) - 1.0;
+  if (tipoOpcion === 'CALL') {
+    precioTeorico = S * calcularDistribucionNormalEstandarAcumulada(d1) -
+      K * Math.exp(-r * T) * calcularDistribucionNormalEstandarAcumulada(d2);
+    delta = calcularDistribucionNormalEstandarAcumulada(d1);
+  } else if (tipoOpcion === 'PUT') {
+    precioTeorico = K * Math.exp(-r * T) * calcularDistribucionNormalEstandarAcumulada(-d2) -
+      S * calcularDistribucionNormalEstandarAcumulada(-d1);
+    delta = calcularDistribucionNormalEstandarAcumulada(d1) - 1.0;
   } else {
     throw boom.badRequest('optionType debe ser CALL o PUT.');
   }
 
   // Griegas comunes
-  const gamma = standardNormalPDF(d1) / (S * sigma * Math.sqrt(T));
-  const vega = (S * standardNormalPDF(d1) * Math.sqrt(T)) / 100; // Por 1% de volatilidad
+  const gamma = calcularDensidadNormalEstandar(d1) / (S * sigma * Math.sqrt(T));
+  const vega = (S * calcularDensidadNormalEstandar(d1) * Math.sqrt(T)) / 100; // Por 1% de volatilidad
 
   let theta = 0;
   let rho = 0;
 
-  if (type === 'CALL') {
+  if (tipoOpcion === 'CALL') {
     theta =
-      (-((S * standardNormalPDF(d1) * sigma) / (2 * Math.sqrt(T))) -
-        r * K * Math.exp(-r * T) * standardNormalCDF(d2)) /
+      (-((S * calcularDensidadNormalEstandar(d1) * sigma) / (2 * Math.sqrt(T))) -
+        r * K * Math.exp(-r * T) * calcularDistribucionNormalEstandarAcumulada(d2)) /
       365;
-    rho = (K * T * Math.exp(-r * T) * standardNormalCDF(d2)) / 100;
+    rho = (K * T * Math.exp(-r * T) * calcularDistribucionNormalEstandarAcumulada(d2)) / 100;
   } else {
     theta =
-      (-((S * standardNormalPDF(d1) * sigma) / (2 * Math.sqrt(T))) +
-        r * K * Math.exp(-r * T) * standardNormalCDF(-d2)) /
+      (-((S * calcularDensidadNormalEstandar(d1) * sigma) / (2 * Math.sqrt(T))) +
+        r * K * Math.exp(-r * T) * calcularDistribucionNormalEstandarAcumulada(-d2)) /
       365;
-    rho = (-K * T * Math.exp(-r * T) * standardNormalCDF(-d2)) / 100;
+    rho = (-K * T * Math.exp(-r * T) * calcularDistribucionNormalEstandarAcumulada(-d2)) / 100;
   }
 
   return {
@@ -87,8 +89,8 @@ export const calculateBlackScholes = ({
     timeToExpirationYears: T,
     riskFreeRate: r,
     volatility: sigma,
-    optionType: type,
-    theoreticalPrice: Number(theoreticalPrice.toFixed(4)),
+    optionType: tipoOpcion,
+    theoreticalPrice: Number(precioTeorico.toFixed(4)),
     greeks: {
       delta: Number(delta.toFixed(4)),
       gamma: Number(gamma.toFixed(6)),
@@ -100,63 +102,64 @@ export const calculateBlackScholes = ({
 };
 
 // Aproximación numérica de Volatilidad Implícita con Newton-Raphson
-export const calculateImpliedVolatility = ({
-  marketPrice,
-  spotPrice,
-  strikePrice,
-  timeToExpirationYears,
-  riskFreeRate = 0.045,
-  optionType = 'PUT',
-  maxIterations = 100,
-  tolerance = 1e-5,
+export const calcularVolatilidadImplicita = ({
+  marketPrice: precioMercado,
+  spotPrice: precioSubyacente,
+  strikePrice: precioEjercicio,
+  timeToExpirationYears: tiempoAlVencimientoEnAnios,
+  riskFreeRate: tasaLibreDeRiesgo = 0.045,
+  optionType: tipoOpcion = 'PUT',
+  maxIterations: maximoDeIteraciones = 100,
+  tolerance: tolerancia = 1e-5,
 }) => {
   let sigma = 0.3; // Semilla inicial razonable (30%)
-  const targetPrice = Number(marketPrice);
+  const precioObjetivo = Number(precioMercado);
 
-  for (let i = 0; i < maxIterations; i++) {
-    const bs = calculateBlackScholes({
-      spotPrice,
-      strikePrice,
-      timeToExpirationYears,
-      riskFreeRate,
+  for (let iteracion = 0; iteracion < maximoDeIteraciones; iteracion++) {
+    const valoracion = valorarOpcionBlackScholes({
+      spotPrice: precioSubyacente,
+      strikePrice: precioEjercicio,
+      timeToExpirationYears: tiempoAlVencimientoEnAnios,
+      riskFreeRate: tasaLibreDeRiesgo,
       volatility: sigma,
-      optionType,
+      optionType: tipoOpcion,
     });
 
-    const diff = bs.theoreticalPrice - targetPrice;
-    if (Math.abs(diff) < tolerance) {
+    const diferenciaPrecio = valoracion.theoreticalPrice - precioObjetivo;
+    if (Math.abs(diferenciaPrecio) < tolerancia) {
       return {
         impliedVolatility: Number(sigma.toFixed(4)),
-        iterations: i + 1,
+        iterations: iteracion + 1,
         converged: true,
-        marketPrice: targetPrice,
+        marketPrice: precioObjetivo,
       };
     }
 
     // Vega cruda sin dividir entre 100
-    const rawVega = Number(spotPrice) * standardNormalPDF(
-      (Math.log(Number(spotPrice) / Number(strikePrice)) + (riskFreeRate + 0.5 * sigma * sigma) * Number(timeToExpirationYears)) /
-        (sigma * Math.sqrt(Number(timeToExpirationYears)))
-    ) * Math.sqrt(Number(timeToExpirationYears));
+    const vegaSinEscalar = Number(precioSubyacente) * calcularDensidadNormalEstandar(
+      (Math.log(Number(precioSubyacente) / Number(precioEjercicio)) +
+        (tasaLibreDeRiesgo + 0.5 * sigma * sigma) * Number(tiempoAlVencimientoEnAnios)) /
+        (sigma * Math.sqrt(Number(tiempoAlVencimientoEnAnios)))
+    ) * Math.sqrt(Number(tiempoAlVencimientoEnAnios));
 
-    if (rawVega < 1e-12) break; // Evitar división entre cero
-    sigma = sigma - diff / rawVega;
+    if (vegaSinEscalar < 1e-12) break; // Evitar división entre cero
+    sigma = sigma - diferenciaPrecio / vegaSinEscalar;
     if (sigma <= 0.001) sigma = 0.001; // Límite inferior
   }
 
   return {
     impliedVolatility: Number(sigma.toFixed(4)),
-    iterations: maxIterations,
+    iterations: maximoDeIteraciones,
     converged: false,
-    marketPrice: targetPrice,
+    marketPrice: precioObjetivo,
   };
 };
 
 // Cálculo agregado de Griegas de portafolio para una estrategia completa
-export const calculateStrategyGreeks = (strategy) => {
-  const S = Number(strategy.underlying?.spotPriceAtEntry || 100);
-  const shares = Number(strategy.underlying?.sharesCount || 100);
-  const legs = strategy.legs || [];
+export const calcularGriegasEstrategia = (estrategia) => {
+  const S = Number(estrategia.underlying?.spotPriceAtEntry || 100);
+  const cantidadAcciones = Number(estrategia.underlying?.sharesCount || 100);
+  const piernas = estrategia.legs || [];
 
   let totalDelta = 0;
   let totalGamma = 0;
@@ -164,62 +167,62 @@ export const calculateStrategyGreeks = (strategy) => {
   let totalTheta = 0;
   let totalRho = 0;
 
-  const legBreakdown = [];
+  const desglosePiernas = [];
 
-  for (const leg of legs) {
-    if (leg.assetType === 'EQUITY' || leg.legRole === 'UNDERLYING') {
-      const equityDelta = 1.0;
-      totalDelta += equityDelta;
-      legBreakdown.push({
-        legId: leg.legId,
-        role: leg.legRole || 'UNDERLYING',
+  for (const pierna of piernas) {
+    if (pierna.assetType === 'EQUITY' || pierna.legRole === 'UNDERLYING') {
+      const deltaAccion = 1.0;
+      totalDelta += deltaAccion;
+      desglosePiernas.push({
+        legId: pierna.legId,
+        role: pierna.legRole || 'UNDERLYING',
         assetType: 'EQUITY',
-        greeks: { delta: equityDelta, gamma: 0, vega: 0, theta: 0, rho: 0 },
+        greeks: { delta: deltaAccion, gamma: 0, vega: 0, theta: 0, rho: 0 },
       });
     } else {
-      const type = (leg.optionType || (leg.legRole === 'HEDGE_FLOOR' ? 'PUT' : 'CALL')).toUpperCase();
-      const strike = Number(leg.strike || S);
-      const isShort = leg.legRole === 'FINANCE_CEILING' || leg.side === 'SELL' || leg.side === 'SHORT';
-      const multiplier = isShort ? -1 : 1;
+      const tipoOpcion = (pierna.optionType || (pierna.legRole === 'HEDGE_FLOOR' ? 'PUT' : 'CALL')).toUpperCase();
+      const precioEjercicio = Number(pierna.strike || S);
+      const esPosicionCorta = pierna.legRole === 'FINANCE_CEILING' || pierna.side === 'SELL' || pierna.side === 'SHORT';
+      const multiplicador = esPosicionCorta ? -1 : 1;
 
-      const bs = calculateBlackScholes({
+      const valoracion = valorarOpcionBlackScholes({
         spotPrice: S,
-        strikePrice: strike,
+        strikePrice: precioEjercicio,
         timeToExpirationYears: 0.1,
         volatility: 0.25,
-        optionType: type,
+        optionType: tipoOpcion,
       });
 
-      const legGreeks = {
-        delta: Number((bs.greeks.delta * multiplier).toFixed(4)),
-        gamma: Number((bs.greeks.gamma * multiplier).toFixed(6)),
-        vega: Number((bs.greeks.vega * multiplier).toFixed(4)),
-        theta: Number((bs.greeks.theta * multiplier).toFixed(4)),
-        rho: Number((bs.greeks.rho * multiplier).toFixed(4)),
+      const griegasPierna = {
+        delta: Number((valoracion.greeks.delta * multiplicador).toFixed(4)),
+        gamma: Number((valoracion.greeks.gamma * multiplicador).toFixed(6)),
+        vega: Number((valoracion.greeks.vega * multiplicador).toFixed(4)),
+        theta: Number((valoracion.greeks.theta * multiplicador).toFixed(4)),
+        rho: Number((valoracion.greeks.rho * multiplicador).toFixed(4)),
       };
 
-      totalDelta += legGreeks.delta;
-      totalGamma += legGreeks.gamma;
-      totalVega += legGreeks.vega;
-      totalTheta += legGreeks.theta;
-      totalRho += legGreeks.rho;
+      totalDelta += griegasPierna.delta;
+      totalGamma += griegasPierna.gamma;
+      totalVega += griegasPierna.vega;
+      totalTheta += griegasPierna.theta;
+      totalRho += griegasPierna.rho;
 
-      legBreakdown.push({
-        legId: leg.legId,
-        role: leg.legRole,
+      desglosePiernas.push({
+        legId: pierna.legId,
+        role: pierna.legRole,
         assetType: 'OPTION',
-        optionType: type,
-        strike,
-        side: isShort ? 'SHORT' : 'LONG',
-        greeks: legGreeks,
+        optionType: tipoOpcion,
+        strike: precioEjercicio,
+        side: esPosicionCorta ? 'SHORT' : 'LONG',
+        greeks: griegasPierna,
       });
     }
   }
 
   return {
-    strategyId: strategy._id || strategy.id,
+    strategyId: estrategia._id || estrategia.id,
     spotPrice: S,
-    sharesCount: shares,
+    sharesCount: cantidadAcciones,
     aggregateGreeks: {
       netDelta: Number(totalDelta.toFixed(4)),
       netGamma: Number(totalGamma.toFixed(6)),
@@ -227,82 +230,100 @@ export const calculateStrategyGreeks = (strategy) => {
       netTheta: Number(totalTheta.toFixed(4)),
       netRho: Number(totalRho.toFixed(4)),
     },
-    legs: legBreakdown,
+    legs: desglosePiernas,
     evaluatedAt: new Date().toISOString(),
   };
 };
 
 // Simulación cuantitativa de cobertura con prima neta F0 y precio futuro F2
-export const simulateF0F2Hedging = (strategy, { futureSpotF2, daysElapsed = 30 } = {}) => {
-  const F0 = Number(strategy.underlying?.spotPriceAtEntry || 100);
-  const F2 = Number(futureSpotF2 !== undefined ? futureSpotF2 : F0);
-  const shares = Number(strategy.underlying?.sharesCount || 100);
+export const simularCoberturaF0F2 = (
+  estrategia,
+  { futureSpotF2: precioFuturoF2, daysElapsed: diasTranscurridos = 30 } = {}
+) => {
+  const F0 = Number(estrategia.underlying?.spotPriceAtEntry || 100);
+  const F2 = Number(precioFuturoF2 !== undefined ? precioFuturoF2 : F0);
+  const cantidadAcciones = Number(estrategia.underlying?.sharesCount || 100);
 
-  const putLeg = (strategy.legs || []).find((l) => l.legRole === 'HEDGE_FLOOR' || l.role === 'LONG_PUT');
-  const callLeg = (strategy.legs || []).find((l) => l.legRole === 'FINANCE_CEILING' || l.role === 'SHORT_CALL');
+  const piernaPut = (estrategia.legs || []).find(
+    (pierna) => pierna.legRole === 'HEDGE_FLOOR' || pierna.role === 'LONG_PUT'
+  );
+  const piernaCall = (estrategia.legs || []).find(
+    (pierna) => pierna.legRole === 'FINANCE_CEILING' || pierna.role === 'SHORT_CALL'
+  );
 
-  const putStrike = putLeg ? Number(putLeg.strike) : F0 * 0.95;
-  const putPremium = putLeg ? Number(putLeg.entryPrice || putLeg.premium || 2.5) : 0;
+  const precioEjercicioPut = piernaPut ? Number(piernaPut.strike) : F0 * 0.95;
+  const primaPut = piernaPut ? Number(piernaPut.entryPrice || piernaPut.premium || 2.5) : 0;
 
-  const callStrike = callLeg ? Number(callLeg.strike) : F0 * 1.05;
-  const callPremium = callLeg ? Number(callLeg.entryPrice || callLeg.premium || 2.8) : 0;
+  const precioEjercicioCall = piernaCall ? Number(piernaCall.strike) : F0 * 1.05;
+  const primaCall = piernaCall ? Number(piernaCall.entryPrice || piernaCall.premium || 2.8) : 0;
 
-  const netPremiumDebitCredit = (callPremium - putPremium) * shares;
+  const flujoNetoPrimas = (primaCall - primaPut) * cantidadAcciones;
 
   // Rendimiento de la acción pura (sin cobertura)
-  const unhedgedStockPL = (F2 - F0) * shares;
-  const unhedgedReturnPct = Number((((F2 - F0) / F0) * 100).toFixed(2));
+  const resultadoSinCobertura = (F2 - F0) * cantidadAcciones;
+  const rendimientoSinCoberturaPorcentual = Number((((F2 - F0) / F0) * 100).toFixed(2));
 
   // Ejercicio de piernas de opciones
-  const putIntrinsic = Math.max(0, putStrike - F2);
-  const putPayoff = (putIntrinsic - putPremium) * shares;
+  const valorIntrinsecoPut = Math.max(0, precioEjercicioPut - F2);
+  const resultadoPut = (valorIntrinsecoPut - primaPut) * cantidadAcciones;
 
-  const callIntrinsic = Math.max(0, F2 - callStrike);
-  const callPayoff = (callPremium - callIntrinsic) * shares;
+  const valorIntrinsecoCall = Math.max(0, F2 - precioEjercicioCall);
+  const resultadoCall = (primaCall - valorIntrinsecoCall) * cantidadAcciones;
 
-  // Payoff consolidado de la estrategia
-  const strategyTotalPL = unhedgedStockPL + (putIntrinsic * shares) - (callIntrinsic * shares) + netPremiumDebitCredit;
-  const strategyReturnPct = Number(((strategyTotalPL / (F0 * shares)) * 100).toFixed(2));
+  // Ganancia o pérdida total de la estrategia
+  const resultadoTotalEstrategia = resultadoSinCobertura + (valorIntrinsecoPut * cantidadAcciones) -
+    (valorIntrinsecoCall * cantidadAcciones) + flujoNetoPrimas;
+  const rendimientoEstrategiaPorcentual = Number(((resultadoTotalEstrategia / (F0 * cantidadAcciones)) * 100).toFixed(2));
 
-  const hedgeBenefitUSD = Number((strategyTotalPL - unhedgedStockPL).toFixed(2));
+  const efectoCobertura = Number((resultadoTotalEstrategia - resultadoSinCobertura).toFixed(2));
 
   return {
-    strategyId: strategy._id || strategy.id,
+    strategyId: estrategia._id || estrategia.id,
     simulationParameters: {
       initialSpotF0: F0,
       futureSpotF2: F2,
       priceChangePct: Number((((F2 - F0) / F0) * 100).toFixed(2)),
-      sharesCount: shares,
-      daysElapsed,
+      sharesCount: cantidadAcciones,
+      daysElapsed: diasTranscurridos,
     },
     optionsStructure: {
-      putFloorStrike: putStrike,
-      putPremium,
-      callCeilingStrike: callStrike,
-      callPremium,
-      netPremiumCashflowUSD: Number(netPremiumDebitCredit.toFixed(2)),
+      putFloorStrike: precioEjercicioPut,
+      putPremium: primaPut,
+      callCeilingStrike: precioEjercicioCall,
+      callPremium: primaCall,
+      netPremiumCashflowUSD: Number(flujoNetoPrimas.toFixed(2)),
     },
     comparativePayoff: {
       unhedgedPortfolio: {
-        totalPLUSD: Number(unhedgedStockPL.toFixed(2)),
-        returnPercent: unhedgedReturnPct,
+        totalPLUSD: Number(resultadoSinCobertura.toFixed(2)),
+        returnPercent: rendimientoSinCoberturaPorcentual,
       },
       hedgedStrategy: {
-        totalPLUSD: Number(strategyTotalPL.toFixed(2)),
-        returnPercent: strategyReturnPct,
-        putPayoffUSD: Number(putPayoff.toFixed(2)),
-        callPayoffUSD: Number(callPayoff.toFixed(2)),
+        totalPLUSD: Number(resultadoTotalEstrategia.toFixed(2)),
+        returnPercent: rendimientoEstrategiaPorcentual,
+        putPayoffUSD: Number(resultadoPut.toFixed(2)),
+        callPayoffUSD: Number(resultadoCall.toFixed(2)),
       },
-      protectionEffectivenessUSD: hedgeBenefitUSD,
+      protectionEffectivenessUSD: efectoCobertura,
       status:
-        F2 < putStrike
+        F2 < precioEjercicioPut
           ? 'COBERTURA_ACTIVADA_PISO_PROTECTOR'
-          : F2 > callStrike
+          : F2 > precioEjercicioCall
           ? 'TECHO_ALCANZADO_GANANCIA_TOPADA'
           : 'ZONA_NEUTRAL_SANO_RENDIMIENTO',
     },
     simulatedAt: new Date().toISOString(),
   };
+};
+
+// Alias para los módulos que importan los nombres originales.
+export {
+  calcularDistribucionNormalEstandarAcumulada as standardNormalCDF,
+  calcularDensidadNormalEstandar as standardNormalPDF,
+  valorarOpcionBlackScholes as calculateBlackScholes,
+  calcularVolatilidadImplicita as calculateImpliedVolatility,
+  calcularGriegasEstrategia as calculateStrategyGreeks,
+  simularCoberturaF0F2 as simulateF0F2Hedging,
 };
 
 
