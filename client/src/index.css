@@ -320,11 +320,6 @@
   box-shadow: inset 3px 0 var(--ui-focus);
 }
 
-.ranking-actions [aria-pressed="true"] {
-  border-color: var(--ui-field);
-  background: var(--ui-soft);
-}
-
 @media (min-width: 1024px) {
   .ranking-actions .ui-button {
     min-height: 2.125rem;

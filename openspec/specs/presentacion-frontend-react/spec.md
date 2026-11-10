@@ -36,7 +36,7 @@ El acceso React SHALL presentar usuario, contraseña, MongoDB y Supabase, IBKR, 
 
 ### Requirement: Presentación del escáner, el ranking y TradingView
 
-El panel SHALL conservar la acción de escaneo, los filtros Top 5 y Top 10, los criterios de probabilidad, prima neta y retorno, y los vencimientos de 30, 45 y 60 días. SHALL mostrar los estados existentes de carga y sin resultados. El ranking SHALL conservar posición, empresa y ticker, mercado, precio spot, tendencia, datos de Put y Call, prima neta, probabilidad, sweet spot, retorno y acciones por candidato. SHALL conservar la selección del activo por fila y botón TradingView, los widgets de gráfico y diagnóstico y el enlace externo al símbolo seleccionado.
+El panel SHALL conservar la acción de escaneo, los filtros Top 5 y Top 10, los criterios de probabilidad, prima neta y retorno, y los vencimientos de 30, 45 y 60 días. SHALL mostrar los estados existentes de carga y sin resultados. El ranking SHALL conservar posición, empresa y ticker, mercado, precio spot, tendencia, datos de Put y Call, prima neta, probabilidad, sweet spot, retorno y acciones por candidato. SHALL permitir seleccionar el activo con un clic en la fila o al activar su ticker con el teclado, y conservar los widgets de gráfico y diagnóstico y el enlace externo al símbolo seleccionado.
 
 #### Scenario: Presentar los filtros iniciales
 - **WHEN** el escáner se muestra por primera vez en el panel
@@ -44,10 +44,10 @@ El panel SHALL conservar la acción de escaneo, los filtros Top 5 y Top 10, los 
 
 #### Scenario: Consultar un candidato en pantalla estrecha
 - **WHEN** el ranking contiene candidatos y se muestra en móvil
-- **THEN** el ticker, sus datos y sus acciones permanecen asociados y los botones TradingView y de orden se pueden localizar sin desplazar lateralmente la página.
+- **THEN** el ticker seleccionable, los datos y la acción de orden de cada candidato se pueden localizar sin desplazar lateralmente la página.
 
 #### Scenario: Mostrar el análisis del activo
-- **WHEN** el panel refleja un activo seleccionado mediante una fila o su botón TradingView
+- **WHEN** se hace clic en una fila del ranking o se activa el ticker del candidato con el teclado
 - **THEN** el gráfico, el análisis técnico y el enlace externo corresponden a ese símbolo y mantienen sus opciones actuales.
 
 #### Scenario: Consultar criterios

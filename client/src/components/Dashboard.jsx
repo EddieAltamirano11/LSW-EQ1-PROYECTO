@@ -522,7 +522,15 @@ export default function Dashboard({ session, onSessionChange, onLogout }) {
                         {/* Empresa / Ticker */}
                         <td role="cell" className="ranking-company">
                           <div className="flex flex-wrap items-center gap-1.5 text-sm font-semibold">
-                            <span>{c.symbol}</span>
+                            {/* La activación del ticker, incluso por teclado, usa el clic de la fila. */}
+                            <button
+                              type="button"
+                              aria-pressed={isSelected}
+                              aria-label={c.symbol + ' · Ver análisis técnico'}
+                              className="rounded-sm underline-offset-2 hover:underline"
+                            >
+                              {c.symbol}
+                            </button>
                             <span className="rounded bg-[var(--ui-page)] px-1.5 py-0.5 text-xs font-medium text-[var(--ui-muted)]">
                               {c.exchange}
                             </span>
@@ -619,43 +627,24 @@ export default function Dashboard({ session, onSessionChange, onLogout }) {
 
                         {/* Acciones */}
                         <td role="cell" className="ranking-actions">
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedAsset({
-                                  symbol: c.symbol,
-                                  tvSymbol: c.tradingViewSymbol,
-                                  companyName: c.companyName,
-                                });
-                              }}
-                              type="button"
-                              aria-pressed={isSelected}
-                              aria-label={'TradingView · ' + c.symbol}
-                              className="ui-button whitespace-nowrap"
-                            >
-                              TradingView
-                            </button>
-
-                            <button
-                              disabled={executingSymbols.includes(c.symbol)}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleExecuteCollar(c);
-                              }}
-                              type="button"
-                              className={liveExecutionMode ? 'ui-button ui-button--warning' : 'ui-button ui-button--primary'}
-                              title={
-                                liveExecutionMode
-                                  ? `EMITIR ÓRDENES REALES a ${brokerTarget}: 100 acciones + Put Floor + Call Ceiling`
-                                  : 'Estructurar y registrar Collar Spread a Costo Cero (Modo Simulación)'
-                              }
-                            >
-                              {executingSymbols.includes(c.symbol)
-                                ? (liveExecutionMode ? 'Enviando a Bolsa...' : 'Estructurando...')
-                                : (liveExecutionMode ? '⚡ Emitir a Broker' : 'Ejecutar')}
-                            </button>
-                          </div>
+                          <button
+                            disabled={executingSymbols.includes(c.symbol)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleExecuteCollar(c);
+                            }}
+                            type="button"
+                            className={liveExecutionMode ? 'ui-button ui-button--warning' : 'ui-button ui-button--primary'}
+                            title={
+                              liveExecutionMode
+                                ? `EMITIR ÓRDENES REALES a ${brokerTarget}: 100 acciones + Put Floor + Call Ceiling`
+                                : 'Estructurar y registrar Collar Spread a Costo Cero (Modo Simulación)'
+                            }
+                          >
+                            {executingSymbols.includes(c.symbol)
+                              ? (liveExecutionMode ? 'Enviando a Bolsa...' : 'Estructurando...')
+                              : (liveExecutionMode ? '⚡ Emitir a Broker' : 'Ejecutar')}
+                          </button>
                         </td>
                       </tr>
                     );
@@ -663,7 +652,7 @@ export default function Dashboard({ session, onSessionChange, onLogout }) {
                 </tbody>
               </table>
               <p className="border-t border-[var(--ui-border)] px-4 py-3 text-xs text-[var(--ui-muted)] sm:px-5">
-                Selecciona una fila o su botón TradingView para actualizar el gráfico interactivo.
+                Selecciona una fila o su ticker para actualizar el gráfico interactivo.
               </p>
             </div>
           )}
