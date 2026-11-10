@@ -1,13 +1,29 @@
+import boom from '@hapi/boom';
 import * as BrokerService from '../services/broker.service.js';
+import { consultarCuentaConfirmada, consultarPosicionesConfirmadas } from '../services/portafolio.service.js';
 
 // Helper unificado: El contexto institucional x-broker-selection es la autoridad rectora
 const resolveBroker = (req) => {
   return req.broker || req.headers['x-broker-selection']?.toUpperCase() || req.query?.broker?.toUpperCase() || 'WEBULL';
 };
 
+function resolverCorredorConfirmado(solicitud) {
+  if (!solicitud.user) throw boom.unauthorized('Se requiere una sesión válida para consultar el portafolio.');
+  const corredor = solicitud.get('x-broker-selection')?.toUpperCase();
+  if (!['WEBULL', 'ALPACA', 'IBKR'].includes(corredor)) {
+    throw boom.badRequest('Selecciona WEBULL, ALPACA o IBKR con x-broker-selection.');
+  }
+  return corredor;
+}
+
 // Consulta de balance, poder de compra y estado de cuenta del broker
 export const getAccount = async (req, res, next) => {
   try {
+    if (req.query.strict === 'true') {
+      const corredor = resolverCorredorConfirmado(req);
+      const cuenta = await consultarCuentaConfirmada(corredor);
+      return res.set('Cache-Control', 'no-store').json({ broker: corredor, account: cuenta });
+    }
     const broker = resolveBroker(req);
     const acc = await BrokerService.getBrokerAccount(broker);
     res.status(200).json(acc);
@@ -44,6 +60,11 @@ export const getOptionsChain = async (req, res, next) => {
 // Posiciones abiertas en el broker
 export const getPositions = async (req, res, next) => {
   try {
+    if (req.query.strict === 'true') {
+      const corredor = resolverCorredorConfirmado(req);
+      const posiciones = await consultarPosicionesConfirmadas(corredor);
+      return res.set('Cache-Control', 'no-store').json({ broker: corredor, positions: posiciones });
+    }
     const broker = resolveBroker(req);
     const positions = await BrokerService.getBrokerPositions(broker);
     res.status(200).json(positions);

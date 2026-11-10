@@ -3,7 +3,6 @@ import {
   TrendingUp,
   Database,
   Server,
-  LogOut,
   Search,
   SlidersHorizontal,
   Info,
@@ -26,10 +25,9 @@ import { brokerOptions, databaseOptions, DEFAULT_BROKER, DEFAULT_DATABASE } from
 
 const isMockToken = (token) => typeof token !== 'string' || token.length < 50 || token.includes('demo-jwt');
 
-export default function Dashboard({ session, onSessionChange, onLogout }) {
+export default function Dashboard({ session, apiBase, onSessionChange }) {
   const databaseTarget = session.databaseTarget || DEFAULT_DATABASE;
   const brokerTarget = session.brokerTarget || DEFAULT_BROKER;
-  const apiBase = (session.backendUrl ?? import.meta.env.VITE_API_URL ?? 'https://lsw-eq1-proyecto.onrender.com').replace(/\/$/, '');
   const [scanResult, setScanResult] = useState(null);
   const scanRequest = useRef(null);
   const [scanning, setScanning] = useState(true);
@@ -277,23 +275,7 @@ export default function Dashboard({ session, onSessionChange, onLogout }) {
   };
 
   return (
-    <div className="flex min-h-screen min-w-0 flex-col">
-      <header className="workspace-header">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
-          <div className="flex min-w-0 items-center gap-3">
-            <span className="brand-mark" aria-hidden="true"><span /><span /><span /></span>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ui-accent)]">LSW · Equipo 1</p>
-              <p className="text-xl font-semibold tracking-tight">Los Eddies</p>
-            </div>
-          </div>
-          <button type="button" onClick={onLogout} className="ui-button ui-button--inverse shrink-0" title="Cerrar Sesión">
-            <LogOut className="h-4 w-4" aria-hidden="true" />
-            Salir
-          </button>
-        </div>
-      </header>
-
+    <div className="flex min-w-0 flex-col">
       <main className="mx-auto w-full max-w-7xl space-y-5 px-4 py-6 sm:px-6 lg:px-8">
         <div>
           <h1 className="text-2xl font-semibold leading-tight tracking-tight sm:text-4xl">

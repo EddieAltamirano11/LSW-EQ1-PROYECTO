@@ -24,7 +24,7 @@ export const calcularDensidadNormalEstandar = (x) => {
   return (1.0 / Math.sqrt(2.0 * Math.PI)) * Math.exp(-0.5 * x * x);
 };
 
-// Valuación analítica Black-Scholes (1973) y cálculo de las 5 Griegas
+// Valuación analítica Black-Scholes y cálculo de las 5 Griegas
 export const valorarOpcionBlackScholes = ({
   spotPrice: precioSubyacente,
   strikePrice: precioEjercicio,

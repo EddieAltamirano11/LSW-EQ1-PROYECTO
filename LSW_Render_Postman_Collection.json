@@ -26,6 +26,21 @@
       "key": "expiration",
       "value": "2026-12-18",
       "type": "string"
+    },
+    {
+      "key": "tokenPortafolio",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "brokerPortafolio",
+      "value": "WEBULL",
+      "type": "string"
+    },
+    {
+      "key": "baseDatosPortafolio",
+      "value": "mongodb",
+      "type": "string"
     }
   ],
   "item": [
@@ -3952,6 +3967,99 @@
             }
           },
           "response": []
+        }
+      ]
+    },
+    {
+      "name": "Portafolio (solo lectura)",
+      "description": "Usa un token de /auth/login en tokenPortafolio y selecciona el broker y la base. Las lecturas estrictas devuelven 503 cuando el broker no está disponible.",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{tokenPortafolio}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Cuenta confirmada del broker",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-broker-selection",
+                "value": "{{brokerPortafolio}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/broker/account?strict=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "broker",
+                "account"
+              ],
+              "query": [
+                {
+                  "key": "strict",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Posiciones abiertas confirmadas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-broker-selection",
+                "value": "{{brokerPortafolio}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/broker/positions?strict=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "broker",
+                "positions"
+              ],
+              "query": [
+                {
+                  "key": "strict",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Coberturas guardadas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-database-selection",
+                "value": "{{baseDatosPortafolio}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hedging",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hedging"
+              ]
+            }
+          }
         }
       ]
     }

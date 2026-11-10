@@ -43,7 +43,65 @@ def get_ib_connection():
         return None
 
 
+def leerResumenConfirmado(conexion):
+    camposPorEtiqueta = {
+        'TotalCashValue': 'cash',
+        'BuyingPower': 'buyingPower',
+        'NetLiquidation': 'portfolioValue',
+    }
+    valoresPorMoneda = {}
+    for dato in conexion.accountSummary(ACCOUNT_ID):
+        if dato.tag in camposPorEtiqueta:
+            moneda = dato.currency or None
+            valoresPorMoneda.setdefault(moneda, {})[camposPorEtiqueta[dato.tag]] = dato.value
+
+    # El resumen puede incluir varias monedas. Preferir el resumen en moneda base.
+    monedaResumen = 'BASE' if 'BASE' in valoresPorMoneda else next(iter(valoresPorMoneda), None)
+    return {
+        'currency': None if monedaResumen == 'BASE' else monedaResumen,
+        **valoresPorMoneda.get(monedaResumen, {}),
+    }
+
+
+def consultarPortafolioConfirmado(esConsultaCuenta):
+    conexion = get_ib_connection()
+    try:
+        if not conexion or not conexion.isConnected() or ACCOUNT_ID not in conexion.managedAccounts():
+            raise RuntimeError('La cuenta configurada no está disponible')
+
+        conexion.RequestTimeout = 5
+        if esConsultaCuenta:
+            datosConfirmados = leerResumenConfirmado(conexion)
+        else:
+            datosConfirmados = [
+                {
+                    'assetId': posicion.contract.conId or None,
+                    'symbol': posicion.contract.localSymbol or posicion.contract.symbol,
+                    'qty': posicion.position,
+                }
+                for posicion in conexion.reqPositions()
+                if posicion.account == ACCOUNT_ID
+            ]
+
+        print(json.dumps({
+            'success': True,
+            'mode': 'LIVE_TWS_SOCKET',
+            'data': datosConfirmados,
+            'source': 'Interactive Brokers TWS',
+        }, allow_nan=False))
+    except (ValueError, TypeError, KeyError, AttributeError):
+        print(json.dumps({'success': False, 'status': 502}))
+    except Exception:
+        print(json.dumps({'success': False, 'status': 503}))
+    finally:
+        if conexion and conexion.isConnected():
+            conexion.disconnect()
+
+
 def cmd_account(args):
+    if getattr(args, 'strict', False):
+        return consultarPortafolioConfirmado(True)
+
     ib = get_ib_connection()
     if ib and ib.isConnected():
         try:
@@ -104,6 +162,9 @@ def cmd_account(args):
 
 
 def cmd_positions(args):
+    if getattr(args, 'strict', False):
+        return consultarPortafolioConfirmado(False)
+
     ib = get_ib_connection()
     positions = []
     if ib and ib.isConnected():
@@ -551,8 +612,8 @@ def main():
     parser = argparse.ArgumentParser(description='Interactive Brokers TWS Official Bridge')
     subparsers = parser.add_subparsers(dest='command')
 
-    subparsers.add_parser('account')
-    subparsers.add_parser('positions')
+    subparsers.add_parser('account').add_argument('--strict', action='store_true')
+    subparsers.add_parser('positions').add_argument('--strict', action='store_true')
     subparsers.add_parser('orders')
     subparsers.add_parser('ping')
 

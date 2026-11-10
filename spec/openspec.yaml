@@ -853,8 +853,16 @@ paths:
   /broker/account:
     get:
       tags: [Brokers Bursátiles]
-      summary: Consultar balance, capital y poder de compra del broker activo (Webull o Alpaca)
+      summary: Consultar balance, capital y poder de compra del broker activo
+      description: >
+        Disponible en v1 y v2. Con strict=true se requiere un token Bearer válido y el
+        encabezado x-broker-selection. Este modo devuelve valores confirmados por el
+        broker seleccionado. Si se omite strict, se aplica la modalidad habitual.
+      security:
+        - {}
+        - bearerAuth: []
       parameters:
+        - $ref: '#/components/parameters/LecturaEstrictaBroker'
         - in: header
           name: x-broker-selection
           schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
@@ -865,13 +873,36 @@ paths:
           description: Selección alternativa de broker por parámetro query
       responses:
         '200':
-          description: Estado financiero de cuenta bursátil de Paper Trading
+          description: Objeto de cuenta habitual o respuesta de cuenta confirmada cuando strict=true.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    not: { required: [account] }
+                  - $ref: '#/components/schemas/CuentaBrokerConfirmada'
+        '400':
+          description: Selección de broker ausente o inválida en modo estricto.
+        '401':
+          description: Token inválido o sesión ausente en modo estricto.
+        '502':
+          description: Respuesta del broker ilegible en modo estricto.
+        '503':
+          description: Consulta de cuenta no disponible en modo estricto.
 
   /broker/positions:
     get:
       tags: [Brokers Bursátiles]
       summary: Consultar posiciones vivas abiertas en el broker activo
+      description: >
+        Disponible en v1 y v2. Con strict=true se requiere un token Bearer válido y el
+        encabezado x-broker-selection. Un arreglo vacío en el campo positions indica una
+        lectura exitosa sin posiciones abiertas. Si se omite strict, se devuelve el arreglo habitual.
+      security:
+        - {}
+        - bearerAuth: []
       parameters:
+        - $ref: '#/components/parameters/LecturaEstrictaBroker'
         - in: header
           name: x-broker-selection
           schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
@@ -880,7 +911,22 @@ paths:
           schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
       responses:
         '200':
-          description: Cartera de acciones y contratos abiertos en el broker
+          description: Arreglo habitual o respuesta de posiciones confirmadas cuando strict=true.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items: { type: object }
+                  - $ref: '#/components/schemas/PosicionesBrokerConfirmadas'
+        '400':
+          description: Selección de broker ausente o inválida en modo estricto.
+        '401':
+          description: Token inválido o sesión ausente en modo estricto.
+        '502':
+          description: Respuesta del broker ilegible en modo estricto.
+        '503':
+          description: Consulta de posiciones no disponible en modo estricto.
 
   /broker/orders:
     get:
@@ -1072,6 +1118,13 @@ paths:
           description: Parámetros del gráfico y velocímetro de análisis técnico
 
 components:
+  parameters:
+    LecturaEstrictaBroker:
+      in: query
+      name: strict
+      schema: { type: boolean, default: false }
+      description: Activa la lectura confirmada para Portafolio y requiere Bearer JWT y x-broker-selection.
+
   securitySchemes:
     bearerAuth:
       type: http
@@ -1080,6 +1133,38 @@ components:
       description: Token Bearer JWT emitido en /auth/login con claims de usuario, rol y motor de base de datos activa (dbTarget).
 
   schemas:
+    CuentaBrokerConfirmada:
+      type: object
+      required: [broker, account]
+      properties:
+        broker: { type: string, enum: [WEBULL, ALPACA, IBKR] }
+        account:
+          type: object
+          required: [currency, cash, portfolioValue, buyingPower]
+          properties:
+            currency: { type: string, nullable: true, example: USD }
+            cash: { type: number, nullable: true, example: 0 }
+            portfolioValue: { type: number, nullable: true }
+            buyingPower: { type: number, nullable: true }
+            source: { type: string, nullable: true, example: Alpaca (paper trading) }
+
+    PosicionesBrokerConfirmadas:
+      type: object
+      required: [broker, positions]
+      properties:
+        broker: { type: string, enum: [WEBULL, ALPACA, IBKR] }
+        positions:
+          type: array
+          items:
+            type: object
+            required: [assetId, symbol, qty, side]
+            description: La posición contiene al menos un identificador de instrumento o símbolo.
+            properties:
+              assetId: { type: string, nullable: true }
+              symbol: { type: string, nullable: true, example: AAPL }
+              qty: { type: number, example: 10 }
+              side: { type: string, nullable: true, enum: [long, short, null] }
+
     UnderlyingInput:
       type: object
       required: [symbol, companyName, spotPrice]

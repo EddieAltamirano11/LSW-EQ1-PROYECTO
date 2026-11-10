@@ -51,7 +51,46 @@ def resolve_account_id(tc):
         pass
     return 'GBG647DN3VL57GSDVGA47NCG18', {'account_number': TARGET_ACCOUNT_NUM, 'account_id': 'GBG647DN3VL57GSDVGA47NCG18'}
 
+def leerRespuestaConfirmada(respuesta):
+    if respuesta.status_code != 200:
+        raise RuntimeError('Webull no pudo completar la consulta')
+    return respuesta.json()
+
+
+def consultarPortafolioConfirmado(esConsultaCuenta):
+    try:
+        clienteOperaciones, _ = get_clients()
+        apiCuenta = clienteOperaciones.account_v2
+        cuentas = leerRespuestaConfirmada(apiCuenta.get_account_list())
+        if not isinstance(cuentas, list) or any(not isinstance(cuenta, dict) for cuenta in cuentas):
+            raise ValueError('Listado de cuentas inválido')
+
+        cuentaConfigurada = TARGET_ACCOUNT_NUM or 'DEV4Q8EB'
+        idCuenta = next((
+            cuenta.get('account_id')
+            for cuenta in cuentas
+            if cuentaConfigurada in (cuenta.get('account_number'), cuenta.get('account_id'))
+        ), None)
+        if not idCuenta:
+            raise RuntimeError('La cuenta configurada no está disponible')
+
+        if esConsultaCuenta:
+            datosConfirmados = leerRespuestaConfirmada(apiCuenta.get_account_balance(idCuenta))
+        else:
+            datosConfirmados = leerRespuestaConfirmada(apiCuenta.get_account_position(idCuenta))
+
+        origen = 'Webull OpenAPI (paper trading)' if DEFAULT_ENDPOINT == 'api.sandbox.webull.com' else 'Webull OpenAPI'
+        print(json.dumps({'success': True, 'data': datosConfirmados, 'source': origen}, allow_nan=False))
+    except (ValueError, TypeError, KeyError):
+        print(json.dumps({'success': False, 'status': 502}))
+    except Exception:
+        print(json.dumps({'success': False, 'status': 503}))
+
+
 def cmd_account(args):
+    if getattr(args, 'strict', False):
+        return consultarPortafolioConfirmado(True)
+
     tc, _ = get_clients()
     acc_id, acc_meta = resolve_account_id(tc)
     bal_res = tc.account_v2.get_account_balance(acc_id)
@@ -76,6 +115,9 @@ def cmd_account(args):
         print(json.dumps({'success': False, 'status': bal_res.status_code, 'error': bal_res.text}))
 
 def cmd_positions(args):
+    if getattr(args, 'strict', False):
+        return consultarPortafolioConfirmado(False)
+
     tc, _ = get_clients()
     acc_id, _ = resolve_account_id(tc)
     pos_res = tc.account_v2.get_account_position(acc_id)
@@ -471,8 +513,8 @@ def main():
     parser = argparse.ArgumentParser(description='Webull Official OpenAPI Bridge')
     subparsers = parser.add_subparsers(dest='command')
 
-    subparsers.add_parser('account')
-    subparsers.add_parser('positions')
+    subparsers.add_parser('account').add_argument('--strict', action='store_true')
+    subparsers.add_parser('positions').add_argument('--strict', action='store_true')
     subparsers.add_parser('orders')
 
     p_quote = subparsers.add_parser('quote')

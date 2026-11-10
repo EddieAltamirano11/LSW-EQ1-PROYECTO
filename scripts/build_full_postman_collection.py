@@ -185,6 +185,67 @@ def get_guided_tutorials():
         
     return tutorials, u1
 
+def agregarConsultasPortafolio(coleccion):
+    variables = coleccion.setdefault("variable", [])
+    clavesExistentes = {variable["key"] for variable in variables}
+    for clave, valor in [
+        ("tokenPortafolio", ""),
+        ("brokerPortafolio", "WEBULL"),
+        ("baseDatosPortafolio", "mongodb"),
+    ]:
+        if clave not in clavesExistentes:
+            variables.append({"key": clave, "value": valor, "type": "string"})
+
+    ejemplos = []
+    for nombre, ruta in [
+        ("Cuenta confirmada del broker", "broker/account"),
+        ("Posiciones abiertas confirmadas", "broker/positions"),
+        ("Coberturas guardadas", "hedging"),
+    ]:
+        esConsultaBroker = ruta.startswith("broker/")
+        url = {
+            "raw": "{{baseUrl}}/" + ruta,
+            "host": ["{{baseUrl}}"],
+            "path": ruta.split("/"),
+        }
+        if esConsultaBroker:
+            url["raw"] += "?strict=true"
+            url["query"] = [{"key": "strict", "value": "true"}]
+        encabezado = (
+            {"key": "x-broker-selection", "value": "{{brokerPortafolio}}"}
+            if esConsultaBroker else
+            {"key": "x-database-selection", "value": "{{baseDatosPortafolio}}"}
+        )
+        ejemplos.append({"name": nombre, "request": {"method": "GET", "header": [encabezado], "url": url}})
+
+    nombreCarpeta = "Portafolio (solo lectura)"
+    carpeta = {
+        "name": nombreCarpeta,
+        "description": (
+            "Usa un token de /auth/login en tokenPortafolio y selecciona el broker y la base. "
+            "Las lecturas estrictas devuelven 503 cuando el broker no está disponible."
+        ),
+        "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{tokenPortafolio}}", "type": "string"}]},
+        "item": ejemplos,
+    }
+    carpetas = coleccion["item"]
+    for indice, existente in enumerate(carpetas):
+        if existente.get("name") == nombreCarpeta:
+            carpetas[indice] = carpeta
+            return
+    carpetas.append(carpeta)
+
+
+def sincronizarSoloPortafolio():
+    raiz = Path(__file__).resolve().parent.parent
+    for nombre in ["LSW_Cloudflare_Postman_Collection.json", "LSW_Render_Postman_Collection.json"]:
+        ruta = raiz / nombre
+        coleccion = json.loads(ruta.read_text(encoding="utf-8"))
+        agregarConsultasPortafolio(coleccion)
+        ruta.write_text(json.dumps(coleccion, indent=2, ensure_ascii=False), encoding="utf-8")
+        print(f"Portafolio sincronizado en {nombre}")
+
+
 def build_complete_collection():
     tutorials, u1 = get_guided_tutorials()
     http_path = r"c:\GitHub\FIC-generator\LSW-EQ1-PROYECTO\request\test_api.http"
@@ -247,6 +308,8 @@ def build_complete_collection():
         "item": items
     }
     
+    agregarConsultasPortafolio(collection)
+
     out_paths = [
         r"c:\GitHub\FIC-generator\LSW_Cloudflare_Postman_Collection.json",
         r"c:\GitHub\FIC-generator\LSW_Render_Postman_Collection.json",
@@ -343,9 +406,13 @@ def sync_black_scholes_only():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generar o sincronizar la colección Postman")
-    parser.add_argument("--black-scholes-only", action="store_true", help="Actualizar solo Black-Scholes en las colecciones del repositorio")
+    opciones = parser.add_mutually_exclusive_group()
+    opciones.add_argument("--black-scholes-only", action="store_true", help="Actualizar solo Black-Scholes en las colecciones del repositorio")
+    opciones.add_argument("--portafolio-only", action="store_true", help="Actualizar solo Portafolio en las colecciones del repositorio")
     args = parser.parse_args()
     if args.black_scholes_only:
         sync_black_scholes_only()
+    elif args.portafolio_only:
+        sincronizarSoloPortafolio()
     else:
         build_complete_collection()
