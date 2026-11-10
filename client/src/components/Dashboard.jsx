@@ -634,7 +634,7 @@ export default function Dashboard({ session, onSessionChange, onLogout }) {
                               handleExecuteCollar(c);
                             }}
                             type="button"
-                            className={liveExecutionMode ? 'ui-button ui-button--warning' : 'ui-button ui-button--primary'}
+                            className={'ui-button whitespace-nowrap ' + (liveExecutionMode ? 'ui-button--warning' : 'ui-button--primary')}
                             title={
                               liveExecutionMode
                                 ? `EMITIR ÓRDENES REALES a ${brokerTarget}: 100 acciones + Put Floor + Call Ceiling`
@@ -643,7 +643,7 @@ export default function Dashboard({ session, onSessionChange, onLogout }) {
                           >
                             {executingSymbols.includes(c.symbol)
                               ? (liveExecutionMode ? 'Enviando a Bolsa...' : 'Estructurando...')
-                              : (liveExecutionMode ? '⚡ Emitir a Broker' : 'Ejecutar')}
+                              : (liveExecutionMode ? 'Emitir a Broker' : 'Ejecutar')}
                           </button>
                         </td>
                       </tr>
