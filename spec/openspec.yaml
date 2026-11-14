@@ -1050,6 +1050,40 @@ paths:
   # ==========================================================
   # 9. SCREENER CUANTITATIVO & TRADINGVIEW (API v2)
   # ==========================================================
+  /strategy-screener/run:
+    servers:
+      - url: http://localhost:3050/api/v2
+        description: API v2 local
+      - url: https://lsw-eq1-proyecto.onrender.com/api/v2
+        description: API v2 de Render
+    post:
+      tags: [Screener & TradingView]
+      operationId: runStrategyScreener
+      summary: Analizar candidatos para Collar Spread con los cores seleccionados
+      description: Consulta informativa basada en observaciones de mercado y publicaciones verificables.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StrategyScreenerCriteria'
+            example: { mode: BY_STRATEGY, strategy: COLLAR_SPREAD, activeCores: ['001', '006'], limit: 5, dteHorizon: 45 }
+      responses:
+        '200':
+          description: Análisis completo o parcial con diagnósticos y exclusiones por activo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StrategyScreenerResult'
+        '400':
+          description: Modo, estrategia, selección o filtros inválidos
+        '401':
+          description: La consulta requiere una sesión válida
+        '503':
+          description: Las fuentes disponibles son insuficientes para evaluar los activos
+
   /market/scanner/top-collars:
     get:
       tags: [Screener & TradingView]
@@ -1133,6 +1167,83 @@ components:
       description: Token Bearer JWT emitido en /auth/login con claims de usuario, rol y motor de base de datos activa (dbTarget).
 
   schemas:
+    StrategyScreenerCriteria:
+      type: object
+      additionalProperties: false
+      required: [mode, strategy, activeCores]
+      properties:
+        mode: { type: string, enum: [BY_STRATEGY] }
+        strategy: { type: string, enum: [COLLAR_SPREAD] }
+        activeCores:
+          type: array
+          minItems: 1
+          maxItems: 5
+          uniqueItems: true
+          items: { type: string, enum: ['001', '002', '003', '005', '006'] }
+        limit: { type: integer, minimum: 1, maximum: 10, default: 5 }
+        dteHorizon: { type: integer, enum: [30, 45, 60], default: 45 }
+    StrategyScreenerResult:
+      type: object
+      required: [asOf, criteria, status, candidates, excluded]
+      properties:
+        asOf: { type: string, format: date-time }
+        criteria:
+          $ref: '#/components/schemas/StrategyScreenerCriteria'
+        status: { type: string, enum: [COMPLETE, PARTIAL] }
+        candidates:
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/StrategyScreenerAsset'
+              - type: object
+                required: [rank, score]
+                properties:
+                  rank: { type: integer, minimum: 1 }
+                  score: { type: number, minimum: 0, maximum: 100 }
+        excluded:
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/StrategyScreenerAsset'
+              - type: object
+                required: [reason]
+                properties:
+                  reason: { type: string }
+    StrategyScreenerAsset:
+      type: object
+      required: [symbol, companyName, eligibility, cores]
+      properties:
+        symbol: { type: string }
+        companyName: { type: string }
+        eligibility: { type: string, enum: [VIABLE, MARGINAL, NO_VIABLE, UNKNOWN] }
+        cores:
+          type: object
+          required: ['001', '002', '003', '004', '005', '006', '007']
+          additionalProperties:
+            $ref: '#/components/schemas/StrategyCoreDiagnostic'
+    StrategyCoreDiagnostic:
+      type: object
+      required: [status, result, evidence]
+      properties:
+        status: { type: string, enum: [AVAILABLE, PARTIAL, UNAVAILABLE, NOT_SELECTED] }
+        active: { type: boolean }
+        reason: { type: string }
+        score: { type: number, minimum: 0, maximum: 100 }
+        result:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: Indicadores, reglas y resultado específico del core.
+        evidence:
+          type: array
+          items:
+            type: object
+            required: [source, observedAt, reference, delayMinutes]
+            properties:
+              source: { type: string }
+              observedAt: { type: string, nullable: true }
+              reference: { type: string, nullable: true }
+              delayMinutes: { type: number, minimum: 0 }
     CuentaBrokerConfirmada:
       type: object
       required: [broker, account]

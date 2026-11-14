@@ -22,6 +22,7 @@ export default function App() {
   const sessionIdentity = useRef(Symbol());
   const currentIdentity = sessionIdentity.current;
   const [pestanaActiva, seleccionarPestana] = useState('dashboard');
+  const [loginContext, setLoginContext] = useState(null);
   const urlBaseApi = (session?.backendUrl ?? import.meta.env.VITE_API_URL ?? 'https://lsw-eq1-proyecto.onrender.com').replace(/\/$/, '');
 
   useEffect(() => {
@@ -36,6 +37,7 @@ export default function App() {
 
   const handleLoginSuccess = (newSession) => {
     sessionIdentity.current = Symbol();
+    setLoginContext(null);
     setSession(newSession);
   };
 
@@ -43,6 +45,12 @@ export default function App() {
     sessionIdentity.current = Symbol();
     seleccionarPestana('dashboard');
     setSession(null);
+  };
+
+  const handleSignIn = () => {
+    const { user, databaseTarget, brokerTarget } = session;
+    setLoginContext({ username: user?.username, databaseTarget, brokerTarget, backendUrl: urlBaseApi });
+    handleLogout();
   };
 
   const handleSessionChange = (changes) => {
@@ -120,7 +128,7 @@ export default function App() {
             hidden={pestanaActiva !== 'dashboard'}
             tabIndex={0}
           >
-            <Dashboard session={session} apiBase={urlBaseApi} onSessionChange={handleSessionChange} />
+            <Dashboard session={session} apiBase={urlBaseApi} onSessionChange={handleSessionChange} onSignIn={handleSignIn} />
           </div>
           <div
             role="tabpanel"
@@ -133,7 +141,7 @@ export default function App() {
           </div>
         </>
       ) : (
-        <LoginView onLoginSuccess={handleLoginSuccess} />
+        <LoginView onLoginSuccess={handleLoginSuccess} loginContext={loginContext} />
       )}
     </div>
   );

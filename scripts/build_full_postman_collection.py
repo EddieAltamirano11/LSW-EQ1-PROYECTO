@@ -246,6 +246,48 @@ def sincronizarSoloPortafolio():
         print(f"Portafolio sincronizado en {nombre}")
 
 
+def agregarConsultaScreener(coleccion):
+    variables = coleccion.setdefault("variable", [])
+    claves = {variable["key"] for variable in variables}
+    base = next(variable["value"] for variable in variables if variable["key"] == "baseUrl")
+    if "baseUrlScreener" not in claves:
+        variables.append({"key": "baseUrlScreener", "value": base.removesuffix("/api/v1") + "/api/v2", "type": "string"})
+    if "tokenScreener" not in claves:
+        variables.append({"key": "tokenScreener", "value": "", "type": "string"})
+
+    nombre = "Escáner por cores (API v2)"
+    carpeta = {"name": nombre, "item": [{
+        "name": "Ranking por confluencia para Collar Spread",
+        "request": {
+            "description": "Usa el token de /auth/login en tokenScreener. El análisis devuelve HTTP 503 si las fuentes reales no permiten evaluar el universo.",
+            "method": "POST",
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{tokenScreener}}", "type": "string"}]},
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {"raw": "{{baseUrlScreener}}/strategy-screener/run", "host": ["{{baseUrlScreener}}"], "path": ["strategy-screener", "run"]},
+            "body": {"mode": "raw", "raw": json.dumps({
+                "mode": "BY_STRATEGY", "strategy": "COLLAR_SPREAD", "activeCores": ["001", "002", "003", "005", "006"],
+                "limit": 5, "dteHorizon": 45,
+            }, indent=2), "options": {"raw": {"language": "json"}}},
+        },
+    }]}
+    carpetas = coleccion["item"]
+    for indice, existente in enumerate(carpetas):
+        if existente.get("name") == nombre:
+            carpetas[indice] = carpeta
+            return
+    carpetas.append(carpeta)
+
+
+def sincronizarSoloScreener():
+    raiz = Path(__file__).resolve().parent.parent
+    for nombre in ["LSW_Cloudflare_Postman_Collection.json", "LSW_Render_Postman_Collection.json"]:
+        ruta = raiz / nombre
+        coleccion = json.loads(ruta.read_text(encoding="utf-8"))
+        agregarConsultaScreener(coleccion)
+        ruta.write_text(json.dumps(coleccion, indent=2, ensure_ascii=False), encoding="utf-8")
+        print(f"Escáner por cores sincronizado en {nombre}")
+
+
 def build_complete_collection():
     tutorials, u1 = get_guided_tutorials()
     http_path = r"c:\GitHub\FIC-generator\LSW-EQ1-PROYECTO\request\test_api.http"
@@ -309,6 +351,7 @@ def build_complete_collection():
     }
     
     agregarConsultasPortafolio(collection)
+    agregarConsultaScreener(collection)
 
     out_paths = [
         r"c:\GitHub\FIC-generator\LSW_Cloudflare_Postman_Collection.json",
@@ -409,10 +452,13 @@ if __name__ == "__main__":
     opciones = parser.add_mutually_exclusive_group()
     opciones.add_argument("--black-scholes-only", action="store_true", help="Actualizar solo Black-Scholes en las colecciones del repositorio")
     opciones.add_argument("--portafolio-only", action="store_true", help="Actualizar solo Portafolio en las colecciones del repositorio")
+    opciones.add_argument("--strategy-screener-only", action="store_true", help="Actualizar solo el escáner por cores")
     args = parser.parse_args()
     if args.black_scholes_only:
         sync_black_scholes_only()
     elif args.portafolio_only:
         sincronizarSoloPortafolio()
+    elif args.strategy_screener_only:
+        sincronizarSoloScreener()
     else:
         build_complete_collection()

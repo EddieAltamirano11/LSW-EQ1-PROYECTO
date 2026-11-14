@@ -10,6 +10,7 @@ import { apiReference } from '@scalar/express-api-reference';
 import config from './config/config.js';
 import routerAPI from './api/v1/routes/index.js';
 import routerAPIv2 from './api/v2/routes/index.js';
+import { strategyScreenerRoutes } from './api/v2/routes/strategyScreener.routes.js';
 import loginRoutes from './web/login.routes.js';
 import { authMiddleware } from './middlewares/auth.middleware.js';
 import { databaseContextMiddleware } from './middlewares/databaseContext.middleware.js';
@@ -39,8 +40,10 @@ if (fs.existsSync(clientDistPath)) {
   });
 }
 
-// Inyección de contexto de persistencia, autenticación y broker
 app.use(authMiddleware);
+// El análisis conserva el cuerpo original y usa proveedores de datos independientes del broker y la base.
+app.use('/api/v2/strategy-screener', strategyScreenerRoutes());
+// Inyección de contexto de persistencia y broker para las rutas existentes
 app.use(databaseContextMiddleware);
 app.use(brokerContextMiddleware);
 // Carga y publicación dinámica del contrato OpenSpec

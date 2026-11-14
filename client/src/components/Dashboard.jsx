@@ -21,11 +21,12 @@ import TradingViewWidget from './TradingViewWidget';
 import CriteriaModal from './CriteriaModal';
 import BrokerExecutionModal from './BrokerExecutionModal';
 import { computeLocalCandidates } from '../services/localScanner';
+import StrategyScreenerPanel from './StrategyScreenerPanel';
 import { brokerOptions, databaseOptions, DEFAULT_BROKER, DEFAULT_DATABASE } from '../sessionTargets';
 
 const isMockToken = (token) => typeof token !== 'string' || token.length < 50 || token.includes('demo-jwt');
 
-export default function Dashboard({ session, apiBase, onSessionChange }) {
+export default function Dashboard({ session, apiBase, onSessionChange, onSignIn }) {
   const databaseTarget = session.databaseTarget || DEFAULT_DATABASE;
   const brokerTarget = session.brokerTarget || DEFAULT_BROKER;
   const [scanResult, setScanResult] = useState(null);
@@ -342,15 +343,15 @@ export default function Dashboard({ session, apiBase, onSessionChange }) {
 
           <div className="grid items-start gap-3 px-4 pb-4 sm:px-5 lg:grid-cols-[1fr_1.35fr_1.15fr]">
             <fieldset className="min-w-0">
-              <legend className="ui-label">Cantidad de Empresas (Top)</legend>
+              <legend className="ui-label">Máximo de resultados por ranking</legend>
               <div className="ui-segments grid-cols-2">
-                <button type="button" onClick={() => setLimit(5)} aria-pressed={limit === 5} className="ui-option">Top 5 Empresas</button>
-                <button type="button" onClick={() => setLimit(10)} aria-pressed={limit === 10} className="ui-option">Top 10 Empresas</button>
+                <button type="button" onClick={() => setLimit(5)} aria-pressed={limit === 5} className="ui-option">Top 5</button>
+                <button type="button" onClick={() => setLimit(10)} aria-pressed={limit === 10} className="ui-option">Top 10</button>
               </div>
             </fieldset>
 
             <div className="min-w-0">
-              <label htmlFor="scanner-sort" className="ui-label">Criterio de Ranking</label>
+              <label htmlFor="scanner-sort" className="ui-label">Orden del ranking clásico</label>
               <select
                 id="scanner-sort"
                 value={sortBy}
@@ -390,6 +391,11 @@ export default function Dashboard({ session, apiBase, onSessionChange }) {
           </div>
         </section>
 
+        <StrategyScreenerPanel
+          apiBase={apiBase} token={session.token} isOfflineDemo={session.isOfflineDemo}
+          limit={limit} dteHorizon={dteHorizon} onSignIn={onSignIn}
+        />
+
         {/* Mensaje de Ejecución Toast */}
         {executionMessage && (
           <div
@@ -421,7 +427,7 @@ export default function Dashboard({ session, apiBase, onSessionChange }) {
         <section className="ui-panel min-w-0" aria-labelledby="ranking-title">
           <div className="flex flex-wrap items-start justify-between gap-2 p-4 sm:p-5">
             <div>
-              <h2 id="ranking-title" className="text-lg font-semibold tracking-tight">Ranking Cuantitativo de Candidatos</h2>
+              <h2 id="ranking-title" className="text-lg font-semibold tracking-tight">Ranking clásico · Black-Scholes</h2>
               <p className="mt-1 text-sm text-[var(--ui-muted)]">
                 Ordenado por:{' '}
                 <span className="font-semibold text-[var(--ui-green)]">

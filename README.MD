@@ -98,6 +98,14 @@ Después de ingresar al cliente React, usa los selectores **Base de datos** y **
 
 En la pantalla pública `/login`, usa **Volver al inicio de sesión** para elegir otra base e ingresar de nuevo.
 
+### Ranking por cores en el cliente React
+
+Configura `SEC_EDGAR_USER_AGENT` en el backend con el nombre y correo de contacto del equipo. El escáner usa las credenciales de Alpaca Market Data y Webull OpenAPI ya configuradas en el backend. Las cotizaciones de Webull se identifican con el retraso informado por el proveedor.
+
+Para probar el panel localmente, inicia la API con `npm run dev` y el cliente con `npm --prefix client run dev`. Abre el cliente y elige **Local (3050)** en la configuración de acceso. En el dashboard selecciona las fuentes de análisis y pulsa **Consultar ranking por cores**. Los filtros Top y vencimiento se toman de los controles superiores. Al abrir un candidato se muestran los siete diagnósticos y la evidencia disponible.
+
+La consulta de solo lectura usa `POST /api/v2/strategy-screener/run` con el token de la sesión. En Postman está en **Escáner por cores (API v2)** y usa las variables `baseUrlScreener` y `tokenScreener`.
+
 ## Mejora de Black-Scholes con OpenSpec
 
 La validación de `POST /api/v1/quant/black-scholes` se desarrolla mediante el cambio

@@ -28,13 +28,13 @@ const getDefaultBackendUrl = () => {
   return 'https://lsw-eq1-proyecto.onrender.com';
 };
 
-export default function LoginView({ onLoginSuccess }) {
-  const [username, setUsername] = useState('demo.trader');
-  const [password, setPassword] = useState('demo1234');
-  const [databaseTarget, setDatabaseTarget] = useState(DEFAULT_DATABASE);
-  const [brokerTarget, setBrokerTarget] = useState(DEFAULT_BROKER);
-  const [backendUrl, setBackendUrl] = useState(getDefaultBackendUrl);
-  const [showServerSettings, setShowServerSettings] = useState(false);
+export default function LoginView({ onLoginSuccess, loginContext }) {
+  const [username, setUsername] = useState(loginContext?.username ?? 'demo.trader');
+  const [password, setPassword] = useState(loginContext ? '' : 'demo1234');
+  const [databaseTarget, setDatabaseTarget] = useState(loginContext?.databaseTarget ?? DEFAULT_DATABASE);
+  const [brokerTarget, setBrokerTarget] = useState(loginContext?.brokerTarget ?? DEFAULT_BROKER);
+  const [backendUrl, setBackendUrl] = useState(() => loginContext?.backendUrl ?? getDefaultBackendUrl());
+  const [showServerSettings, setShowServerSettings] = useState(Boolean(loginContext));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 

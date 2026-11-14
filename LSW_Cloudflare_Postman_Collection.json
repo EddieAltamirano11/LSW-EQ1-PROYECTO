@@ -41,6 +41,16 @@
       "key": "baseDatosPortafolio",
       "value": "mongodb",
       "type": "string"
+    },
+    {
+      "key": "baseUrlScreener",
+      "value": "https://lsw-eq1-proyecto.onrender.com/api/v2",
+      "type": "string"
+    },
+    {
+      "key": "tokenScreener",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -4058,6 +4068,53 @@
               "path": [
                 "hedging"
               ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Escáner por cores (API v2)",
+      "item": [
+        {
+          "name": "Ranking por confluencia para Collar Spread",
+          "request": {
+            "description": "Usa el token de /auth/login en tokenScreener. El análisis devuelve HTTP 503 si las fuentes reales no permiten evaluar el universo.",
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenScreener}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlScreener}}/strategy-screener/run",
+              "host": [
+                "{{baseUrlScreener}}"
+              ],
+              "path": [
+                "strategy-screener",
+                "run"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mode\": \"BY_STRATEGY\",\n  \"strategy\": \"COLLAR_SPREAD\",\n  \"activeCores\": [\n    \"001\",\n    \"002\",\n    \"003\",\n    \"005\",\n    \"006\"\n  ],\n  \"limit\": 5,\n  \"dteHorizon\": 45\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           }
         }
