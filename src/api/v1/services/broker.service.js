@@ -6,15 +6,6 @@ import { getUnderlyingRepo } from '../repositories/underlying.repository.js';
 import * as WebullService from './webull.service.js';
 import * as IBKRService from './ibkr.service.js';
 
-// Precios de referencia realistas para el entorno de simulación bursátil
-const REALISTIC_MARKET_SNAPSHOTS = {
-  AAPL: { companyName: 'Apple Inc.', spotPrice: 228.52, volatility: 0.225, bid: 228.50, ask: 228.55 },
-  SPY: { companyName: 'SPDR S&P 500 ETF Trust', spotPrice: 565.15, volatility: 0.142, bid: 565.10, ask: 565.20 },
-  NVDA: { companyName: 'NVIDIA Corporation', spotPrice: 125.80, volatility: 0.450, bid: 125.75, ask: 125.85 },
-  MSFT: { companyName: 'Microsoft Corporation', spotPrice: 428.30, volatility: 0.185, bid: 428.25, ask: 428.35 },
-  GOOGL: { companyName: 'Alphabet Inc.', spotPrice: 165.40, volatility: 0.240, bid: 165.35, ask: 165.45 },
-};
-
 /**
  * Consulta de cuenta y balance del broker seleccionado (Webull, Alpaca o IBKR)
  */
@@ -27,25 +18,6 @@ export const getBrokerAccount = async (broker = 'WEBULL') => {
 
   if (targetBroker === 'IBKR') {
     return await IBKRService.getIBKRAccount();
-  }
-
-  if (targetBroker === 'SIMULATED') {
-    return {
-      broker: 'SIMULATED',
-      accountId: 'SIM-ACCOUNT-001',
-      status: 'ACTIVE',
-      currency: 'USD',
-      cash: 100000,
-      portfolioValue: 100000,
-      buyingPower: 200000,
-      unrealizedPL: 0,
-      realizedPL: 0,
-      tradingBlocked: false,
-      transfersBlocked: false,
-      accountBlocked: false,
-      createdAt: new Date().toISOString(),
-      source: 'In-Memory Simulated Account',
-    };
   }
 
   // Flujo Alpaca Markets
@@ -72,19 +44,11 @@ export const getBrokerAccount = async (broker = 'WEBULL') => {
       };
     } catch (error) {
       console.warn(`[Broker Alpaca Account] Error: ${error.message}`);
+      throw boom.serverUnavailable(`Error al consultar cuenta de Alpaca Markets: ${error.message}`);
     }
   }
 
-  return {
-    broker: 'ALPACA',
-    accountId: 'ACC-PAPER-DEMO-01',
-    status: 'ACTIVE',
-    currency: 'USD',
-    cash: 100000.0,
-    portfolioValue: 100000.0,
-    buyingPower: 400000.0,
-    source: 'Alpaca Simulated Paper Account',
-  };
+  throw boom.serverUnavailable('Alpaca Markets no está configurado (faltan credenciales ALPACA_API_KEY / ALPACA_SECRET_KEY).');
 };
 
 /**
@@ -102,28 +66,6 @@ export const getBrokerQuote = async (symbol, broker = 'WEBULL') => {
     return await IBKRService.getIBKRQuote(ticker);
   }
 
-  if (targetBroker === 'SIMULATED') {
-    const data = REALISTIC_MARKET_SNAPSHOTS[ticker] || {
-      companyName: `${ticker} Corp.`,
-      spotPrice: 150.0,
-      volatility: 0.25,
-      bid: 149.95,
-      ask: 150.05,
-    };
-    return {
-      broker: 'SIMULATED',
-      symbol: ticker,
-      companyName: data.companyName,
-      lastPrice: data.spotPrice,
-      bid: data.bid,
-      ask: data.ask,
-      bidSize: 100,
-      askSize: 100,
-      timestamp: new Date().toISOString(),
-      source: 'Pure In-Memory Simulation Engine',
-    };
-  }
-
   // Flujo Alpaca Markets
   if (isAlpacaConfigured()) {
     try {
@@ -136,7 +78,10 @@ export const getBrokerQuote = async (symbol, broker = 'WEBULL') => {
         const dailyClose = snap.dailyBar?.c || snap.prevDailyBar?.c;
         const q = snap.latestQuote;
 
-        const effectiveLastPrice = tradePrice || dailyClose || (q?.bp && q?.ap ? (q.bp + q.ap) / 2 : 100);
+        const effectiveLastPrice = tradePrice || dailyClose || (q?.bp && q?.ap ? (q.bp + q.ap) / 2 : null);
+        if (!effectiveLastPrice) {
+          throw new Error('Alpaca snapshot no contiene precio de última transacción ni barra de cierre diaria');
+        }
 
         let effectiveBid = (q?.bp && q.bp > 1) ? q.bp : Number((effectiveLastPrice - 0.05).toFixed(2));
         let effectiveAsk = (q?.ap && q.ap > 1) ? q.ap : Number((effectiveLastPrice + 0.05).toFixed(2));
@@ -149,7 +94,7 @@ export const getBrokerQuote = async (symbol, broker = 'WEBULL') => {
         return {
           broker: 'ALPACA',
           symbol: ticker,
-          companyName: REALISTIC_MARKET_SNAPSHOTS[ticker]?.companyName || `${ticker} Inc.`,
+          companyName: `${ticker} Inc.`,
           lastPrice: Number(effectiveLastPrice.toFixed(2)),
           bid: Number(effectiveBid.toFixed(2)),
           ask: Number(effectiveAsk.toFixed(2)),
@@ -160,33 +105,12 @@ export const getBrokerQuote = async (symbol, broker = 'WEBULL') => {
         };
       }
     } catch (error) {
-      console.warn(`[Broker Alpaca] Error al consultar Alpaca API Snapshot (${error.message}). Usando fallback bursátil.`);
+      console.warn(`[Broker Alpaca Quote Error (${ticker})]: ${error.message}`);
+      throw boom.serverUnavailable(`No se pudo obtener cotización viva para ${ticker} desde Alpaca Markets: ${error.message}`);
     }
   }
 
-  // Fallback de alta fidelidad para Alpaca
-  const data = REALISTIC_MARKET_SNAPSHOTS[ticker] || {
-    companyName: `${ticker} Corp.`,
-    spotPrice: 100.0,
-    volatility: 0.2,
-    bid: 99.95,
-    ask: 100.05,
-  };
-
-  const jitter = (Math.random() - 0.5) * 0.2;
-  const currentPrice = Number((data.spotPrice + jitter).toFixed(2));
-
-  return {
-    broker: 'ALPACA',
-    symbol: ticker,
-    companyName: data.companyName,
-    lastPrice: currentPrice,
-    bid: Number((currentPrice - 0.05).toFixed(2)),
-    ask: Number((currentPrice + 0.05).toFixed(2)),
-    volatility: data.volatility,
-    timestamp: new Date().toISOString(),
-    source: 'Alpaca Paper Proxy (Real-Time Simulated Feed)',
-  };
+  throw boom.serverUnavailable('Alpaca Markets no está configurado (faltan credenciales ALPACA_API_KEY / ALPACA_SECRET_KEY).');
 };
 
 /**
@@ -360,27 +284,6 @@ export const createBrokerOrder = async (orderPayload, broker = 'WEBULL') => {
   const { qty = 1, side = 'buy', type = 'limit', limit_price, limitPrice, price, time_in_force = 'day', timeInForce = 'day' } = orderPayload;
   const effectiveLimitPrice = limit_price !== undefined ? limit_price : (limitPrice !== undefined ? limitPrice : price);
 
-  if (targetBroker === 'SIMULATED') {
-    const simOrderId = `SIM-${Date.now().toString(36).toUpperCase()}`;
-    return {
-      message: 'Orden bursátil ejecutada en Sandbox Simulado Autónomo.',
-      order: {
-        broker: 'SIMULATED',
-        id: simOrderId,
-        clientOrderId: `CLI-${simOrderId}`,
-        symbol: targetSymbol || 'SIM',
-        qty: Number(qty),
-        side: side.toLowerCase(),
-        type: type.toLowerCase(),
-        limitPrice: effectiveLimitPrice ? Number(effectiveLimitPrice) : null,
-        status: 'filled',
-        assetClass: orderPayload.instrumentType || (targetSymbol.length > 6 ? 'us_option' : 'us_equity'),
-        createdAt: new Date().toISOString(),
-        source: 'Simulated Execution Engine (Pure In-Memory Sandbox)',
-      },
-    };
-  }
-
   // Flujo Alpaca
   if (!targetSymbol) {
     throw boom.badRequest('El campo symbol o contractSymbol es obligatorio para emitir la orden al broker.');
@@ -429,20 +332,7 @@ export const createBrokerOrder = async (orderPayload, broker = 'WEBULL') => {
     }
   }
 
-  // Fallback de simulación en memoria para Alpaca
-  const simOrderId = `ALP-SIM-${Date.now().toString(36).toUpperCase()}`;
-  return {
-    message: 'Orden bursátil ejecutada en Alpaca Paper Trading Sandbox.',
-    order: {
-      broker: 'ALPACA',
-      id: simOrderId,
-      symbol: targetSymbol,
-      qty: Number(qty),
-      side,
-      type,
-      status: 'filled',
-    },
-  };
+  throw boom.serverUnavailable('Alpaca Markets no está configurado para emitir órdenes en tiempo real.');
 };
 
 /**
@@ -472,7 +362,8 @@ export const cancelBrokerOrder = async (orderId, broker = 'WEBULL') => {
       throw boom.badRequest(`Error al cancelar orden en Alpaca: ${alpacaMsg}`);
     }
   }
-  return { message: `Orden simulada ${orderId} cancelada.` };
+
+  throw boom.serverUnavailable('Alpaca Markets no está configurado para cancelar órdenes.');
 };
 
 /**

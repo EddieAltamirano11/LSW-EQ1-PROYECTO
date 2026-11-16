@@ -8,15 +8,27 @@ Unificar la identidad visual del acceso y del panel de coberturas de Los Eddies 
 
 ### Requirement: Identidad visual y disposición adaptable
 
-El frontend React SHALL usar el verde bosque y las superficies claras del login público como referencia visual en el acceso, el panel, los formularios, los filtros, las tablas, los botones y los modales. La interfaz SHALL ofrecer etiquetas legibles, foco visible y acceso por teclado a los controles. Las vistas SHALL ajustarse al ancho de pantalla y permitir el desplazamiento dentro de una sección de datos cuando sea necesario, manteniendo a la vista las acciones correspondientes.
+El frontend React SHALL implementar la arquitectura de **Santo Grial (3 Columnas)** para pantallas de escritorio (>= 1024px) y apilamiento secuencial accesible para dispositivos móviles (< 1024px). El diseño SHALL aprovechar de forma fluida el ancho horizontal completo de la pantalla sin márgenes laterales ociosos, otorgando prioridad espacial a la columna central (núcleo cuantitativo y gráfico), asignando un ancho equilibrado y cómodo a las columnas laterales (izquierda y derecha), y delimitando **un único ranking consolidado** en la parte inferior central.
 
-#### Scenario: Usar el cliente en escritorio
-- **WHEN** se presenta el acceso o el panel React en un ancho de 1280 px
-- **THEN** los encabezados, superficies, controles y modales comparten la identidad verde y clara, con estados diferenciados por texto y tratamiento visual.
+El diseño SHALL conservar estrictamente la paleta de colores institucional actual: verde bosque (`--ui-green`: `#254d38` / `#193b2d`), superficies y tarjetas claras (`--ui-bg`, `--ui-panel`, `--ui-card`), acentos suaves (`--ui-soft`), tipografía de alto contraste (`--ui-ink`) y bordes refinados (`--ui-border`).
+
+En la columna derecha (Terminal de Ejecución Bursátil), las pestañas selectoras de operación bursátil (Auto-Collar, Protective Put y Acciones) SHALL implementar un estado activo de alto contraste visual con sombreado nítido (`bg-[var(--ui-green)] text-white shadow-md ring-2`) que distinga de forma inequívoca la opción seleccionada frente a las inactivas.
+
+Queda terminantemente prohibido el uso de caracteres emoji en la interfaz gráfica; todos los indicadores, estados, botones y acciones SHALL utilizar exclusivamente iconos vectoriales SVG de **Lucide React (`lucide-react`)**.
+
+La interfaz SHALL ofrecer etiquetas legibles, foco visible y acceso por teclado a los controles. Las vistas SHALL ajustarse al ancho de pantalla y permitir el desplazamiento dentro de una sección de datos cuando sea necesario, manteniendo a la vista las acciones correspondientes.
+
+#### Scenario: Usar el cliente en escritorio con disposición Santo Grial
+- **WHEN** se presenta el acceso o el panel React en un ancho de escritorio (>= 1024 px)
+- **THEN** la interfaz se organiza en tres columnas fluidas de ancho completo:
+  1. Columna Izquierda (320px - 330px): Motores cuantitativos, selectores de Cores (1 a 5), filtros de DTE, ordenamiento y buscador dinámico de tickers, sin duplicar listas de empresas.
+  2. Columna Central (1fr expandida): Núcleo de análisis con gráfico TradingView en vivo arriba y el **único ranking cuantitativo multicriterio** abajo enriquecido con los badges de los cores.
+  3. Columna Derecha (380px - 390px): Terminal de ejecución bursátil con selector de estrategia en alto contraste visual y ticket de orden hacia el broker activo.
+  Los controles usan exclusivamente iconos de `lucide-react` y la paleta verde bosque institucional.
 
 #### Scenario: Usar el cliente en móvil
 - **WHEN** se presenta una vista React en un ancho de 360 px
-- **THEN** los formularios, los filtros y las acciones se pueden leer y alcanzar sin desplazamiento horizontal de la página, y los modales mantienen accesibles sus controles.
+- **THEN** los formularios, los filtros y las acciones se pueden leer y alcanzar mediante apilamiento secuencial fluido sin desplazamiento horizontal de la página, y los modales mantienen accesibles sus controles.
 
 ### Requirement: Presentación del acceso y de la sesión
 
@@ -54,13 +66,19 @@ El panel SHALL conservar la acción de escaneo, los filtros Top 5 y Top 10, los 
 - **WHEN** se abre el modal desde «¿Qué debe cumplir una empresa?»
 - **THEN** aparecen los cuatro pilares con sus umbrales y explicaciones, y están disponibles la X y «Entendido y Validado».
 
-### Requirement: Presentación de los modos de órdenes y de la respuesta
+### Requirement: Presentación de órdenes directas a Broker y de la respuesta
 
-El panel SHALL iniciar en modo Real y concentrar la indicación y el cambio de modo en el selector «Órdenes». SHALL conservar la acción por candidato según el modo y el aviso de resultado con su cierre. El modal SHALL presentar los datos y estados que recibe actualmente, incluidos el código HTTP, el contexto, el mensaje, las patas, las métricas y, cuando corresponda, el listado de órdenes. SHALL conservar la expansión, ocultación y copia del JSON con su indicador actual de copia y los dos controles de cierre.
+El panel SHALL operar exclusivamente en modo de ejecución real hacia el broker seleccionado y enviar siempre `executeOrders: true`. Queda descartado el modo simulado u órdenes virtuales. La terminal de ejecución bursátil SHALL ofrecer tres operaciones directas hacia el broker activo (Webull, Alpaca o IBKR):
 
-#### Scenario: Identificar el modo de órdenes
-- **WHEN** se presenta el panel en su estado inicial o en el modo Simulado existente
-- **THEN** el selector «Órdenes» muestra el modo activo con texto y permite cambiar entre Real y Simulado, y la acción de cada fila conserva la etiqueta correspondiente, «Emitir a Broker» o «Ejecutar».
+1. **Auto-Collar Spread:** Estructura y emite la cobertura combinada de 3 patas (100 acciones subyacentes + compra de Put protector + venta de Call cubierta).
+2. **Protective Put:** Estructura y emite la cobertura de suelo blindado (compra de contrato Put para cobertura contra caídas, con opción de cobertura de cartera o compra de acciones + Put).
+3. **Compra / Venta de Acciones (Equity):** Emite órdenes bursátiles directas de mercado o límite para el subyacente seleccionado sin derivados.
+
+El botón de confirmación de cada operación SHALL mostrar «Emitir a Broker (LIVE)» con icono Lucide, aviso de confirmación y el estado de la transacción real. El modal de respuesta SHALL presentar los datos y estados reales que recibe del microservicio y del broker, incluidos el código HTTP, el contexto, el mensaje, las patas de cobertura o de equity, las métricas y el listado de órdenes procesadas por el matching engine. SHALL conservar la expansión, ocultación y copia del JSON con su indicador actual de copia y los controles de cierre.
+
+#### Scenario: Emitir orden directa a Broker (Auto-Collar, Protective Put o Acciones)
+- **WHEN** el usuario confirma la emisión de cualquiera de las tres estrategias bursátiles desde la terminal derecha
+- **THEN** la solicitud se envía con `executeOrders: true` hacia el broker activo (Webull, Alpaca o IBKR), reportando el resultado real de la emisión sin estados simulados.
 
 #### Scenario: Presentar el detalle de respuesta
 - **WHEN** la aplicación muestra el modal de respuesta en su flujo vigente

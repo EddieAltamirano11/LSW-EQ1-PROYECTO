@@ -11,20 +11,20 @@ import { confluenceCore, newsCore, SOURCE_CORES } from './strategyScreener/confl
 const ETFS = new Set(['SPY', 'QQQ']);
 const DEFAULT_UNIVERSE = MARKET_BASKET.filter(asset => !ETFS.has(asset.symbol));
 const NOT_SELECTED = { status: 'NOT_SELECTED', result: null, evidence: [] };
-const INPUT_FIELDS = ['mode', 'strategy', 'activeCores', 'limit', 'dteHorizon'];
+const INPUT_FIELDS = ['mode', 'strategy', 'activeCores', 'limit', 'dteHorizon', 'extraSymbols'];
 
 export function parseScreenerInput(body) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) throw boom.badRequest('El cuerpo debe ser un objeto JSON.');
   if (Object.keys(body).some(key => !INPUT_FIELDS.includes(key))) throw boom.badRequest('La solicitud contiene campos no admitidos.');
-  const { mode, strategy, activeCores, limit = 5, dteHorizon = 45 } = body;
+  const { mode, strategy, activeCores, limit = 5, dteHorizon = 45, extraSymbols = [] } = body;
   if (mode !== 'BY_STRATEGY' || strategy !== 'COLLAR_SPREAD') throw boom.badRequest('El modo admitido es BY_STRATEGY para COLLAR_SPREAD.');
   if (!Array.isArray(activeCores) || activeCores.length === 0 || new Set(activeCores).size !== activeCores.length
       || activeCores.some(core => !SOURCE_CORES.includes(core))) {
     throw boom.badRequest('Selecciona cores distintos del conjunto 001, 002, 003, 005 y 006.');
   }
-  if (!Number.isInteger(limit) || limit < 1 || limit > 10) throw boom.badRequest('limit debe ser un entero entre 1 y 10.');
+  if (!Number.isInteger(limit) || limit < 1 || limit > 25) throw boom.badRequest('limit debe ser un entero entre 1 y 25.');
   if (![30, 45, 60].includes(dteHorizon)) throw boom.badRequest('dteHorizon debe ser 30, 45 o 60.');
-  return { mode, strategy, activeCores: SOURCE_CORES.filter(core => activeCores.includes(core)), limit, dteHorizon };
+  return { mode, strategy, activeCores: SOURCE_CORES.filter(core => activeCores.includes(core)), limit, dteHorizon, extraSymbols };
 }
 
 async function capture(task) {
@@ -67,7 +67,20 @@ export function createStrategyScreener({ marketData = market, edgar = sec, unive
       throw boom.serverUnavailable(`Datos reales insuficientes. ${reason}`);
     }
     const holdings = includes('005') ? use('13F', () => edgar.holdingsReport(asOf, signal)) : null;
-    const rows = await mapConcurrent(universe, 3, async asset => {
+
+    const extraList = Array.isArray(criteria.extraSymbols)
+      ? criteria.extraSymbols
+      : typeof criteria.extraSymbols === 'string'
+      ? criteria.extraSymbols.split(',').map((s) => s.trim().toUpperCase()).filter(Boolean)
+      : [];
+    const activeUniverse = [...universe];
+    for (const sym of extraList) {
+      if (!activeUniverse.some((a) => a.symbol === sym) && !ETFS.has(sym)) {
+        activeUniverse.push({ symbol: sym, companyName: `${sym} Inc.` });
+      }
+    }
+
+    const rows = await mapConcurrent(activeUniverse, 3, async asset => {
       const { symbol, companyName } = asset;
       const [spot, facts, event, history, news] = await Promise.all([
         use(`spot:${symbol}`, () => marketData.stockSpot(symbol, clock.value, signal)),

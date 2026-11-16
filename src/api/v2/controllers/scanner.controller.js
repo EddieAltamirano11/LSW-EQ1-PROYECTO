@@ -10,6 +10,7 @@ export const getTopCollars = async (req, res, next) => {
       sortBy = 'probability',
       dteHorizon = 45,
       broker,
+      extraSymbols,
     } = req.query;
 
     const result = await ScannerService.scanTopCollars({
@@ -17,6 +18,7 @@ export const getTopCollars = async (req, res, next) => {
       sortBy,
       dteHorizon,
       broker: broker || req.brokerTarget,
+      extraSymbols,
     });
 
     res.status(200).json(result);

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Layers, RefreshCw, CheckCircle2 } from 'lucide-react';
 
 const LABELS = {
   '001': 'Técnico', '002': 'Fundamental', '003': 'Señales directas', '004': 'Estrategia de opciones',
@@ -119,13 +120,23 @@ function Asset({ asset }) {
   );
 }
 
-export default function StrategyScreenerPanel({ apiBase, token, isOfflineDemo, limit, dteHorizon, onSignIn }) {
+export default function StrategyScreenerPanel({
+  apiBase,
+  token,
+  isOfflineDemo,
+  limit,
+  dteHorizon,
+  extraSymbols = [],
+  onSignIn,
+  hideAssetList = false,
+  onScreenerResults,
+}) {
   const [activeCores, setActiveCores] = useState(SELECTABLE);
   const [run, setRun] = useState(0);
   const [response, setResponse] = useState(null);
   const [rejectedSession, setRejectedSession] = useState(null);
   const session = useMemo(() => ({ apiBase, token }), [apiBase, token]);
-  const query = useMemo(() => ({ session, run, activeCores, limit, dteHorizon }), [session, run, activeCores, limit, dteHorizon]);
+  const query = useMemo(() => ({ session, run, activeCores, limit, dteHorizon, extraSymbols }), [session, run, activeCores, limit, dteHorizon, extraSymbols]);
   const needsSignIn = isOfflineDemo || !token || rejectedSession === session;
   const current = response?.query === query ? response : null;
   const loading = !needsSignIn && run > 0 && activeCores.length > 0 && !current;
@@ -140,7 +151,7 @@ export default function StrategyScreenerPanel({ apiBase, token, isOfflineDemo, l
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${query.session.token}` },
           body: JSON.stringify({
             mode: 'BY_STRATEGY', strategy: 'COLLAR_SPREAD', activeCores: query.activeCores,
-            limit: query.limit, dteHorizon: query.dteHorizon,
+            limit: query.limit, dteHorizon: query.dteHorizon, extraSymbols: query.extraSymbols,
           }),
         });
         if (res.status === 401) {
@@ -149,20 +160,110 @@ export default function StrategyScreenerPanel({ apiBase, token, isOfflineDemo, l
         }
         const data = await res.json();
         if (!res.ok) throw new Error(data.message ?? 'El proveedor no entregó datos suficientes.');
-        if (!controller.signal.aborted) setResponse({ query, data });
+        if (!controller.signal.aborted) {
+          setResponse({ query, data });
+          onScreenerResults?.(data);
+        }
       } catch (error) {
         if (!controller.signal.aborted) setResponse({ query, error: error.message });
       }
     };
     const timer = setTimeout(request, 250);
     return () => { clearTimeout(timer); controller.abort(); };
-  }, [needsSignIn, query]);
+  }, [needsSignIn, query, onScreenerResults]);
 
   function toggle(id) {
     setActiveCores(previous => SELECTABLE.filter(core => core === id ? !previous.includes(id) : previous.includes(core)));
   }
 
   const data = needsSignIn ? null : current?.data;
+
+  if (hideAssetList) {
+    return (
+      <section className="ui-panel min-w-0" aria-labelledby="cores-config-title">
+        <div className="flex items-center gap-2.5 border-b border-[var(--ui-border)] p-3.5">
+          <Layers className="h-5 w-5 text-[var(--ui-green)]" aria-hidden="true" />
+          <h2 id="cores-config-title" className="text-base font-bold tracking-tight">
+            Cores &amp; Fuentes Cuantitativas
+          </h2>
+        </div>
+        <div className="space-y-3.5 p-4 text-sm">
+          <p className="text-xs text-[var(--ui-muted)] leading-relaxed">
+            Filtra y calibra los motores del ranking central (Técnico, SEC EDGAR, Noticias).
+          </p>
+
+          <fieldset>
+            <legend className="ui-label text-sm mb-2 font-bold">Fuentes Seleccionadas:</legend>
+            <div className="grid grid-cols-1 gap-2">
+              {SELECTABLE.map(id => (
+                <label
+                  key={id}
+                  className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm cursor-pointer transition-colors ${
+                    activeCores.includes(id)
+                      ? 'border-[var(--ui-green)] bg-[var(--ui-soft)] font-bold text-[var(--ui-green)] shadow-sm'
+                      : 'border-[var(--ui-border)] bg-[var(--ui-card)] text-[var(--ui-muted)] opacity-75 hover:opacity-100'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-semibold text-[var(--ui-muted)]">{id}</span>
+                    <span>{LABELS[id]}</span>
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={activeCores.includes(id)}
+                    onChange={() => toggle(id)}
+                    className="h-4 w-4 rounded text-[var(--ui-green)] focus:ring-[var(--ui-green)]"
+                  />
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          {needsSignIn ? (
+            <div className="space-y-2 pt-1">
+              <p role="status" className="text-xs text-[var(--ui-muted)]">
+                Inicia sesión en el servidor para consultar fuentes y EDGAR.
+              </p>
+              <button type="button" className="ui-button ui-button--primary w-full text-sm font-bold py-2" onClick={onSignIn}>
+                Iniciar Sesión
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2.5 pt-1">
+              <button
+                type="button"
+                className="ui-button ui-button--primary w-full justify-center gap-2 py-2.5 text-sm font-bold shadow-sm"
+                disabled={!activeCores.length || loading}
+                onClick={() => setRun(value => value + 1)}
+              >
+                {loading ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <Layers className="h-4 w-4" aria-hidden="true" />
+                )}
+                <span>{current?.error ? 'Reintentar Evaluación' : loading ? 'Evaluando Cores en Vivo...' : 'Evaluar Cores Cuantitativos'}</span>
+              </button>
+
+              {!activeCores.length && <p role="status" className="text-xs text-amber-700">Selecciona al menos una fuente.</p>}
+              {current?.error && <p role="alert" className="break-words text-xs text-red-700">{current.error}</p>}
+
+              {data && (
+                <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-2.5 text-emerald-950">
+                  <div className="flex items-center gap-1.5 font-bold text-xs sm:text-sm">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-700 shrink-0" aria-hidden="true" />
+                    <span>Cores sincronizados en vivo</span>
+                  </div>
+                  <p className="mt-1 text-xs text-emerald-800">
+                    {data.candidates?.length || 0} empresas viables evaluadas con corte {new Date(data.asOf).toLocaleTimeString()}. Reflejado en el ranking central.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </section>
+    );
+  }
   return (
     <section className="ui-panel min-w-0" aria-labelledby="cores-ranking-title">
       <div className="space-y-3 p-4 sm:p-5">

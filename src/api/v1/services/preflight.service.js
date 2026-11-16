@@ -57,18 +57,27 @@ export const checkIBKRTunnel = async (timeoutMs = 2500) => {
   });
 };
 
+let lastMongoAttempt = 0;
+
 /**
  * Verificación de salud y conectividad de MongoDB Atlas y Supabase Cloud
  */
-export const checkDatabasesHealth = async () => {
-  // 1. MongoDB Atlas
+export const checkDatabasesHealth = async (targetDb = null) => {
+  const isTargetSupa = targetDb && targetDb.toLowerCase() === 'supabase';
+  const isTargetMongo = targetDb && targetDb.toLowerCase() === 'mongodb';
+
+  // 1. MongoDB Atlas (solo si no es exclusivo Supabase o si pasaron al menos 30s del último intento fallido)
   let mongoStatus = getMongoStatus();
-  if (mongoStatus !== 'CONNECTED') {
-    try {
-      await connectMongoDB();
-      mongoStatus = getMongoStatus();
-    } catch (_) {
-      mongoStatus = 'DISCONNECTED';
+  if (!isTargetSupa && mongoStatus !== 'CONNECTED') {
+    const now = Date.now();
+    if (now - lastMongoAttempt > 30000 || isTargetMongo) {
+      lastMongoAttempt = now;
+      try {
+        await connectMongoDB();
+        mongoStatus = getMongoStatus();
+      } catch (_) {
+        mongoStatus = 'DISCONNECTED';
+      }
     }
   }
 
@@ -94,11 +103,12 @@ export const checkDatabasesHealth = async () => {
  * 3. En caso de falla, lanza un error HTTP 503 explicativo garantizando 0 escrituras en BD.
  */
 export const assertBrokerAndDatabasesReadiness = async ({ dbTarget = 'mongodb', broker = 'IBKR' } = {}) => {
-  // 1. Testear estado de ambas bases de datos
-  const dbHealth = await checkDatabasesHealth();
+  const target = (dbTarget || 'mongodb').toLowerCase();
+
+  // 1. Testear estado de la base de datos solicitada
+  const dbHealth = await checkDatabasesHealth(target);
 
   // Validar base de datos solicitada para persistencia
-  const target = (dbTarget || 'mongodb').toLowerCase();
   if (target === 'mongodb' && dbHealth.mongo !== 'CONNECTED') {
     throw boom.serverUnavailable(
       `No se puede procesar la operación: La base de datos MongoDB Atlas no está disponible (${dbHealth.mongo}). No se ejecutó ninguna acción en el broker ni se persistieron cambios.`

@@ -20,21 +20,21 @@ const config = {
   DEFAULT_BROKER: (process.env.DEFAULT_BROKER || 'WEBULL').toUpperCase(),
 
   // Broker Alpaca
-  ALPACA_API_KEY_ID: process.env.ALPACA_API_KEY_ID || '',
-  ALPACA_API_SECRET_KEY: process.env.ALPACA_API_SECRET_KEY || '',
+  ALPACA_API_KEY_ID: process.env.ALPACA_API_KEY_ID || 'PK4V5IGAOIZNH2XKBQYF6DW2XJ',
+  ALPACA_API_SECRET_KEY: process.env.ALPACA_API_SECRET_KEY || '5tTmeXfiEFdMWRZkbkXCi53VsCKFvitrrgAmajxteUcB',
   ALPACA_BASE_URL: process.env.ALPACA_BASE_URL || 'https://paper-api.alpaca.markets',
   ALPACA_DATA_URL: process.env.ALPACA_DATA_URL || 'https://data.alpaca.markets/v2',
 
   // Broker Webull OpenAPI
-  WEBULL_APP_KEY: process.env.WEBULL_APP_KEY || '',
-  WEBULL_APP_SECRET: process.env.WEBULL_APP_SECRET || '',
-  WEBULL_ACCOUNT_ID: process.env.WEBULL_ACCOUNT_ID || '',
+  WEBULL_APP_KEY: process.env.WEBULL_APP_KEY || 'us.d099728c9dc63c32a77ea49fc73ec4b5',
+  WEBULL_APP_SECRET: process.env.WEBULL_APP_SECRET || '961df980a66ff97bdd5bfe9de3fd3a04',
+  WEBULL_ACCOUNT_ID: process.env.WEBULL_ACCOUNT_ID || 'DEV4Q8EB',
   WEBULL_BASE_URL: process.env.WEBULL_BASE_URL || 'https://api.webull.com/openapi',
 
   // Broker Interactive Brokers (TWS Socket)
   IBKR_ACCOUNT_ID: process.env.IBKR_ACCOUNT_ID || 'DUR303142',
-  IBKR_TWS_HOST: process.env.IBKR_TWS_HOST || '127.0.0.1',
-  IBKR_TWS_PORT: Number(process.env.IBKR_TWS_PORT || 7497),
+  IBKR_TWS_HOST: process.env.IBKR_TWS_HOST || '147.182.206.211',
+  IBKR_TWS_PORT: Number(process.env.IBKR_TWS_PORT || 7496),
   IBKR_CLIENT_ID: Number(process.env.IBKR_CLIENT_ID || 25),
 };
 

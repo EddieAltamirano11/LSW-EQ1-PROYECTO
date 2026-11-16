@@ -10,6 +10,12 @@ import argparse
 import math
 import uuid
 from datetime import datetime
+import asyncio
+try:
+    asyncio.get_event_loop()
+except RuntimeError:
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
 
 try:
     from ib_insync import IB, Stock, Option, MarketOrder, LimitOrder, Contract, ComboLeg
@@ -17,19 +23,10 @@ try:
 except ImportError:
     HAS_IB = False
 
-TWS_HOST = os.getenv('IBKR_TWS_HOST', '127.0.0.1')
-TWS_PORT = int(os.getenv('IBKR_TWS_PORT', '7497'))
+TWS_HOST = os.getenv('IBKR_TWS_HOST') or '147.182.206.211'
+TWS_PORT = int(os.getenv('IBKR_TWS_PORT') or '7496')
 CLIENT_ID = int(os.getenv('IBKR_CLIENT_ID', '25'))
 ACCOUNT_ID = os.getenv('IBKR_ACCOUNT_ID', 'DUR303142')
-
-FALLBACK_STOCKS = {
-    'AAPL': {'companyName': 'Apple Inc.', 'price': 347.73, 'bid': 347.50, 'ask': 348.00, 'volatility': 0.22},
-    'NVDA': {'companyName': 'NVIDIA Corporation', 'price': 214.13, 'bid': 213.66, 'ask': 213.83, 'volatility': 0.35},
-    'MSFT': {'companyName': 'Microsoft Corporation', 'price': 428.30, 'bid': 428.10, 'ask': 428.50, 'volatility': 0.19},
-    'AMZN': {'companyName': 'Amazon.com, Inc.', 'price': 254.76, 'bid': 254.50, 'ask': 255.00, 'volatility': 0.26},
-    'SPY': {'companyName': 'SPDR S&P 500 ETF Trust', 'price': 565.15, 'bid': 565.10, 'ask': 565.20, 'volatility': 0.14},
-    'TSLA': {'companyName': 'Tesla, Inc.', 'price': 218.89, 'bid': 218.70, 'ask': 219.00, 'volatility': 0.45},
-}
 
 
 def get_ib_connection():
@@ -145,19 +142,9 @@ def cmd_account(args):
             if ib.isConnected():
                 ib.disconnect()
 
-    # Fallback defensivo
     print(json.dumps({
-        'success': True,
-        'mode': 'DEFENSIVE_SANDBOX_FALLBACK',
-        'accountNumber': ACCOUNT_ID,
-        'currency': 'USD',
-        'cash': 1000000.0,
-        'portfolioValue': 1000000.0,
-        'buyingPower': 4000000.0,
-        'unrealizedPL': 0.0,
-        'realizedPL': 0.0,
-        'status': 'ACTIVE',
-        'source': f'Interactive Brokers Paper Sandbox (Virtual Feed DUR303142)'
+        'success': False,
+        'error': f'No se pudo conectar con Interactive Brokers TWS en {TWS_HOST}:{TWS_PORT}'
     }))
 
 
@@ -186,7 +173,7 @@ def cmd_positions(args):
             if ib.isConnected():
                 ib.disconnect()
 
-    print(json.dumps({'success': True, 'positions': [], 'mode': 'DEFENSIVE_SANDBOX_FALLBACK'}))
+    print(json.dumps({'success': False, 'error': f'No se pudo conectar con Interactive Brokers TWS en {TWS_HOST}:{TWS_PORT}'}))
 
 
 def cmd_orders(args):
@@ -226,7 +213,7 @@ def cmd_orders(args):
             if ib.isConnected():
                 ib.disconnect()
 
-    print(json.dumps({'success': True, 'orders': [], 'mode': 'DEFENSIVE_SANDBOX_FALLBACK'}))
+    print(json.dumps({'success': False, 'error': f'No se pudo conectar con Interactive Brokers TWS en {TWS_HOST}:{TWS_PORT}'}))
 
 
 def cmd_quote(args):
@@ -277,20 +264,10 @@ def cmd_quote(args):
             if ib.isConnected():
                 ib.disconnect()
 
-    fallback = FALLBACK_STOCKS.get(symbol, {'companyName': f'{symbol} Inc.', 'price': 220.0, 'bid': 219.90, 'ask': 220.10, 'volatility': 0.25})
     print(json.dumps({
-        'success': True,
+        'success': False,
         'symbol': symbol,
-        'companyName': fallback['companyName'],
-        'price': fallback['price'],
-        'bid': fallback['bid'],
-        'ask': fallback['ask'],
-        'high': round(fallback['price'] * 1.02, 2),
-        'low': round(fallback['price'] * 0.98, 2),
-        'open': fallback['price'],
-        'close': fallback['price'],
-        'peRatio': 28.5,
-        'mode': 'DEFENSIVE_SANDBOX_FALLBACK'
+        'error': f'No se pudo obtener cotización de {symbol} desde Interactive Brokers TWS'
     }))
 
 
@@ -314,7 +291,7 @@ def cmd_options_chain(args):
         pass
     
     # 1. Obtener precio spot
-    spot = 220.0
+    spot = None
     company = f'{symbol} Inc.'
     ib = get_ib_connection()
     if ib and ib.isConnected():
@@ -328,10 +305,15 @@ def cmd_options_chain(args):
         except Exception:
             if ib.isConnected():
                 ib.disconnect()
-    else:
-        fallback = FALLBACK_STOCKS.get(symbol)
-        if fallback:
-            spot = fallback['price']
+
+    if not spot or spot <= 0:
+        print(json.dumps({
+            'success': False,
+            'broker': 'IBKR',
+            'symbol': symbol,
+            'error': f'No se pudo conectar con Interactive Brokers TWS para obtener cotización real y cadena de opciones de {symbol}'
+        }))
+        return
 
     # 2. Generar strikes calibrados alrededor del dinero (OTM, ATM, ITM)
     strikes = [

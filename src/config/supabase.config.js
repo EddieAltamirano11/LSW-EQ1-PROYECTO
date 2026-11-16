@@ -1,6 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 import config from './config.js';
 
+// Polyfill seguro para entornos Node.js < 22 que no exponen WebSocket nativo en globalThis
+if (typeof globalThis.WebSocket === 'undefined') {
+  globalThis.WebSocket = class WebSocket {};
+}
+
 let supabaseClient = null;
 
 export const getSupabaseClient = () => {

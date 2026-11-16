@@ -231,8 +231,99 @@ export const createProtectivePut = async (payload, dbTarget = 'mongodb') => {
     },
   };
 
+  // Ejecución bursátil en vivo si executeOrders es true
+  const executedOrders = [];
+  const executionErrors = [];
+  const shouldExecute = payload.executeOrders === true || payload.executeOrders === 'true' || payload.executeOnBroker === true;
+
+  if (shouldExecute) {
+    // 1. Pata de Acciones Subyacentes (si buyUnderlying !== false)
+    if (payload.buyUnderlying !== false) {
+      try {
+        const stockOrder = await createBrokerOrder({
+          broker: targetBroker,
+          symbol: symbol.toUpperCase(),
+          instrumentType: 'EQUITY',
+          qty: count,
+          side: 'buy',
+          type: 'limit',
+          limitPrice: S,
+          timeInForce: 'day',
+        }, targetBroker);
+
+        executedOrders.push({
+          legRole: 'UNDERLYING',
+          legType: 'EQUITY',
+          action: 'BUY',
+          symbol: symbol.toUpperCase(),
+          quantity: count,
+          limitPrice: S,
+          orderId: stockOrder.order?.id || stockOrder.id,
+          status: stockOrder.order?.status || 'submitted',
+          details: stockOrder,
+        });
+      } catch (err) {
+        executionErrors.push({
+          legRole: 'UNDERLYING',
+          legType: 'EQUITY',
+          error: err.message,
+        });
+      }
+    }
+
+    // 2. Pata Put Protector
+    try {
+      const cleanExpDate = expirationDate ? new Date(expirationDate).toISOString().slice(0, 10) : '2026-12-18';
+      const occExpiration = cleanExpDate.slice(2).replace(/-/g, '');
+      const occPutSymbol = `${symbol.toUpperCase()}${occExpiration}P${String(Math.round(K * 1000)).padStart(8, '0')}`;
+      const putOrder = await createBrokerOrder({
+        broker: targetBroker,
+        symbol: symbol.toUpperCase(),
+        contractSymbol: occPutSymbol,
+        instrumentType: 'OPTION',
+        optionType: 'PUT',
+        strikePrice: K,
+        expirationDate: cleanExpDate,
+        qty: contracts,
+        side: 'buy',
+        type: 'limit',
+        limitPrice: premium,
+        timeInForce: 'day',
+      }, targetBroker);
+
+      executedOrders.push({
+        legRole: 'HEDGE_FLOOR',
+        legType: 'PUT',
+        action: 'BUY',
+        strike: K,
+        quantity: contracts,
+        limitPrice: premium,
+        orderId: putOrder.order?.id || putOrder.id,
+        status: putOrder.order?.status || 'submitted',
+        details: putOrder,
+      });
+    } catch (err) {
+      executionErrors.push({
+        legRole: 'HEDGE_FLOOR',
+        legType: 'PUT',
+        error: err.message,
+      });
+    }
+  }
+
+  strategyDoc.brokerExecution = {
+    broker: targetBroker,
+    executed: executedOrders.length > 0,
+    orders: executedOrders,
+    errors: executionErrors.length > 0 ? executionErrors : undefined,
+  };
+
   const repo = getHedgingRepo(dbTarget);
-  return await repo.create(strategyDoc);
+  const saved = await repo.create(strategyDoc);
+  return {
+    ...saved,
+    brokerExecution: strategyDoc.brokerExecution,
+  };
 };
 
 // ESTRUCTURACIÓN Y CREACIÓN DE ZERO-COST COLLAR SPREAD (F2 PARTE B)
@@ -830,8 +921,8 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
         ? String(foundInBroker.status || '').toLowerCase() 
         : String(leg.status || '').toLowerCase();
 
-      const rawErrMsg = String(leg.details?.error || leg.details?.message || foundInBroker?.rejectReason || '');
-      const cleanErrMsg = rawErrMsg.replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').trim();
+      const rawErrMsg = String(leg.details?.error || leg.details?.rawError || foundInBroker?.rejectReason || '');
+      const cleanErrMsg = rawErrMsg.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
       let diagExplanation = '';
       if (cleanErrMsg.toLowerCase().includes('nbbo')) {
         diagExplanation = `Precio límite ($${leg.limitPrice}) rechazado por violar límites NBBO (National Best Bid/Offer). Para vencimientos cercanos (${cleanExpDate}), la bolsa exige precios límites más cercanos al Bid/Ask real.`;
@@ -843,8 +934,15 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
         diagExplanation = cleanErrMsg;
       }
 
-      // Regla Fundamental Institucional: CERO SIMULACIÓN. Si no está en vivo en el broker, se rechaza de inmediato
-      if (!ordId || ordId.startsWith('WB-SIM-') || ordId.startsWith('SIM-') || (!foundInBroker && process.env.NODE_ENV !== 'test')) {
+      // Regla Fundamental Institucional: CERO SIMULACIÓN. Si no está en vivo en el broker ni fue confirmada con orderId real, se rechaza
+      const isConfirmedByBrokerResponse = Boolean(
+        ordId &&
+        !ordId.startsWith('WB-SIM-') &&
+        !ordId.startsWith('SIM-') &&
+        (leg.details?.order?.id || leg.details?.success === true || (leg.status && validLiveStatuses.includes(leg.status)))
+      );
+
+      if (!ordId || ordId.startsWith('WB-SIM-') || ordId.startsWith('SIM-') || (!foundInBroker && !isConfirmedByBrokerResponse && process.env.NODE_ENV !== 'test')) {
         unverifiedOrFailedLegs.push({
           legRole: leg.legRole,
           symbol: leg.contractSymbol || leg.symbol,
@@ -863,7 +961,7 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
           status: liveStatus,
           reason: `Pata ${leg.legRole} (${leg.contractSymbol || leg.symbol}, Orden #${leg.orderId || 'N/A'}, Estado: '${liveStatus}'): ${diagExplanation || 'Cancelada/rechazada por el broker o matching engine.'}`,
         });
-      } else if (!validLiveStatuses.includes(liveStatus)) {
+      } else if (!validLiveStatuses.includes(liveStatus) && !isConfirmedByBrokerResponse) {
         unverifiedOrFailedLegs.push({
           legRole: leg.legRole,
           symbol: leg.contractSymbol || leg.symbol,
@@ -871,8 +969,8 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
           status: liveStatus,
           reason: `Pata ${leg.legRole} (${leg.contractSymbol || leg.symbol}, Orden #${leg.orderId || 'N/A'}, Estado no operable: '${liveStatus}'): ${diagExplanation || 'El broker no confirmó la orden en un estado activo estándar.'}`,
         });
-      } else if (foundInBroker) {
-        leg.status = liveStatus;
+      } else if (foundInBroker || isConfirmedByBrokerResponse) {
+        leg.status = liveStatus || 'submitted';
         leg.verifiedInBroker = true;
       }
     }

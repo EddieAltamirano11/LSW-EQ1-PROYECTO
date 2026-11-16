@@ -16,11 +16,11 @@ export const brokerContextMiddleware = (req, res, next) => {
   const defaultBroker = config.DEFAULT_BROKER || 'WEBULL';
 
   let selected = defaultBroker;
-  if (['WEBULL', 'ALPACA', 'IBKR', 'SIMULATED'].includes(headerSelection)) {
+  if (['WEBULL', 'ALPACA', 'IBKR'].includes(headerSelection)) {
     selected = headerSelection;
-  } else if (['WEBULL', 'ALPACA', 'IBKR', 'SIMULATED'].includes(querySelection)) {
+  } else if (['WEBULL', 'ALPACA', 'IBKR'].includes(querySelection)) {
     selected = querySelection;
-  } else if (req.body?.broker && ['WEBULL', 'ALPACA', 'IBKR', 'SIMULATED'].includes(String(req.body.broker).toUpperCase())) {
+  } else if (req.body?.broker && ['WEBULL', 'ALPACA', 'IBKR'].includes(String(req.body.broker).toUpperCase())) {
     selected = String(req.body.broker).toUpperCase();
   }
 

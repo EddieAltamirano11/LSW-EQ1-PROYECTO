@@ -26,6 +26,10 @@ export default function BrokerExecutionModal({ isOpen, onClose, modalData }) {
 
   const { candidate, liveMode, broker, databaseTarget, status, ok, data, rawError } = modalData;
 
+  const dbLabel = (databaseTarget || modalData.database || 'MONGODB').toString().toUpperCase();
+  const brokerLabel = (broker || 'BROKER').toString().toUpperCase();
+  const expLabel = candidate?.optimalExpiration || modalData.payload?.expirationDate || 'Vencimiento Activo';
+
   const isSuccess = ok && (status === 200 || status === 201);
   const analysis = data?.analysis || candidate;
   const execution = data?.brokerExecution;
@@ -69,21 +73,15 @@ export default function BrokerExecutionModal({ isOpen, onClose, modalData }) {
                 >
                   HTTP {status || (isSuccess ? 201 : 400)}
                 </span>
-                <span
-                  className={`text-xs font-bold px-2 py-0.5 rounded border uppercase flex items-center gap-1 ${
-                    liveMode
-                      ? 'border-amber-200 bg-amber-50 text-amber-900'
-                      : 'border-sky-200 bg-sky-50 text-sky-900'
-                  }`}
-                >
-                  {liveMode ? <Zap className="w-3 h-3 text-amber-800" /> : null}
-                  <span>{liveMode ? 'Órdenes Reales' : 'Simulación'}</span>
+                <span className="text-xs font-bold px-2 py-0.5 rounded border uppercase flex items-center gap-1 border-amber-200 bg-amber-50 text-amber-900">
+                  <Zap className="w-3 h-3 text-amber-800" />
+                  <span>Órdenes Reales</span>
                 </span>
               </div>
               <p className="text-xs text-[var(--ui-muted)] mt-2 break-words">
-                Broker: <strong className="text-[var(--ui-ink)]">{broker}</strong> • Persistencia:{' '}
-                <strong className="text-[var(--ui-ink)]">{databaseTarget.toUpperCase()}</strong> • Vencimiento:{' '}
-                <strong className="text-[var(--ui-ink)]">{candidate?.optimalExpiration}</strong>
+                Broker: <strong className="text-[var(--ui-ink)]">{brokerLabel}</strong> • Persistencia:{' '}
+                <strong className="text-[var(--ui-ink)]">{dbLabel}</strong> • Vencimiento:{' '}
+                <strong className="text-[var(--ui-ink)]">{expLabel}</strong>
               </p>
             </div>
           </div>

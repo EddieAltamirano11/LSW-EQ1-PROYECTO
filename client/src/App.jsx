@@ -80,7 +80,7 @@ export default function App() {
       {session ? (
         <>
           <header className="workspace-header">
-            <div className="mx-auto flex max-w-7xl items-center gap-1.5 px-2 py-2 sm:gap-6 sm:px-6 sm:py-3 lg:px-8">
+            <div className="flex w-full items-center gap-1.5 px-3 py-2 sm:gap-6 sm:px-6 sm:py-3 lg:px-8">
               <div className="flex shrink-0 items-center gap-1.5 whitespace-nowrap sm:gap-3">
                 <span className="brand-mark max-[359px]:!hidden" aria-hidden="true"><span /><span /><span /></span>
                 <div>

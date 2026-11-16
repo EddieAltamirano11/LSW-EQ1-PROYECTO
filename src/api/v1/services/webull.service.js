@@ -1,6 +1,7 @@
 import boom from '@hapi/boom';
 import { spawnSync } from 'child_process';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import config from '../../../config/config.js';
 import { isWebullConfigured } from '../../../config/webull.config.js';
@@ -14,7 +15,10 @@ const BRIDGE_SCRIPT = path.join(__dirname, '../../../../scripts/webull_desktop_b
  */
 export const runBridge = (command, args = []) => {
   try {
-    const pythonCmd = process.env.PYTHON_BIN || (process.platform === 'win32' ? 'python' : 'python3');
+    const defaultPython = fs.existsSync(path.join(process.cwd(), '.venv/bin/python3'))
+      ? path.join(process.cwd(), '.venv/bin/python3')
+      : (process.platform === 'win32' ? 'python' : 'python3');
+    const pythonCmd = process.env.PYTHON_BIN || defaultPython;
     const result = spawnSync(pythonCmd, [BRIDGE_SCRIPT, command, ...args], {
       encoding: 'utf-8',
       timeout: 15000,
@@ -41,20 +45,6 @@ export const runBridge = (command, args = []) => {
   return null;
 };
 
-// Memoria local para órdenes de simulación de Webull
-const webullSimulatedOrders = [];
-
-// Precios de referencia de respaldo
-const FALLBACK_SNAPSHOTS = {
-  AAPL: { companyName: 'Apple Inc.', spotPrice: 228.52, volatility: 0.225, bid: 228.50, ask: 228.55 },
-  SPY: { companyName: 'SPDR S&P 500 ETF Trust', spotPrice: 565.15, volatility: 0.142, bid: 565.10, ask: 565.20 },
-  NVDA: { companyName: 'NVIDIA Corporation', spotPrice: 125.80, volatility: 0.450, bid: 125.75, ask: 125.85 },
-  MSFT: { companyName: 'Microsoft Corporation', spotPrice: 428.30, volatility: 0.185, bid: 428.25, ask: 428.35 },
-  GOOGL: { companyName: 'Alphabet Inc.', spotPrice: 165.40, volatility: 0.240, bid: 165.35, ask: 165.45 },
-  TSLA: { companyName: 'Tesla, Inc.', spotPrice: 218.89, volatility: 0.485, bid: 218.80, ask: 218.95 },
-  AMZN: { companyName: 'Amazon.com, Inc.', spotPrice: 187.60, volatility: 0.260, bid: 187.55, ask: 187.65 },
-};
-
 /**
  * Consulta de balance y estado de cuenta bursátil de Webull
  */
@@ -67,9 +57,9 @@ export const getWebullAccount = async () => {
       internalAccountId: bridgeRes.accountId || 'GBG647DN3VL57GSDVGA47NCG18',
       status: 'ACTIVE',
       currency: bridgeRes.currency || 'USD',
-      cash: Number(bridgeRes.cash || 1000000.0),
-      portfolioValue: Number(bridgeRes.portfolioValue || 1000000.0),
-      buyingPower: Number(bridgeRes.buyingPower || 1000000.0),
+      cash: Number(bridgeRes.cash || 0),
+      portfolioValue: Number(bridgeRes.portfolioValue || 0),
+      buyingPower: Number(bridgeRes.buyingPower || 0),
       unrealizedPL: Number(bridgeRes.unrealizedPL || 0.0),
       dayPL: Number(bridgeRes.dayPL || 0.0),
       tradingBlocked: false,
@@ -77,21 +67,9 @@ export const getWebullAccount = async () => {
     };
   }
 
-  // Fallback defensivo
-  return {
-    broker: 'WEBULL',
-    accountId: config.WEBULL_ACCOUNT_ID || 'DEV4Q8EB',
-    status: 'ACTIVE',
-    currency: 'USD',
-    cash: 1000000.0,
-    portfolioValue: 1000000.0,
-    buyingPower: 1000000.0,
-    tradingBlocked: false,
-    transfersBlocked: false,
-    accountBlocked: false,
-    createdAt: new Date().toISOString(),
-    source: 'Webull Paper Trading Sandbox (Virtual Feed)',
-  };
+  throw boom.serverUnavailable(
+    `No se pudo consultar la cuenta de Webull OpenAPI: El bridge o matching engine no respondió (${bridgeRes?.error || 'Sin conexión'}).`
+  );
 };
 
 /**
@@ -101,8 +79,8 @@ export const getWebullQuote = async (symbol) => {
   const ticker = symbol.toUpperCase();
 
   const bridgeRes = runBridge('quote', ['--symbol', ticker]);
-  if (bridgeRes && bridgeRes.success) {
-    const price = Number(bridgeRes.price || 0);
+  if (bridgeRes && bridgeRes.success && bridgeRes.price > 0) {
+    const price = Number(bridgeRes.price);
     const bid = Number(bridgeRes.bid || price - 0.05);
     const ask = Number(bridgeRes.ask || price + 0.05);
 
@@ -126,30 +104,9 @@ export const getWebullQuote = async (symbol) => {
     };
   }
 
-  const fallback = FALLBACK_SNAPSHOTS[ticker] || {
-    companyName: `${ticker} Corp.`,
-    spotPrice: 100.0,
-    volatility: 0.2,
-    bid: 99.95,
-    ask: 100.05,
-  };
-
-  const jitter = (Math.random() - 0.5) * 0.15;
-  const currentPrice = Number((fallback.spotPrice + jitter).toFixed(2));
-
-  return {
-    broker: 'WEBULL',
-    symbol: ticker,
-    companyName: fallback.companyName,
-    lastPrice: currentPrice,
-    bid: Number((currentPrice - 0.05).toFixed(2)),
-    ask: Number((currentPrice + 0.05).toFixed(2)),
-    bidSize: 100,
-    askSize: 100,
-    volatility: fallback.volatility,
-    timestamp: new Date().toISOString(),
-    source: 'Webull Paper Trading Sandbox (Fallback Feed)',
-  };
+  throw boom.serverUnavailable(
+    `No se pudo obtener cotización en tiempo real para ${ticker} desde Webull OpenAPI: ${bridgeRes?.error || 'Símbolo no disponible o bridge inactivo'}.`
+  );
 };
 
 /**
@@ -271,10 +228,6 @@ export const getWebullOrders = async (status = 'all') => {
     }
   }
 
-  if (process.env.NODE_ENV === 'test' && liveOrders.length === 0) {
-    return webullSimulatedOrders;
-  }
-
   return liveOrders;
 };
 
@@ -369,33 +322,6 @@ export const createWebullOrder = async (orderPayload) => {
       };
     }
 
-    if (process.env.NODE_ENV === 'test') {
-      const fallbackOrder = {
-        broker: 'WEBULL',
-        id: `WB-TEST-${Date.now()}`,
-        clientOrderId: `WB-CLI-${Math.floor(Math.random() * 100000)}`,
-        symbol: symbol.toUpperCase(),
-        instrumentType: 'OPTION',
-        optionType: optType,
-        strategy: optStrategy,
-        strikePrice: Number(strike),
-        expirationDate: expDate,
-        qty: Number(qty),
-        side: side.toLowerCase(),
-        type: type.toLowerCase(),
-        timeInForce: timeInForce.toLowerCase(),
-        limitPrice: Number(effectivePrice),
-        status: 'submitted',
-        assetClass: 'us_option',
-        createdAt: new Date().toISOString(),
-        source: 'Webull Test Stub',
-      };
-      return {
-        message: 'Orden bursátil de prueba en modo test.',
-        order: fallbackOrder,
-      };
-    }
-
     const errorMsg = bridgeRes?.error || 'Rechazo del matching engine de Webull para la orden de opción.';
     throw boom.badRequest(`Error de Webull Matching Engine: ${errorMsg}`);
   }
@@ -442,30 +368,6 @@ export const createWebullOrder = async (orderPayload) => {
     };
   }
 
-  if (process.env.NODE_ENV === 'test') {
-    const fallbackOrder = {
-      broker: 'WEBULL',
-      id: `WB-TEST-${Date.now()}`,
-      clientOrderId: `WB-CLI-${Math.floor(Math.random() * 100000)}`,
-      symbol: symbol.toUpperCase(),
-      instrumentType: 'EQUITY',
-      qty: Number(qty),
-      side: side.toLowerCase(),
-      type: type.toLowerCase(),
-      timeInForce: timeInForce.toLowerCase(),
-      limitPrice: Number(effectivePrice),
-      filledQty: Number(qty),
-      status: 'submitted',
-      assetClass: 'us_stock',
-      createdAt: new Date().toISOString(),
-      source: 'Webull Test Stub',
-    };
-    return {
-      message: 'Orden bursátil de prueba en modo test.',
-      order: fallbackOrder,
-    };
-  }
-
   const errorMsg = bridgeRes?.error || 'Rechazo del matching engine de Webull para la orden de acciones.';
   throw boom.badRequest(`Error de Webull Matching Engine: ${errorMsg}`);
 };
@@ -479,12 +381,7 @@ export const cancelWebullOrder = async (orderId) => {
     return { message: `Orden ${orderId} cancelada exitosamente en Webull OpenAPI.` };
   }
 
-  const idx = webullSimulatedOrders.findIndex((o) => o.id === orderId);
-  if (idx !== -1) {
-    webullSimulatedOrders[idx].status = 'cancelled';
-  }
-
-  return { message: `Orden simulada ${orderId} cancelada en Webull Paper Sandbox.` };
+  throw boom.badRequest(`No se pudo cancelar la orden ${orderId} en Webull OpenAPI: ${bridgeRes?.error || 'Rechazo del matching engine'}`);
 };
 
 export default {

@@ -1,6 +1,7 @@
 import boom from '@hapi/boom';
 import { spawnSync } from 'child_process';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import config from '../../../config/config.js';
 import { assertBrokerAndDatabasesReadiness, checkIBKRTunnel } from './preflight.service.js';
@@ -14,14 +15,17 @@ const BRIDGE_SCRIPT = path.join(__dirname, '../../../../scripts/ibkr_desktop_bri
  */
 export const runBridge = (command, args = []) => {
   try {
-    const pythonCmd = process.env.PYTHON_BIN || (process.platform === 'win32' ? 'python' : 'python3');
+    const defaultPython = fs.existsSync(path.join(process.cwd(), '.venv/bin/python3'))
+      ? path.join(process.cwd(), '.venv/bin/python3')
+      : (process.platform === 'win32' ? 'python' : 'python3');
+    const pythonCmd = process.env.PYTHON_BIN || defaultPython;
     const result = spawnSync(pythonCmd, [BRIDGE_SCRIPT, command, ...args], {
       encoding: 'utf-8',
       timeout: 15000,
       env: {
         ...process.env,
-        IBKR_TWS_HOST: config.IBKR_TWS_HOST || '127.0.0.1',
-        IBKR_TWS_PORT: String(config.IBKR_TWS_PORT || 7497),
+        IBKR_TWS_HOST: config.IBKR_TWS_HOST || '147.182.206.211',
+        IBKR_TWS_PORT: String(config.IBKR_TWS_PORT || 7496),
         IBKR_ACCOUNT_ID: config.IBKR_ACCOUNT_ID || 'DUR303142',
         IBKR_CLIENT_ID: String(config.IBKR_CLIENT_ID || 25),
       },
@@ -45,17 +49,6 @@ export const runBridge = (command, args = []) => {
   return null;
 };
 
-// Precios de referencia de respaldo
-const FALLBACK_SNAPSHOTS = {
-  AAPL: { companyName: 'Apple Inc.', spotPrice: 347.73, volatility: 0.22, bid: 347.68, ask: 347.78 },
-  SPY: { companyName: 'SPDR S&P 500 ETF Trust', spotPrice: 565.15, volatility: 0.14, bid: 565.10, ask: 565.20 },
-  NVDA: { companyName: 'NVIDIA Corporation', spotPrice: 214.13, volatility: 0.35, bid: 213.66, ask: 213.83 },
-  MSFT: { companyName: 'Microsoft Corporation', spotPrice: 428.30, volatility: 0.19, bid: 428.10, ask: 428.50 },
-  GOOGL: { companyName: 'Alphabet Inc.', spotPrice: 165.40, volatility: 0.24, bid: 165.35, ask: 165.45 },
-  TSLA: { companyName: 'Tesla, Inc.', spotPrice: 218.89, volatility: 0.45, bid: 218.70, ask: 219.00 },
-  AMZN: { companyName: 'Amazon.com, Inc.', spotPrice: 254.76, volatility: 0.26, bid: 254.50, ask: 255.00 },
-};
-
 /**
  * Consulta de balance y estado de cuenta bursátil de Interactive Brokers
  */
@@ -67,9 +60,9 @@ export const getIBKRAccount = async () => {
       accountId: bridgeRes.accountNumber || config.IBKR_ACCOUNT_ID || 'DUR303142',
       status: 'ACTIVE',
       currency: bridgeRes.currency || 'USD',
-      cash: Number(bridgeRes.cash || 1000000.0),
-      portfolioValue: Number(bridgeRes.portfolioValue || 1000000.0),
-      buyingPower: Number(bridgeRes.buyingPower || 4000000.0),
+      cash: Number(bridgeRes.cash || 0),
+      portfolioValue: Number(bridgeRes.portfolioValue || 0),
+      buyingPower: Number(bridgeRes.buyingPower || 0),
       unrealizedPL: Number(bridgeRes.unrealizedPL || 0.0),
       realizedPL: Number(bridgeRes.realizedPL || 0.0),
       tradingBlocked: false,
@@ -82,27 +75,10 @@ export const getIBKRAccount = async () => {
 
   // Si no está disponible el socket en vivo, verificar el túnel TCP y reportar error explícito
   const tunnel = await checkIBKRTunnel(2000);
-  if (!tunnel.connected) {
-    throw boom.serverUnavailable(
-      `No se puede consultar la cuenta de Interactive Brokers: El túnel/socket TCP hacia Trader Workstation (TWS) en ${tunnel.host}:${tunnel.port} no está disponible (${tunnel.error || tunnel.code}). ` +
-      `La API REST está 100% operativa, pero requiere que la PC host tenga TWS abierto y el túnel TCP activo.`
-    );
-  }
-
-  return {
-    broker: 'IBKR',
-    accountId: config.IBKR_ACCOUNT_ID || 'DUR303142',
-    status: 'ACTIVE',
-    currency: 'USD',
-    cash: 1000000.0,
-    portfolioValue: 1000000.0,
-    buyingPower: 4000000.0,
-    tradingBlocked: false,
-    transfersBlocked: false,
-    accountBlocked: false,
-    createdAt: new Date().toISOString(),
-    source: 'Interactive Brokers TWS Socket Feed (DUR303142)',
-  };
+  throw boom.serverUnavailable(
+    `No se puede consultar la cuenta de Interactive Brokers: El socket TCP hacia Trader Workstation (TWS) en ${tunnel.host}:${tunnel.port} no está disponible (${tunnel.error || tunnel.code || 'Desconectado'}). ` +
+    `Requiere que TWS o IB Gateway esté activo con el puerto API habilitado.`
+  );
 };
 
 /**
@@ -137,32 +113,9 @@ export const getIBKRQuote = async (symbol) => {
     };
   }
 
-  const fallback = FALLBACK_SNAPSHOTS[ticker] || {
-    companyName: `${ticker} Corp.`,
-    spotPrice: 200.0,
-    volatility: 0.25,
-    bid: 199.95,
-    ask: 200.05,
-  };
-
-  return {
-    broker: 'IBKR',
-    symbol: ticker,
-    companyName: fallback.companyName,
-    lastPrice: fallback.spotPrice,
-    bid: fallback.bid,
-    ask: fallback.ask,
-    high: Number((fallback.spotPrice * 1.01).toFixed(2)),
-    low: Number((fallback.spotPrice * 0.99).toFixed(2)),
-    open: fallback.spotPrice,
-    close: fallback.spotPrice,
-    peRatio: 28.5,
-    bidSize: 100,
-    askSize: 100,
-    volatility: fallback.volatility,
-    timestamp: new Date().toISOString(),
-    source: 'Interactive Brokers Market Reference Snapshot',
-  };
+  throw boom.serverUnavailable(
+    `No se pudo obtener cotización viva para ${ticker} desde Interactive Brokers TWS: ${bridgeRes?.error || 'Sin respuesta del socket TWS'}.`
+  );
 };
 
 /**
@@ -330,7 +283,8 @@ export const createIBKROrder = async (orderData) => {
   } = orderData;
 
   // 1. Verificación Pre-Vuelo estricta: Túnel TWS y Bases de Datos
-  await assertBrokerAndDatabasesReadiness({ dbTarget: 'mongodb', broker: 'IBKR' });
+  const activeDb = orderData.dbTarget || orderData.database || 'supabase';
+  await assertBrokerAndDatabasesReadiness({ dbTarget: activeDb, broker: 'IBKR' });
 
   const ticker = symbol?.toUpperCase();
   const action = side.toUpperCase();

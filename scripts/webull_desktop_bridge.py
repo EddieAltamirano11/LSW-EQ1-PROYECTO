@@ -23,12 +23,16 @@ from webull.core.client import ApiClient
 from webull.trade.trade_client import TradeClient
 from webull.data.data_client import DataClient
 from webull.data.common.category import Category
+from webull.core.http.initializer.client_initializer import ClientInitializer
 
-APP_KEY = os.getenv('WEBULL_APP_KEY', 'us.d099728c9dc63c32a77ea49fc73ec4b5')
-APP_SECRET = os.getenv('WEBULL_APP_SECRET', '961df980a66ff97bdd5bfe9de3fd3a04')
-REGION_ID = os.getenv('WEBULL_REGION_ID', 'us')
-DEFAULT_ENDPOINT = os.getenv('WEBULL_ENDPOINT', 'api.sandbox.webull.com')
-TARGET_ACCOUNT_NUM = os.getenv('WEBULL_ACCOUNT_ID', 'DEV4Q8EB')
+# Prevenir error 429 TOO_MANY_REQUESTS en chequeo redundante de token
+ClientInitializer._check_token_enable = lambda self: False
+
+APP_KEY = os.getenv('WEBULL_APP_KEY') or 'us.d099728c9dc63c32a77ea49fc73ec4b5'
+APP_SECRET = os.getenv('WEBULL_APP_SECRET') or '961df980a66ff97bdd5bfe9de3fd3a04'
+REGION_ID = os.getenv('WEBULL_REGION_ID') or 'us'
+DEFAULT_ENDPOINT = os.getenv('WEBULL_ENDPOINT') or 'api.sandbox.webull.com'
+TARGET_ACCOUNT_NUM = os.getenv('WEBULL_ACCOUNT_ID') or 'DEV4Q8EB'
 
 def get_clients():
     client = ApiClient(APP_KEY, APP_SECRET, REGION_ID)

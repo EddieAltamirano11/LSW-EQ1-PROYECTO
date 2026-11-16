@@ -107,7 +107,7 @@ const componentsSection = `components:
         portfolioId: { type: string, example: 'PORT-TECH-COLLAR-01' }
         broker:
           type: string
-          enum: [ALPACA, IBKR, WEBULL, SIMULATED]
+          enum: [ALPACA, IBKR, WEBULL]
           default: ALPACA
           example: ALPACA
           description: Broker bursátil donde opera o se liquida la estrategia de cobertura

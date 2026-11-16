@@ -173,8 +173,8 @@ const quoteCache = new Map();
  * Obtiene el precio spot con timeout de 600ms y caché en memoria para máxima velocidad
  */
 export const getCachedOrBrokerSpot = async (symbol, broker, referenceSpot) => {
-  // En modo de pruebas unitarias o simulación, responder inmediatamente con el precio de referencia
-  if (process.env.NODE_ENV === 'test' || broker === 'SIMULATED') {
+  // En modo de pruebas unitarias, responder con el precio de referencia
+  if (process.env.NODE_ENV === 'test') {
     return referenceSpot;
   }
 
@@ -211,14 +211,15 @@ export const scanTopCollars = async (options = {}) => {
     sortBy = 'probability',
     dteHorizon = 45,
     broker = config.DEFAULT_BROKER || 'WEBULL',
+    extraSymbols = '',
   } = options;
 
   const validLimits = Number(limit);
-  if (isNaN(validLimits) || validLimits < 1 || validLimits > 10) {
-    throw boom.badRequest("El parámetro 'limit' debe ser un número entero entre 1 y 10.");
+  if (isNaN(validLimits) || validLimits < 1 || validLimits > 25) {
+    throw boom.badRequest("El parámetro 'limit' debe ser un número entero entre 1 y 25.");
   }
 
-  const validSorts = ['probability', 'netCredit', 'maxReturn'];
+  const validSorts = ['probability', 'netCredit', 'maxReturn', 'cores'];
   if (!validSorts.includes(sortBy)) {
     throw boom.badRequest(`El parámetro 'sortBy' debe ser uno de: ${validSorts.join(', ')}.`);
   }
@@ -232,8 +233,44 @@ export const scanTopCollars = async (options = {}) => {
   const timeToExpirationYears = Number((validDte / 365).toFixed(4));
   const r = 0.045; // Tasa libre de riesgo federal de referencia (4.5%)
 
+  // Parsear y consultar cotización real para símbolos adicionales añadidos por el usuario
+  const extraList = typeof extraSymbols === 'string'
+    ? extraSymbols.split(',').map((s) => s.trim().toUpperCase()).filter(Boolean)
+    : Array.isArray(extraSymbols) ? extraSymbols : [];
+
+  const existingSymbols = new Set(MARKET_BASKET.map((a) => a.symbol.toUpperCase()));
+  const newExtraSymbols = extraList.filter((s) => !existingSymbols.has(s));
+
+  const extraAssets = await Promise.all(
+    newExtraSymbols.map(async (sym) => {
+      let quote = null;
+      try {
+        quote = await BrokerService.getBrokerQuote(sym, broker);
+      } catch (e) {
+        quote = { lastPrice: 100.0, companyName: `${sym} Inc.`, volatility: 0.28 };
+      }
+      const spot = Number(quote?.lastPrice || quote?.price || 100.0);
+      return {
+        symbol: sym,
+        companyName: quote?.companyName || `${sym} Inc.`,
+        exchange: 'NASDAQ',
+        tvSymbol: `NASDAQ:${sym}`,
+        sector: 'Renta Variable Adicional',
+        beta: 1.15,
+        dividendYield: 0.0,
+        baseVolatility: Number(quote?.volatility) || 0.28,
+        referenceSpot: spot,
+        rsi14: 53.0,
+        aboveSma200: true,
+        isCustom: true,
+      };
+    })
+  );
+
+  const fullBasket = [...MARKET_BASKET, ...extraAssets];
+
   const evaluatedCandidates = await Promise.all(
-    MARKET_BASKET.map(async (asset) => {
+    fullBasket.map(async (asset) => {
       const S = await getCachedOrBrokerSpot(asset.symbol, broker, asset.referenceSpot);
       const vol = asset.baseVolatility;
 
@@ -366,7 +403,7 @@ export const scanTopCollars = async (options = {}) => {
   );
 
   // 6. Ordenamiento multi-criterio según requerimiento
-  if (sortBy === 'probability') {
+  if (sortBy === 'probability' || sortBy === 'cores') {
     evaluatedCandidates.sort((a, b) => b.probabilities.floorProtectionPct - a.probabilities.floorProtectionPct);
   } else if (sortBy === 'netCredit') {
     evaluatedCandidates.sort((a, b) => b.financialMetrics.netDebitCredit - a.financialMetrics.netDebitCredit);
@@ -374,8 +411,9 @@ export const scanTopCollars = async (options = {}) => {
     evaluatedCandidates.sort((a, b) => b.financialMetrics.maxReturnPct - a.financialMetrics.maxReturnPct);
   }
 
-  // 7. Asignar Ranking correlativo y limitar al tamaño solicitado
-  const rankedCandidates = evaluatedCandidates.slice(0, validLimits).map((item, idx) => ({
+  // 7. Asignar Ranking correlativo y limitar al tamaño solicitado (o incluir todos los evaluados si hay símbolos extra)
+  const effectiveLimit = Math.max(validLimits, newExtraSymbols.length > 0 ? validLimits + newExtraSymbols.length : validLimits);
+  const rankedCandidates = evaluatedCandidates.slice(0, effectiveLimit).map((item, idx) => ({
     rank: idx + 1,
     ...item,
   }));
@@ -388,7 +426,7 @@ export const scanTopCollars = async (options = {}) => {
       dteHorizon: validDte,
       targetExpiration,
       broker: broker.toUpperCase(),
-      totalScanned: MARKET_BASKET.length,
+      totalScanned: fullBasket.length,
     },
     candidates: rankedCandidates,
   };

@@ -52,7 +52,7 @@ const hedgingStrategySchema = new mongoose.Schema(
     broker: {
       type: String,
       required: true,
-      enum: ['ALPACA', 'IBKR', 'WEBULL', 'SIMULATED'],
+      enum: ['ALPACA', 'IBKR', 'WEBULL'],
       default: 'ALPACA',
       uppercase: true,
     },
