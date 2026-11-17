@@ -997,10 +997,10 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
       {/* CONTENEDOR PRINCIPAL: ARQUITECTURA SANTO GRIAL (3 COLUMNAS - FLUIDA EN ESCRITORIO Y SCROLL VERTICAL NATURAL EN CELULARES) */}
       <main ref={mainContainerRef} className="flex-1 min-h-0 w-full p-2.5 sm:p-3.5 lg:p-5 flex flex-col overflow-y-auto lg:overflow-hidden">
         <div
-          className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,11fr)_minmax(0,18fr)_minmax(0,11fr)] flex-1 min-h-0 w-full"
+          className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,19fr)_minmax(0,42fr)_minmax(0,19fr)] flex-1 min-h-0 w-full"
           style={{
             gridTemplateColumns: isMultiColumn
-              ? 'minmax(0, 27.5fr) minmax(0, 45fr) minmax(0, 27.5fr)'
+              ? 'minmax(0, 23.75fr) minmax(0, 52.5fr) minmax(0, 23.75fr)'
               : undefined,
           }}
         >
