@@ -94,16 +94,22 @@ export async function stockHistory(symbol, clock, signal) {
   const ranges = [['1Day', 410 * DAY], ['1Hour', 35 * DAY], ['15Min', 24 * DAY]];
   const series = await Promise.all(ranges.map(async ([period, lookback]) => {
     const rows = await bars(symbol, period, clock.quoteCut - lookback, clock.quoteCut, signal);
+    const duration = (period === '1Hour' ? 60 : period === '15Min' ? 15 : 24 * 60) * MINUTE;
     const closed = period === '1Day' ? rows.filter(row => easternDay.format(row.at) <= clock.lastClosed.date)
       : rows.filter(row => {
         const date = easternDay.format(row.at);
-        const open = sessionTime(date, '09:30');
+        const open = sessionTime(date, period === '1Hour' ? '09:00' : '09:30');
         const close = date === clock.session.date ? clock.session.close : sessionTime(date, '16:00');
-        const duration = (period === '1Hour' ? 60 : 15) * MINUTE;
         return row.at >= open && row.at < close && Math.min(row.at + duration, close) <= clock.quoteCut;
       });
-    const recent = period === '1Day' ? easternDay.format(closed.at(-1)?.at || 0) === clock.lastClosed.date
-      : within(closed.at(-1)?.at, clock.quoteCut - 2 * 60 * MINUTE, clock.quoteCut);
+    const lastBar = closed.at(-1);
+    const lastBarDate = lastBar ? easternDay.format(lastBar.at) : '';
+    const isToday = lastBarDate === clock.session.date;
+    const isLastClosed = lastBarDate === clock.lastClosed.date;
+    const lastBarEnd = lastBar ? Math.min(lastBar.at + duration, sessionTime(lastBarDate, '16:00')) : 0;
+    const recent = period === '1Day' ? isLastClosed
+      : (isToday && within(lastBarEnd, clock.quoteCut - 3 * 60 * MINUTE, clock.quoteCut + 5 * MINUTE))
+        || (isLastClosed && clock.quoteCut - clock.session.open < 2 * 60 * MINUTE);
     if (closed.length < 60 || !recent) throw new SourceError(ALPACA, `Serie ${period} incompleta o fuera de vigencia para ${symbol}.`);
     return [period, closed];
   }));
