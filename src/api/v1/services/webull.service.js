@@ -243,7 +243,7 @@ export const createWebullOrder = async (orderPayload) => {
     limitPrice,
     limit_price,
     price,
-    timeInForce = 'gtc',
+    timeInForce = 'day',
     instrumentType,
     optionType,
     option_type,

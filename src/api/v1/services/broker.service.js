@@ -284,8 +284,8 @@ export const createBrokerOrder = async (orderPayload, broker = 'WEBULL') => {
     try {
       const positions = await getBrokerPositions(targetBroker);
       const posList = Array.isArray(positions) ? positions : (positions?.positions || []);
-      const match = posList.find((p) => (p.symbol || p.assetId || '').toUpperCase() === targetSymbol.toUpperCase());
-      const owned = Number(match?.qty || 0);
+      const matchingPositions = posList.filter((p) => (p.symbol || p.assetId || '').toUpperCase() === targetSymbol.toUpperCase());
+      const owned = matchingPositions.reduce((acc, p) => acc + Number(p.qty || 0), 0);
       if (owned <= 0) {
         throw boom.badRequest(`Venta rechazada: No posees acciones de ${targetSymbol} en tu portafolio de ${targetBroker} (Posición: 0 acciones). Venta corta no permitida.`);
       }

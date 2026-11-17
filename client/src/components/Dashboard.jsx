@@ -834,10 +834,10 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
           }
         } catch (_) {}
 
-        const currentPos = livePositions.find(
+        const matchingPositions = livePositions.filter(
           (p) => (p.symbol || p.assetId || '').toUpperCase() === symbol.toUpperCase()
         );
-        const ownedQty = Number(currentPos?.qty || 0);
+        const ownedQty = matchingPositions.reduce((acc, p) => acc + Number(p.qty || 0), 0);
         const requestedQty = Number(orderPayload.qty) || 1;
 
         if (ownedQty <= 0) {
