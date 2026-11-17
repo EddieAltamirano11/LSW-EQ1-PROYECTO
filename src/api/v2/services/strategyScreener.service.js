@@ -11,7 +11,7 @@ import { confluenceCore, newsCore, SOURCE_CORES } from './strategyScreener/confl
 const ETFS = new Set(['SPY', 'QQQ']);
 const DEFAULT_UNIVERSE = MARKET_BASKET.filter(asset => !ETFS.has(asset.symbol));
 const NOT_SELECTED = { status: 'NOT_SELECTED', result: null, evidence: [] };
-const INPUT_FIELDS = ['mode', 'strategy', 'activeCores', 'limit', 'dteHorizon', 'extraSymbols'];
+const INPUT_FIELDS = ['mode', 'strategy', 'activeCores', 'limit', 'dteHorizon', 'extraSymbols', 'databaseTarget', 'broker'];
 
 export function parseScreenerInput(body) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) throw boom.badRequest('El cuerpo debe ser un objeto JSON.');

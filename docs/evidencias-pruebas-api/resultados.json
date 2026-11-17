@@ -1,15 +1,15 @@
 {
-  "startedAt": "2026-11-07T05:18:28.427Z",
-  "finishedAt": "2026-11-07T05:18:44.210Z",
+  "startedAt": "2026-11-17T07:32:49.506Z",
+  "finishedAt": "2026-11-17T07:33:00.478Z",
   "environment": {
-    "node": "v24.14.1",
-    "platform": "win32",
-    "release": "10.0.26300",
+    "node": "v20.20.2",
+    "platform": "linux",
+    "release": "6.18.60-2-cachyos-lts",
     "architecture": "x64",
-    "cpuModel": "11th Gen Intel(R) Core(TM) i5-11300H @ 3.10GHz",
+    "cpuModel": "Intel(R) Core(TM) Ultra 7 258V",
     "logicalCpus": 8,
-    "systemMemoryGiB": 15.788383483886719,
-    "target": "http://127.0.0.1:53064",
+    "systemMemoryGiB": 30.88512420654297,
+    "target": "http://127.0.0.1:43667",
     "apiBase": "/api/v1",
     "mode": "local sin conexiones a bases ni operaciones bursátiles"
   },
@@ -257,6 +257,36 @@
       "error": null
     },
     {
+      "file": "test/portafolio.test.js",
+      "exitCode": 0,
+      "passed": 5,
+      "failed": 0,
+      "cases": [
+        {
+          "name": "Alpaca distingue cero, cartera vacía, tiempo de espera y datos ilegibles",
+          "passed": true
+        },
+        {
+          "name": "Webull utiliza los datos confirmados del puente y el poder de compra en la moneda de cuenta",
+          "passed": true
+        },
+        {
+          "name": "IBKR conserva los contratos individuales y rechaza arreglos de respaldo",
+          "passed": true
+        },
+        {
+          "name": "El servicio distingue errores de formato del puente y un proceso sin respuesta",
+          "passed": true
+        },
+        {
+          "name": "Las rutas de cuenta y posiciones exponen el modo estricto en v1 y v2",
+          "passed": true
+        }
+      ],
+      "logFile": "portafolio.tap.txt",
+      "error": null
+    },
+    {
       "file": "test/quant.unit.test.js",
       "exitCode": 0,
       "passed": 8,
@@ -299,6 +329,112 @@
       "error": null
     },
     {
+      "file": "test/scanner.v2.test.js",
+      "exitCode": 0,
+      "passed": 10,
+      "failed": 0,
+      "cases": [
+        {
+          "name": "[v2-scanner] GET /api/v2/market/scanner/top-collars responde 200 con 5 candidatos por defecto",
+          "passed": true
+        },
+        {
+          "name": "[v2-scanner] permite solicitar 10 candidatos con limit=10",
+          "passed": true
+        },
+        {
+          "name": "[v2-scanner] ordena correctamente por mayor crédito neto (sortBy=netCredit)",
+          "passed": true
+        },
+        {
+          "name": "[v2-scanner] ordena correctamente por mayor retorno potencial (sortBy=maxReturn)",
+          "passed": true
+        },
+        {
+          "name": "[v2-scanner] admite horizonte temporal de 30 y 60 días",
+          "passed": true
+        },
+        {
+          "name": "[v2-scanner] rechaza parámetros de consulta inválidos con 400 Bad Request",
+          "passed": true
+        },
+        {
+          "name": "[v2-scanner] GET /api/v2/market/scanner/company-criteria devuelve los 4 pilares de selección",
+          "passed": true
+        },
+        {
+          "name": "[v2-scanner] GET /api/v2/market/scanner/tradingview/:symbol devuelve configuración válida de widgets",
+          "passed": true
+        },
+        {
+          "name": "[v2-core] GET /api/v2/health devuelve estado UP y versión v2.0.0",
+          "passed": true
+        },
+        {
+          "name": "[v2-core] ruta alias /api/v2/scanner/top-collars es equivalente",
+          "passed": true
+        }
+      ],
+      "logFile": "scanner.v2.tap.txt",
+      "error": null
+    },
+    {
+      "file": "test/strategyScreener.observations.test.js",
+      "exitCode": 0,
+      "passed": 2,
+      "failed": 0,
+      "cases": [
+        {
+          "name": "las observaciones conservan cero y respetan el corte y la ventana",
+          "passed": true
+        },
+        {
+          "name": "recorre las páginas, deduplica registros y reporta cursores incompletos",
+          "passed": true
+        }
+      ],
+      "logFile": "strategyScreener.observations.tap.txt",
+      "error": null
+    },
+    {
+      "file": "test/strategyScreener.v2.test.js",
+      "exitCode": 0,
+      "passed": 7,
+      "failed": 0,
+      "cases": [
+        {
+          "name": "001 combina temporalidades, requiere volumen en ruptura y expone la cobertura",
+          "passed": true
+        },
+        {
+          "name": "002 distingue los cuatro estados y 003 aplica confirmación y riesgo",
+          "passed": true
+        },
+        {
+          "name": "004 valora ask y bid observados y rechaza un par sin liquidez o entregables compatibles",
+          "passed": true
+        },
+        {
+          "name": "005 respeta el lado observado y 006 distingue ventanas vacías de fallas",
+          "passed": true
+        },
+        {
+          "name": "007 combina pesos sin tratar 001 y 003 como confirmaciones independientes",
+          "passed": true
+        },
+        {
+          "name": "ruta autenticada entrega resultados completos y parciales, veta, valida y reporta 503",
+          "passed": true
+        },
+        {
+          "name": "la ruta pública del escáner valida el cuerpo original antes de inyectar contextos heredados",
+          "passed": true
+        }
+      ],
+      "logFile": "strategyScreener.v2.tap.txt",
+      "error": null
+    },
+    {
       "file": "test/underlying.integration.test.js",
       "exitCode": 0,
       "passed": 4,
@@ -326,32 +462,32 @@
     }
   ],
   "totals": {
-    "passed": 60,
+    "passed": 84,
     "failed": 0
   },
   "smoke": [
     {
       "endpoint": "/api/v1/health",
       "status": 200,
-      "elapsedMs": 86.22399999999834,
+      "elapsedMs": 35.79889600000024,
       "passed": true
     },
     {
       "endpoint": "/api/v1/spec.json",
       "status": 200,
-      "elapsedMs": 34.3184999999994,
+      "elapsedMs": 22.388794999998936,
       "passed": true
     },
     {
       "endpoint": "/api/v1/docs",
       "status": 200,
-      "elapsedMs": 7.688199999998687,
+      "elapsedMs": 3.6625220000005356,
       "passed": true
     },
     {
       "endpoint": "/api/v1/quant/black-scholes",
       "status": 200,
-      "elapsedMs": 27.049199999999473,
+      "elapsedMs": 9.059644999999364,
       "passed": true,
       "response": {
         "message": "Valuación analítica Black-Scholes y Griegas calculadas.",
@@ -378,14 +514,14 @@
       "requests": 40,
       "completed": 40,
       "errors": 0,
-      "elapsedMs": 89.27369999999974,
-      "requestsPerSecond": 448.0602909927573,
-      "p50Ms": 2.1450000000004366,
-      "p95Ms": 2.7939000000005763,
-      "p99Ms": 2.8968000000004395,
-      "maxMs": 2.8968000000004395,
-      "serverRssMiB": 100.90625,
-      "serverCpuMs": 16,
+      "elapsedMs": 36.18783499999881,
+      "requestsPerSecond": 1105.3438261780875,
+      "p50Ms": 0.7687779999996565,
+      "p95Ms": 1.5648499999988417,
+      "p99Ms": 2.3812120000002324,
+      "maxMs": 2.3812120000002324,
+      "serverRssMiB": 119.2890625,
+      "serverCpuMs": 22.332,
       "passed": true
     },
     {
@@ -393,14 +529,14 @@
       "requests": 100,
       "completed": 100,
       "errors": 0,
-      "elapsedMs": 148.26989999999932,
-      "requestsPerSecond": 674.44572364317,
-      "p50Ms": 6.600000000000364,
-      "p95Ms": 12.175300000000789,
-      "p99Ms": 13.180200000000696,
-      "maxMs": 13.674700000001394,
-      "serverRssMiB": 100.97265625,
-      "serverCpuMs": 93,
+      "elapsedMs": 74.81213399999979,
+      "requestsPerSecond": 1336.681560239951,
+      "p50Ms": 2.1683109999994485,
+      "p95Ms": 10.978580999999394,
+      "p99Ms": 14.769235999998273,
+      "maxMs": 18.58859400000074,
+      "serverRssMiB": 121.4140625,
+      "serverCpuMs": 44.778,
       "passed": true
     },
     {
@@ -408,14 +544,14 @@
       "requests": 400,
       "completed": 400,
       "errors": 0,
-      "elapsedMs": 512.3155000000006,
-      "requestsPerSecond": 780.7688816754511,
-      "p50Ms": 23.797300000000178,
-      "p95Ms": 45.60059999999976,
-      "p99Ms": 57.554700000000594,
-      "maxMs": 58.4471999999987,
-      "serverRssMiB": 109.53515625,
-      "serverCpuMs": 453,
+      "elapsedMs": 173.13478700000087,
+      "requestsPerSecond": 2310.3387073794593,
+      "p50Ms": 7.498826999999437,
+      "p95Ms": 15.600194999999076,
+      "p99Ms": 25.05041700000038,
+      "maxMs": 26.314705000000686,
+      "serverRssMiB": 134.0390625,
+      "serverCpuMs": 188.287,
       "passed": true
     },
     {
@@ -423,14 +559,14 @@
       "requests": 500,
       "completed": 500,
       "errors": 0,
-      "elapsedMs": 527.5967,
-      "requestsPerSecond": 947.6935697285445,
-      "p50Ms": 46.989700000000084,
-      "p95Ms": 88.15920000000006,
-      "p99Ms": 91.79609999999957,
-      "maxMs": 104.39760000000024,
-      "serverRssMiB": 110.796875,
-      "serverCpuMs": 312,
+      "elapsedMs": 192.46136400000069,
+      "requestsPerSecond": 2597.924017622561,
+      "p50Ms": 16.89899499999956,
+      "p95Ms": 54.7009450000005,
+      "p99Ms": 63.297955,
+      "maxMs": 66.41637300000002,
+      "serverRssMiB": 134.83984375,
+      "serverCpuMs": 210.435,
       "passed": true
     },
     {
@@ -438,76 +574,76 @@
       "requests": 1000,
       "completed": 1000,
       "errors": 0,
-      "elapsedMs": 1032.2713999999996,
-      "requestsPerSecond": 968.7374851226143,
-      "p50Ms": 93.28009999999995,
-      "p95Ms": 204.59779999999955,
-      "p99Ms": 223.60410000000047,
-      "maxMs": 228.22869999999966,
-      "serverRssMiB": 112.35546875,
-      "serverCpuMs": 813,
+      "elapsedMs": 311.6950280000001,
+      "requestsPerSecond": 3208.2642011216158,
+      "p50Ms": 29.6623469999995,
+      "p95Ms": 60.12851700000101,
+      "p99Ms": 70.00980400000117,
+      "maxMs": 74.82829800000036,
+      "serverRssMiB": 152.08984375,
+      "serverCpuMs": 386.445,
       "passed": true
     }
   ],
   "synthetic": [
     {
       "cycle": 1,
-      "timestamp": "2026-11-07T05:18:42.882Z",
+      "timestamp": "2026-11-17T07:32:59.200Z",
       "healthStatus": 200,
       "sessionStatus": 200,
       "calculationStatus": 200,
       "activeDatabase": "supabase",
-      "elapsedMs": 19.612199999999575,
-      "uptimeSeconds": 3.7364167,
-      "rssMiB": 112.609375,
+      "elapsedMs": 7.579794999999649,
+      "uptimeSeconds": 1.173526218,
+      "rssMiB": 152.08984375,
       "passed": true
     },
     {
       "cycle": 2,
-      "timestamp": "2026-11-07T05:18:43.150Z",
+      "timestamp": "2026-11-17T07:32:59.458Z",
       "healthStatus": 200,
       "sessionStatus": 200,
       "calculationStatus": 200,
       "activeDatabase": "supabase",
-      "elapsedMs": 9.490300000001298,
-      "uptimeSeconds": 4.0133331,
-      "rssMiB": 112.67578125,
+      "elapsedMs": 7.510369999999966,
+      "uptimeSeconds": 1.431622216,
+      "rssMiB": 155.58984375,
       "passed": true
     },
     {
       "cycle": 3,
-      "timestamp": "2026-11-07T05:18:43.416Z",
+      "timestamp": "2026-11-17T07:32:59.713Z",
       "healthStatus": 200,
       "sessionStatus": 200,
       "calculationStatus": 200,
       "activeDatabase": "supabase",
-      "elapsedMs": 8.948099999999613,
-      "uptimeSeconds": 4.2797648,
-      "rssMiB": 112.6953125,
+      "elapsedMs": 4.538077999999587,
+      "uptimeSeconds": 1.689850212,
+      "rssMiB": 155.58984375,
       "passed": true
     },
     {
       "cycle": 4,
-      "timestamp": "2026-11-07T05:18:43.680Z",
+      "timestamp": "2026-11-17T07:32:59.968Z",
       "healthStatus": 200,
       "sessionStatus": 200,
       "calculationStatus": 200,
       "activeDatabase": "supabase",
-      "elapsedMs": 8.652899999999136,
-      "uptimeSeconds": 4.5443864,
-      "rssMiB": 112.6953125,
+      "elapsedMs": 4.923655999999028,
+      "uptimeSeconds": 1.944416819,
+      "rssMiB": 155.58984375,
       "passed": true
     },
     {
       "cycle": 5,
-      "timestamp": "2026-11-07T05:18:43.945Z",
+      "timestamp": "2026-11-17T07:33:00.224Z",
       "healthStatus": 200,
       "sessionStatus": 200,
       "calculationStatus": 200,
       "activeDatabase": "supabase",
-      "elapsedMs": 7.805900000001202,
-      "uptimeSeconds": 4.8091878,
-      "rssMiB": 112.7109375,
+      "elapsedMs": 5.021630999999616,
+      "uptimeSeconds": 2.199710413,
+      "rssMiB": 155.58984375,
       "passed": true
     }
   ],
@@ -543,10 +679,10 @@
       "observation": "La raíz anuncia ambas BD conectadas sin abrir conexiones durante esta ejecución",
       "status": 200,
       "evidence": {
-        "mongodb": "CONNECTED",
-        "supabase": "CONNECTED"
+        "mongodb": "DISCONNECTED",
+        "supabase": "DISCONNECTED"
       },
-      "confirmed": true
+      "confirmed": false
     },
     {
       "id": "H04",
@@ -581,18 +717,22 @@
     }
   ],
   "sourceHashes": {
-    "src/app.js": "67a59e312644d6674786bfaa6cbd91c145987b7469b9e0b6633eee8619f10e22",
-    "src/api/v1/routes/index.js": "e15f1fcdafe5e1a7b2082cd2a1880b97d8ffd89edd9d1b8df7be42fc987679cf",
-    "src/middlewares/auth.middleware.js": "9f26a32fee602d292206cf600ea7e84750f62ee0410e45b6485d955d50c427f2",
-    "src/middlewares/databaseContext.middleware.js": "12983966a01b0020780235cf629c5954ab5db6f50168a8125d4b657b50529226",
-    "src/api/v1/services/auth.service.js": "9f6ad64a84624ff8314a82f98ddd1d31a5155f03a38ebebef5e59617aa305045",
-    "src/api/v1/services/quant.service.js": "64581694a0a37a39cd1d78170d3666cd46d6a5edbc12c0b77638525b0a3c505f",
+    "src/app.js": "2d44c4a7ffc647facdeec059c861996ffb21ffe0368307c1259c1fe52f498c3e",
+    "src/api/v1/routes/index.js": "b6e975f5f67dde50c07bb6ef6eb38492bdcae7711125dcca9f636b76db45efb8",
+    "src/middlewares/auth.middleware.js": "f360b72dd5ca48b43174f03ad3125e9e001970c04202e9fe3e2b94c0a142ee90",
+    "src/middlewares/databaseContext.middleware.js": "4ac9ae3d542b6ae3c0c2bd525c22e2e687a583511aa39684fbc305cadb8d5338",
+    "src/api/v1/services/auth.service.js": "f029dcb389e3d2431c085ba474ff97c3d2b7f4dcde75702dfa797e9939d7fb80",
+    "src/api/v1/services/quant.service.js": "71034fa48e90134cd080355bd9ed953aaeb562a59b01a9636ac50a3b5949b06c",
     "test/api.contract-functional.test.js": "7438c84ec66775cbe4af36aa00a9f199e5472ae33a3bacdd45e0352f9fa5af92",
     "test/black-scholes.validation.test.js": "d3e3cb02f8d5a9c996a45f4bab0967b4935e9c59adb3818ba984b683e449b10b",
     "test/context.unit.test.js": "304f1e7bb1fe4aecb46d16355913d80ee370e64fab4f22bd9bfae37bb534adbd",
     "test/login.routes.test.js": "d9d6f6f217c74f0603633e4bcd6c73658ab80256bc45eca8528bbd8e460eb2fb",
     "test/login.session.test.js": "5f48e4bf8d3be214c4727062bee7ceda0179deb46b75df92d7b20a9815f3de6f",
+    "test/portafolio.test.js": "43eefb0776d36369cb2c872a527d7c98982328dbaf9c4db4077824abd0f51d7e",
     "test/quant.unit.test.js": "740eb801d6b9cdff9aa3a4d0d0a083f4f19cf9565bc12883601c9f6785894632",
+    "test/scanner.v2.test.js": "7ef69436f1ddbaa21241af70b8f710135e1f37a0f97d4107393c54ec82ce2086",
+    "test/strategyScreener.observations.test.js": "1863b5918c39aee01d5a1cabda6c4baf2f482fbd13ce1b861d7e24b162f722b1",
+    "test/strategyScreener.v2.test.js": "ad87d59d65b46a9fd6949c82f7b9fe8c61ffb594668619757cafd29cecff21fe",
     "test/underlying.integration.test.js": "30318647c03258c2e089b268219fdced9fdff87e2f717c7235d202225708bf3e"
   }
 }

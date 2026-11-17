@@ -1,0 +1,146 @@
+TAP version 13
+# ⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715
+# GET /api/v2/market/scanner/top-collars 200 3948.299 ms - 5688
+# Subtest: [v2-scanner] GET /api/v2/market/scanner/top-collars responde 200 con 5 candidatos por defecto
+ok 1 - [v2-scanner] GET /api/v2/market/scanner/top-collars responde 200 con 5 candidatos por defecto
+  ---
+  duration_ms: 4192.064627
+  ...
+# GET /api/v2/market/scanner/top-collars?limit=10 200 0.821 ms - 11168
+# Subtest: [v2-scanner] permite solicitar 10 candidatos con limit=10
+ok 2 - [v2-scanner] permite solicitar 10 candidatos con limit=10
+  ---
+  duration_ms: 3.994625
+  ...
+# GET /api/v2/market/scanner/top-collars?limit=5&sortBy=netCredit 200 0.460 ms - 5666
+# Subtest: [v2-scanner] ordena correctamente por mayor crédito neto (sortBy=netCredit)
+ok 3 - [v2-scanner] ordena correctamente por mayor crédito neto (sortBy=netCredit)
+  ---
+  duration_ms: 2.283953
+  ...
+# GET /api/v2/market/scanner/top-collars?limit=5&sortBy=maxReturn 200 0.513 ms - 5654
+# Subtest: [v2-scanner] ordena correctamente por mayor retorno potencial (sortBy=maxReturn)
+ok 4 - [v2-scanner] ordena correctamente por mayor retorno potencial (sortBy=maxReturn)
+  ---
+  duration_ms: 1.991699
+  ...
+# GET /api/v2/market/scanner/top-collars?dteHorizon=30 200 0.481 ms - 5675
+# GET /api/v2/market/scanner/top-collars?dteHorizon=60 200 0.363 ms - 5683
+# Subtest: [v2-scanner] admite horizonte temporal de 30 y 60 días
+ok 5 - [v2-scanner] admite horizonte temporal de 30 y 60 días
+  ---
+  duration_ms: 3.338704
+  ...
+# [API Error Detail]: Error: El parámetro 'limit' debe ser un número entero entre 1 y 25.
+#     at Module.scanTopCollars (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/services/scanner.service.js:219:16)
+#     at getTopCollars (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/controllers/scanner.controller.js:16:41)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
+#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: "El parámetro 'limit' debe ser un número entero entre 1 y 25."
+#     },
+#     headers: {}
+#   }
+# }
+# GET /api/v2/market/scanner/top-collars?limit=99 400 1.746 ms - 234
+# [API Error Detail]: Error: El parámetro 'sortBy' debe ser uno de: probability, netCredit, maxReturn, cores.
+#     at Module.scanTopCollars (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/services/scanner.service.js:224:16)
+#     at getTopCollars (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/controllers/scanner.controller.js:16:41)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
+#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: "El parámetro 'sortBy' debe ser uno de: probability, netCredit, maxReturn, cores."
+#     },
+#     headers: {}
+#   }
+# }
+# GET /api/v2/market/scanner/top-collars?sortBy=arbitrario 400 0.509 ms - 262
+# [API Error Detail]: Error: El parámetro 'dteHorizon' debe ser un horizonte estándar en días: 30, 45 o 60.
+#     at Module.scanTopCollars (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/services/scanner.service.js:229:16)
+#     at getTopCollars (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/controllers/scanner.controller.js:16:41)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
+#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: "El parámetro 'dteHorizon' debe ser un horizonte estándar en días: 30, 45 o 60."
+#     },
+#     headers: {}
+#   }
+# }
+# GET /api/v2/market/scanner/top-collars?dteHorizon=90 400 0.402 ms - 258
+# Subtest: [v2-scanner] rechaza parámetros de consulta inválidos con 400 Bad Request
+ok 6 - [v2-scanner] rechaza parámetros de consulta inválidos con 400 Bad Request
+  ---
+  duration_ms: 6.702708
+  ...
+# GET /api/v2/market/scanner/company-criteria 200 0.300 ms - 1975
+# Subtest: [v2-scanner] GET /api/v2/market/scanner/company-criteria devuelve los 4 pilares de selección
+ok 7 - [v2-scanner] GET /api/v2/market/scanner/company-criteria devuelve los 4 pilares de selección
+  ---
+  duration_ms: 2.084529
+  ...
+# GET /api/v2/market/scanner/tradingview/NVDA 200 0.410 ms - 459
+# Subtest: [v2-scanner] GET /api/v2/market/scanner/tradingview/:symbol devuelve configuración válida de widgets
+ok 8 - [v2-scanner] GET /api/v2/market/scanner/tradingview/:symbol devuelve configuración válida de widgets
+  ---
+  duration_ms: 2.093145
+  ...
+# GET /api/v2/health 200 0.206 ms - 250
+# Subtest: [v2-core] GET /api/v2/health devuelve estado UP y versión v2.0.0
+ok 9 - [v2-core] GET /api/v2/health devuelve estado UP y versión v2.0.0
+  ---
+  duration_ms: 1.594242
+  ...
+# GET /api/v2/scanner/top-collars?limit=3 200 0.455 ms - 3482
+# Subtest: [v2-core] ruta alias /api/v2/scanner/top-collars es equivalente
+ok 10 - [v2-core] ruta alias /api/v2/scanner/top-collars es equivalente
+  ---
+  duration_ms: 1.730503
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4443.930831

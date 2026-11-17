@@ -169,19 +169,48 @@ export default function StrategyScreenerPanel({
 
     const request = async () => {
       try {
-        const res = await fetch(`${currentSession.apiBase}/api/v2/strategy-screener/run`, {
+        const payload = {
+          mode: 'BY_STRATEGY',
+          strategy: 'COLLAR_SPREAD',
+          activeCores: currentCores,
+          limit: 25, // Evaluar canasta completa para que el ranking central ordene todos los activos
+          dteHorizon: currentDte,
+        };
+        if (Array.isArray(currentSymbols) && currentSymbols.length > 0) {
+          payload.extraSymbols = currentSymbols;
+        }
+
+        let res = await fetch(`${currentSession.apiBase}/api/v2/strategy-screener/run`, {
           method: 'POST',
           signal: controller.signal,
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentSession.token}` },
-          body: JSON.stringify({
-            mode: 'BY_STRATEGY',
-            strategy: 'COLLAR_SPREAD',
-            activeCores: currentCores,
-            limit: 25, // Evaluar canasta completa para que el ranking central ordene todos los activos
-            dteHorizon: currentDte,
-            extraSymbols: currentSymbols,
-          }),
+          body: JSON.stringify(payload),
         });
+
+        // Tolerancia a fallos por incompatibilidad de versiones en backends remotos (ej. Render en rama main anterior):
+        // Si el backend aún no admite limit: 25 o extraSymbols, reintentar automáticamente con parámetros legacy
+        if (res.status === 400) {
+          try {
+            const errClone = await res.clone().json();
+            const errMsg = (errClone?.message || '').toLowerCase();
+            if (errMsg.includes('no admitidos') || errMsg.includes('limit')) {
+              res = await fetch(`${currentSession.apiBase}/api/v2/strategy-screener/run`, {
+                method: 'POST',
+                signal: controller.signal,
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentSession.token}` },
+                body: JSON.stringify({
+                  mode: 'BY_STRATEGY',
+                  strategy: 'COLLAR_SPREAD',
+                  activeCores: currentCores,
+                  limit: 10,
+                  dteHorizon: currentDte,
+                }),
+              });
+            }
+          } catch {
+            // Continuar con res original si falla el clon
+          }
+        }
         if (res.status === 401) {
           if (!controller.signal.aborted) {
             setRejectedSession(currentSession);

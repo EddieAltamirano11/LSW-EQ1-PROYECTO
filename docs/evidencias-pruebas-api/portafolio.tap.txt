@@ -1,0 +1,196 @@
+TAP version 13
+# ⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715
+# [Broker Alpaca Account] Error: Información interna del proveedor
+# [Broker Alpaca Positions] Error: Información interna del proveedor
+# Subtest: Alpaca distingue cero, cartera vacía, tiempo de espera y datos ilegibles
+ok 1 - Alpaca distingue cero, cartera vacía, tiempo de espera y datos ilegibles
+  ---
+  duration_ms: 2.523103
+  ...
+# Subtest: Webull utiliza los datos confirmados del puente y el poder de compra en la moneda de cuenta
+ok 2 - Webull utiliza los datos confirmados del puente y el poder de compra en la moneda de cuenta
+  ---
+  duration_ms: 1.988361
+  ...
+# Subtest: IBKR conserva los contratos individuales y rechaza arreglos de respaldo
+ok 3 - IBKR conserva los contratos individuales y rechaza arreglos de respaldo
+  ---
+  duration_ms: 1.732155
+  ...
+# Subtest: El servicio distingue errores de formato del puente y un proceso sin respuesta
+ok 4 - El servicio distingue errores de formato del puente y un proceso sin respuesta
+  ---
+  duration_ms: 0.86315
+  ...
+# [API Error Detail]: Error: Se requiere una sesión válida para consultar el portafolio.
+#     at resolverCorredorConfirmado (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/broker.controller.js:11:35)
+#     at getAccount (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/broker.controller.js:23:24)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
+#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 401,
+#     payload: {
+#       statusCode: 401,
+#       error: 'Unauthorized',
+#       message: 'Se requiere una sesión válida para consultar el portafolio.'
+#     },
+#     headers: {}
+#   }
+# }
+# GET /api/v2/broker/account?strict=true 401 2.821 ms - 225
+# [API Error Detail]: Error: Token de autorización inválido o expirado.
+#     at authMiddleware (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/middlewares/auth.middleware.js:18:15)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at trim_prefix (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:328:13)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:286:9
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:646:15
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:265:14)
+#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3)
+#     at router (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:47:12) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 401,
+#     payload: {
+#       statusCode: 401,
+#       error: 'Unauthorized',
+#       message: 'Token de autorización inválido o expirado.'
+#     },
+#     headers: {}
+#   }
+# }
+# GET /api/v1/broker/positions?strict=true 401 0.623 ms - 210
+# [API Error Detail]: Error: Selecciona WEBULL, ALPACA o IBKR con x-broker-selection.
+#     at resolverCorredorConfirmado (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/broker.controller.js:14:16)
+#     at getAccount (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/broker.controller.js:23:24)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
+#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'Selecciona WEBULL, ALPACA o IBKR con x-broker-selection.'
+#     },
+#     headers: {}
+#   }
+# }
+# GET /api/v2/broker/account?strict=true&broker=ALPACA 400 1.521 ms - 233
+# [API Error Detail]: Error: Selecciona WEBULL, ALPACA o IBKR con x-broker-selection.
+#     at resolverCorredorConfirmado (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/broker.controller.js:14:16)
+#     at getPositions (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/broker.controller.js:64:24)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
+#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'Selecciona WEBULL, ALPACA o IBKR con x-broker-selection.'
+#     },
+#     headers: {}
+#   }
+# }
+# GET /api/v1/broker/positions?strict=true 400 0.898 ms - 221
+# GET /api/v2/broker/account?strict=true&broker=IBKR 200 0.877 ms - 132
+# GET /api/v1/broker/positions?strict=true 200 0.683 ms - 34
+# [API Error Detail]: Error: El broker devolvió datos que no se pueden interpretar.
+#     at consultarPosicionesConfirmadas (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/services/portafolio.service.js:69:41)
+#     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+#     at async getPositions (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/broker.controller.js:65:26) {
+#   data: null,
+#   isBoom: true,
+#   isServer: true,
+#   output: {
+#     statusCode: 502,
+#     payload: {
+#       statusCode: 502,
+#       error: 'Bad Gateway',
+#       message: 'El broker devolvió datos que no se pueden interpretar.'
+#     },
+#     headers: {}
+#   }
+# }
+# [API Error Detail]: Error: No se pudo consultar el broker seleccionado.
+#     at consultarBrokerConfirmado (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/services/portafolio.service.js:28:18)
+#     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+#     at async consultarCuentaConfirmada (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/services/portafolio.service.js:46:29)
+#     at async getAccount (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/broker.controller.js:24:22) {
+#   data: null,
+#   isBoom: true,
+#   isServer: true,
+#   output: {
+#     statusCode: 503,
+#     payload: {
+#       statusCode: 503,
+#       error: 'Service Unavailable',
+#       message: 'No se pudo consultar el broker seleccionado.'
+#     },
+#     headers: {}
+#   }
+# }
+# [Broker Alpaca Account] Error: detalle privado del proveedor
+# GET /api/v1/broker/positions?strict=true 502 0.984 ms - 220
+# GET /api/v2/broker/account?strict=true 503 0.877 ms - 215
+# [API Error Detail]: Error: Error al consultar cuenta de Alpaca Markets: detalle privado del proveedor
+#     at Module.getBrokerAccount (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/services/broker.service.js:47:18)
+#     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+#     at async getAccount (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/broker.controller.js:28:17) {
+#   data: null,
+#   isBoom: true,
+#   isServer: true,
+#   output: {
+#     statusCode: 503,
+#     payload: {
+#       statusCode: 503,
+#       error: 'Service Unavailable',
+#       message: 'Error al consultar cuenta de Alpaca Markets: detalle privado del proveedor'
+#     },
+#     headers: {}
+#   }
+# }
+# GET /api/v2/broker/account?broker=ALPACA 503 1.034 ms - 247
+# Subtest: Las rutas de cuenta y posiciones exponen el modo estricto en v1 y v2
+ok 5 - Las rutas de cuenta y posiciones exponen el modo estricto en v1 y v2
+  ---
+  duration_ms: 99.305005
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 374.654168

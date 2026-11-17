@@ -1122,7 +1122,7 @@ paths:
             type: integer
             default: 5
             minimum: 1
-            maximum: 10
+            maximum: 25
           description: Cantidad de activos a retornar en el ranking
         - name: sortBy
           in: query
@@ -1193,7 +1193,7 @@ components:
   schemas:
     StrategyScreenerCriteria:
       type: object
-      additionalProperties: false
+      additionalProperties: true
       required: [mode, strategy, activeCores]
       properties:
         mode: { type: string, enum: [BY_STRATEGY] }
@@ -1204,8 +1204,20 @@ components:
           maxItems: 5
           uniqueItems: true
           items: { type: string, enum: ['001', '002', '003', '005', '006'] }
-        limit: { type: integer, minimum: 1, maximum: 10, default: 5 }
+        limit: { type: integer, minimum: 1, maximum: 25, default: 5 }
         dteHorizon: { type: integer, enum: [30, 45, 60], default: 45 }
+        extraSymbols:
+          type: array
+          items: { type: string }
+          description: Tickers adicionales personalizados añadidos por el usuario para análisis multi-core
+        broker:
+          type: string
+          enum: [WEBULL, ALPACA, IBKR]
+          description: Contexto opcional del broker rector
+        databaseTarget:
+          type: string
+          enum: [mongodb, supabase]
+          description: Contexto opcional del motor de persistencia activo
     StrategyScreenerResult:
       type: object
       required: [asOf, criteria, status, candidates, excluded]

@@ -1,0 +1,20 @@
+TAP version 13
+# Subtest: las observaciones conservan cero y respetan el corte y la ventana
+ok 1 - las observaciones conservan cero y respetan el corte y la ventana
+  ---
+  duration_ms: 1.168251
+  ...
+# Subtest: recorre las páginas, deduplica registros y reporta cursores incompletos
+ok 2 - recorre las páginas, deduplica registros y reporta cursores incompletos
+  ---
+  duration_ms: 0.670488
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 76.348906

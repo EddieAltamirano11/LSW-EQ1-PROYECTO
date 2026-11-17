@@ -2,38 +2,32 @@ TAP version 13
 # Subtest: [unitaria] encabezado de BD prevalece sobre JWT query y cuerpo
 ok 1 - [unitaria] encabezado de BD prevalece sobre JWT query y cuerpo
   ---
-  duration_ms: 2.2008
-  type: 'test'
+  duration_ms: 1.053486
   ...
 # Subtest: [unitaria] JWT selecciona BD cuando el encabezado es inválido
 ok 2 - [unitaria] JWT selecciona BD cuando el encabezado es inválido
   ---
-  duration_ms: 0.3658
-  type: 'test'
+  duration_ms: 0.116048
   ...
 # Subtest: [unitaria] sin selección válida se usa MongoDB
 ok 3 - [unitaria] sin selección válida se usa MongoDB
   ---
-  duration_ms: 0.2809
-  type: 'test'
+  duration_ms: 0.092432
   ...
 # Subtest: [unitaria] encabezado de broker prevalece sobre query y cuerpo
 ok 4 - [unitaria] encabezado de broker prevalece sobre query y cuerpo
   ---
-  duration_ms: 0.4328
-  type: 'test'
+  duration_ms: 0.122095
   ...
 # Subtest: [unitaria] middleware verifica un JWT válido sin consultas externas
 ok 5 - [unitaria] middleware verifica un JWT válido sin consultas externas
   ---
-  duration_ms: 5.2512
-  type: 'test'
+  duration_ms: 2.223388
   ...
 # Subtest: [unitaria] middleware rechaza un JWT con firma incorrecta
 ok 6 - [unitaria] middleware rechaza un JWT con firma incorrecta
   ---
-  duration_ms: 1.244
-  type: 'test'
+  duration_ms: 1.045179
   ...
 1..6
 # tests 6
@@ -43,4 +37,4 @@ ok 6 - [unitaria] middleware rechaza un JWT con firma incorrecta
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 310.514
+# duration_ms 110.775147
