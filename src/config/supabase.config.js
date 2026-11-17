@@ -7,6 +7,9 @@ if (typeof globalThis.WebSocket === 'undefined') {
 }
 
 let supabaseClient = null;
+let supabaseStatus = 'DISCONNECTED';
+
+export const getSupabaseStatus = () => supabaseStatus;
 
 export const getSupabaseClient = () => {
   if (!supabaseClient) {
@@ -28,9 +31,11 @@ export const testSupabaseConnection = async () => {
     const { data, error } = await client.from('tbl_underlyings').select('count', { count: 'exact', head: true });
     if (error) throw error;
     console.log('[Supabase Cloud] Conectado exitosamente y tabla tbl_underlyings accesible.');
+    supabaseStatus = 'CONNECTED';
     return 'CONNECTED';
   } catch (error) {
     console.error(`[Supabase Cloud] Error al conectar: ${error.message}`);
-    return 'ERROR';
+    supabaseStatus = 'DISCONNECTED';
+    return 'DISCONNECTED';
   }
 };

@@ -68,7 +68,7 @@ test('Alpaca distingue cero, cartera vacía, tiempo de espera y datos ilegibles'
   falla = true;
   await assert.rejects(consultarCuentaConfirmada('ALPACA'), tieneEstado(503));
   await assert.rejects(consultarPosicionesConfirmadas('ALPACA'), tieneEstado(503));
-  assert.match((await getBrokerAccount('ALPACA')).source, /Simulated/);
+  await assert.rejects(getBrokerAccount('ALPACA'), tieneEstado(503));
   assert.deepEqual(await getBrokerPositions('ALPACA'), []);
 });
 
@@ -102,7 +102,7 @@ test('Webull utiliza los datos confirmados del puente y el poder de compra en la
   ]);
   posiciones = {};
   await assert.rejects(consultarPosicionesConfirmadas('WEBULL'), tieneEstado(502));
-  assert.match((await getBrokerAccount('WEBULL')).source, /Virtual Feed/);
+  await assert.rejects(getBrokerAccount('WEBULL'), tieneEstado(503));
   assert.deepEqual(await getBrokerPositions('WEBULL'), []);
 });
 
@@ -189,12 +189,6 @@ test('Las rutas de cuenta y posiciones exponen el modo estricto en v1 y v2', asy
   assert.equal(cuerpoError.account, undefined);
   assert.doesNotMatch(JSON.stringify(cuerpoError), /detalle privado/);
 
-  const respuestaHabitual = await fetch(`${servidor.origin}/api/v2/broker/account?broker=ALPACA`);
-  assert.equal(respuestaHabitual.status, 200);
-  const cuentaHabitual = await respuestaHabitual.json();
-  assert.match(cuentaHabitual.source, /Simulated/);
-  assert.equal(cuentaHabitual.account, undefined);
-  const posicionesHabituales = await fetch(`${servidor.origin}/api/v1/broker/positions?broker=ALPACA`);
-  assert.equal(posicionesHabituales.status, 200);
-  assert.deepEqual(await posicionesHabituales.json(), []);
+  const respuestaHabitual = await fetch(`${servidor.origin}/api/v2/broker/account?broker=ALPACA`, { headers: autorizacion });
+  assert.equal(respuestaHabitual.status, 503);
 });

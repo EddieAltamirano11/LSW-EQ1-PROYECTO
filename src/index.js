@@ -1,7 +1,7 @@
 import app from './app.js';
 import config from './config/config.js';
 import { connectMongoDB, getMongoStatus } from './config/mongo.config.js';
-import { testSupabaseConnection } from './config/supabase.config.js';
+import { testSupabaseConnection, getSupabaseStatus } from './config/supabase.config.js';
 
 const startServer = async () => {
   console.log('===============================================================');
@@ -25,12 +25,26 @@ const startServer = async () => {
 
   // 3. Inicio del servidor HTTP Express
   const server = app.listen(app.get('port'), config.HOST, () => {
-    const baseUrl = `http://${config.HOST}:${app.get('port')}${config.API_URL}`;
-    console.log(`\nServidor Express escuchando en: ${baseUrl}`);
-    console.log(`Documentación interactiva OpenSpec: ${baseUrl}/docs`);
-    console.log(`Especificación cruda OpenSpec JSON: ${baseUrl}/spec.json`);
-    console.log(`Estado MongoDB Atlas: ${getMongoStatus()}`);
-    console.log('Persistencia Dual: Habilitada (MongoDB Atlas & Supabase PostgreSQL)');
+    const port = app.get('port');
+    const host = config.HOST;
+    const serverUrl = `http://${host}:${port}`;
+    const apiUrl = `${serverUrl}${config.API_URL}`;
+    const docsUrl = `${apiUrl}/docs`;
+    const specUrl = `${apiUrl}/spec.json`;
+    const clientUrl = 'http://localhost:5174';
+
+    console.log('\n===============================================================');
+    console.log('   SERVIDORES ACTIVOS — LISTOS PARA CONEXIÓN');
+    console.log('===============================================================');
+    console.log(`   ➜  Fontend:   ${clientUrl}`);
+    console.log(`   ➜  Servidor Backend (REST):     ${serverUrl}`);
+    console.log(`   ➜  Endpoints API Base:          ${apiUrl}`);
+    console.log(`   ➜  Documentación OpenSpec:      ${docsUrl}`);
+    console.log(`   ➜  Especificación OpenSpec:     ${specUrl}`);
+    console.log('---------------------------------------------------------------');
+    console.log(`   •  Estado MongoDB:              ${getMongoStatus()}`);
+    console.log(`   •  Estado Supabase:             ${getSupabaseStatus()}`);
+    console.log('   •  Persistencia Dual:           MongoDB & Supabase Habilitadas');
     console.log('===============================================================\n');
   });
 

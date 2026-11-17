@@ -2,6 +2,50 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ========================================================================== */
+/* SUPRESIÓN TOTAL DE BARRAS DE SCROLL (ZERO SCROLLBARS POLICY)               */
+/* ========================================================================== */
+/* En ninguna parte debe haber barra de scrolleo visible (Firefox, Webkit, IE) */
+* {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+*::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+
+html,
+body,
+#root,
+.app-shell {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+#root::-webkit-scrollbar,
+.app-shell::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.no-scrollbar {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
 :root {
   color-scheme: light;
   --ui-forest: #193b2d;

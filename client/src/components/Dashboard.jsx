@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   TrendingUp,
   Database,
@@ -41,10 +41,13 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
   const scanRequest = useRef(null);
   const [scanning, setScanning] = useState(true);
   const [error, setError] = useState(null);
-  const result = scanResult?.broker === brokerTarget ? scanResult : null;
+  const [coresError, setCoresError] = useState(null);
+  const [evaluatingCores, setEvaluatingCores] = useState(false);
+  const result = scanResult?.broker === brokerTarget ? scanResult : null; 
   const candidates = result?.candidates ?? [];
   const criteria = result?.criteria;
   const loading = scanning || (scanResult !== null && result === null);
+  const isRankingLoading = loading || evaluatingCores;
 
   // Filtros del Scanner
   const [limit, setLimit] = useState(5);
@@ -58,6 +61,11 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
 
   // Datos sincronizados de Cores Cuantitativos (para un solo ranking integrado)
   const [screenerData, setScreenerData] = useState(null);
+  const handleScreenerResults = useCallback((data) => {
+    setCoresError(null);
+    setScreenerData(data);
+    setSortBy('cores'); // Reordenar el ranking automáticamente según los Cores
+  }, []);
 
   // Activo seleccionado para TradingView y Terminal de Órdenes
   const [selectedAsset, setSelectedAsset] = useState({
@@ -96,40 +104,63 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
   const [portfolioAccount, setPortfolioAccount] = useState(null);
   const [portfolioPositions, setPortfolioPositions] = useState([]);
   const [portfolioLoading, setPortfolioLoading] = useState(false);
+  const [portfolioError, setPortfolioError] = useState(null);
 
   // Función para consultar cuenta y posiciones en tiempo real del broker
-  const fetchPortfolioSummary = async () => {
+  const fetchPortfolioSummary = async (targetBroker = brokerTarget) => {
     setPortfolioLoading(true);
+    setPortfolioError(null);
     try {
       const headers = {
         Authorization: `Bearer ${session?.token}`,
-        'x-broker-selection': brokerTarget,
+        'x-broker-selection': targetBroker,
         'x-database-selection': databaseTarget,
       };
 
       const [accRes, posRes] = await Promise.all([
-        fetch(`${apiBase}/api/v1/broker/account?broker=${brokerTarget}`, { headers }),
-        fetch(`${apiBase}/api/v1/broker/positions?broker=${brokerTarget}`, { headers }),
+        fetch(`${apiBase}/api/v1/broker/account?broker=${targetBroker}`, { headers }),
+        fetch(`${apiBase}/api/v1/broker/positions?broker=${targetBroker}`, { headers }),
       ]);
 
-      if (accRes.ok) {
-        const accData = await accRes.json();
-        setPortfolioAccount(accData?.account || accData);
+      let errorMsg = null;
+      let accData = null;
+      let posData = null;
+
+      if (!accRes.ok) {
+        const errJson = await accRes.json().catch(() => ({}));
+        errorMsg = errJson.message || `No se pudo obtener el estado de cuenta del broker ${targetBroker} (HTTP ${accRes.status}).`;
+      } else {
+        accData = await accRes.json().catch(() => null);
+        if (!accData) errorMsg = `Respuesta inválida al consultar cuenta de ${targetBroker}.`;
       }
-      if (posRes.ok) {
-        const posData = await posRes.json();
-        const rawPositions = Array.isArray(posData) ? posData : posData?.positions || [];
+
+      if (!errorMsg) {
+        if (!posRes.ok) {
+          const errJson = await posRes.json().catch(() => ({}));
+          errorMsg = errJson.message || `No se pudieron obtener las posiciones del broker ${targetBroker} (HTTP ${posRes.status}).`;
+        } else {
+          posData = await posRes.json().catch(() => null);
+        }
+      }
+
+      if (errorMsg) {
+        setPortfolioError(errorMsg);
+      } else {
+        setPortfolioAccount(accData?.account || accData);
+        const rawPositions = Array.isArray(posData) ? posData : (posData?.positions || []);
         setPortfolioPositions(rawPositions);
+        setPortfolioError(null);
       }
     } catch (e) {
       console.error('Error al consultar resumen de portafolio:', e);
+      setPortfolioError(e.message || `Error de conexión al consultar el broker ${targetBroker}.`);
     } finally {
       setPortfolioLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchPortfolioSummary();
+    fetchPortfolioSummary(brokerTarget);
   }, [brokerTarget]);
 
   // Agrupación y métricas de portafolio: acciones del activo seleccionado, top 5 y buying power
@@ -186,8 +217,8 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
     } else if (sortBy === 'maxReturn') {
       list.sort((a, b) => (b.financialMetrics?.maxReturnPct || 0) - (a.financialMetrics?.maxReturnPct || 0));
     }
-    return list.map((item, idx) => ({ ...item, displayRank: idx + 1 }));
-  }, [candidates, sortBy, screenerData]);
+    return list.slice(0, limit).map((item, idx) => ({ ...item, displayRank: idx + 1 }));
+  }, [candidates, sortBy, screenerData, limit]);
 
   // Candidato actualmente seleccionado para operaciones
   const activeCandidate = sortedCandidates.find((c) => c.symbol === selectedAsset.symbol) || {
@@ -218,6 +249,101 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
     },
   };
 
+  // =========================================================================
+  // SISTEMA DE 3 SCROLLS SINCRONIZADOS A LA COLUMNA MÁS PEQUEÑA & VIEWPORT
+  // =========================================================================
+  const mainContainerRef = useRef(null);
+  const col1InnerRef = useRef(null);
+  const col2InnerRef = useRef(null);
+  const col3InnerRef = useRef(null);
+  const [syncedColumnHeight, setSyncedColumnHeight] = useState(null);
+  const [isMultiColumn, setIsMultiColumn] = useState(() => {
+    return typeof window !== 'undefined' ? window.innerWidth >= 1024 : true;
+  });
+  const prevHeightRef = useRef(null);
+  const rafIdRef = useRef(null);
+
+  useEffect(() => {
+    const checkMultiColumn = () => {
+      const isDesktop = window.innerWidth >= 1024;
+      setIsMultiColumn(isDesktop);
+      return isDesktop;
+    };
+
+    const updateColumnHeights = () => {
+      if (typeof window === 'undefined') return;
+      if (window.innerWidth < 1024) {
+        if (prevHeightRef.current !== null) {
+          prevHeightRef.current = null;
+          setSyncedColumnHeight(null);
+        }
+        return;
+      }
+
+      const getInnerHeight = (ref) => {
+        if (!ref?.current) return 0;
+        return Math.max(
+          ref.current.scrollHeight || 0,
+          ref.current.offsetHeight || 0,
+          Math.ceil(ref.current.getBoundingClientRect()?.height || 0)
+        );
+      };
+
+      const h1 = getInnerHeight(col1InnerRef);
+      const h2 = getInnerHeight(col2InnerRef);
+      const h3 = getInnerHeight(col3InnerRef);
+
+      // Esperar a que las 3 columnas hayan pintado su estructura base (mínimo 200px)
+      if (h1 < 200 || h2 < 200 || h3 < 200) return;
+
+      // Medir la altura vertical disponible en pantalla dentro de main dejando margen para el fondo gris inferior
+      const availableHeight = mainContainerRef.current
+        ? Math.floor(mainContainerRef.current.clientHeight - 32)
+        : (window.innerHeight - 100);
+
+      // La altura visible de las 3 columnas se adapta a la más pequeña, sin rebasar el espacio visible en pantalla
+      const smallest = Math.min(h1, h2, h3);
+      const target = Math.max(Math.min(smallest, availableHeight), 350);
+
+      // Actualizar solo si hay cambio apreciable (>2px) para evitar micro-saltos
+      if (prevHeightRef.current === null || Math.abs(prevHeightRef.current - target) > 2) {
+        prevHeightRef.current = target;
+        setSyncedColumnHeight(target);
+      }
+    };
+
+    const scheduleUpdate = () => {
+      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = requestAnimationFrame(updateColumnHeights);
+    };
+
+    let resizeObserver = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(() => {
+        scheduleUpdate();
+      });
+
+      if (mainContainerRef.current) resizeObserver.observe(mainContainerRef.current);
+      if (col1InnerRef.current) resizeObserver.observe(col1InnerRef.current);
+      if (col2InnerRef.current) resizeObserver.observe(col2InnerRef.current);
+      if (col3InnerRef.current) resizeObserver.observe(col3InnerRef.current);
+    }
+
+    const onWindowResize = () => {
+      checkMultiColumn();
+      scheduleUpdate();
+    };
+
+    window.addEventListener('resize', onWindowResize);
+    scheduleUpdate();
+
+    return () => {
+      window.removeEventListener('resize', onWindowResize);
+      if (resizeObserver) resizeObserver.disconnect();
+      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+    };
+  }, [screenerData, activeCandidate, activeStrategyTab, selectedAsset, sortedCandidates.length, loading]);
+
   // Función para renovar token ante expiración
   const renewToken = async () => {
     const response = await fetch(`${apiBase}/api/v1/auth/login`, {
@@ -246,7 +372,7 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
 
     try {
       const query = new URLSearchParams({
-        limit: String(limit),
+        limit: '25',
         sortBy,
         dteHorizon: String(dteHorizon),
         broker: brokerTarget,
@@ -319,10 +445,19 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
     if (!cleanSym) return;
 
     if (candidates.some((c) => c.symbol.toUpperCase() === cleanSym) || customSymbols.includes(cleanSym)) {
-      setExecutionMessage({
-        type: 'error',
-        text: `El ticker ${cleanSym} ya se encuentra incluido en el ranking.`,
+      setExecutionMessage(null);
+      setBrokerModalData({
+        actionLabel: `Búsqueda de ticker ${cleanSym}`,
+        broker: brokerTarget,
+        database: databaseTarget,
+        databaseTarget: databaseTarget,
+        strategyType: 'EQUITY_ORDER',
+        status: 400,
+        ok: false,
+        data: { message: `El ticker ${cleanSym} ya se encuentra incluido en el ranking.` },
+        rawError: `El ticker ${cleanSym} ya se encuentra incluido en el ranking.`,
       });
+      setIsBrokerModalOpen(true);
       return;
     }
 
@@ -360,16 +495,35 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
         });
       } else {
         const errJson = await res.json().catch(() => ({}));
-        setExecutionMessage({
-          type: 'error',
-          text: `[NO DISPONIBLE EN BROKER]: ${errJson.message || `No se pudo cotizar ${cleanSym} en ${brokerTarget}.`}`,
+        const rawMsg = errJson.message || `No se pudo cotizar ${cleanSym} en ${brokerTarget}.`;
+        setExecutionMessage(null);
+        setBrokerModalData({
+          actionLabel: `Cotización de ticker ${cleanSym}`,
+          broker: brokerTarget,
+          database: databaseTarget,
+          databaseTarget: databaseTarget,
+          strategyType: 'EQUITY_ORDER',
+          status: res.status,
+          ok: false,
+          data: errJson,
+          rawError: rawMsg,
         });
+        setIsBrokerModalOpen(true);
       }
     } catch (err) {
-      setExecutionMessage({
-        type: 'error',
-        text: `Error al evaluar ${cleanSym}: ${err.message}`,
+      setExecutionMessage(null);
+      setBrokerModalData({
+        actionLabel: `Cotización de ticker ${cleanSym}`,
+        broker: brokerTarget,
+        database: databaseTarget,
+        databaseTarget: databaseTarget,
+        strategyType: 'EQUITY_ORDER',
+        status: 500,
+        ok: false,
+        data: { message: err.message },
+        rawError: err.message,
       });
+      setIsBrokerModalOpen(true);
     } finally {
       setCustomTickerLoading(false);
       setCustomTicker('');
@@ -459,10 +613,7 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
       } else if (response) {
         const errJson = await response.json().catch(() => ({}));
         const rawMsg = errJson.message || `El broker devolvió código HTTP ${response.status}.`;
-        setExecutionMessage({
-          type: 'error',
-          text: `[RESPUESTA DEL BROKER ${brokerTarget}]: ${rawMsg}`,
-        });
+        setExecutionMessage(null);
 
         setBrokerModalData({
           ...executionContext,
@@ -474,10 +625,7 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
         setIsBrokerModalOpen(true);
       } else {
         const defaultMsg = 'No se pudo contactar al microservicio para emitir órdenes al broker.';
-        setExecutionMessage({
-          type: 'error',
-          text: `[ERROR DE CONEXIÓN] ${defaultMsg}`,
-        });
+        setExecutionMessage(null);
         setBrokerModalData({
           ...executionContext,
           status: 500,
@@ -488,10 +636,7 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
         setIsBrokerModalOpen(true);
       }
     } catch (err) {
-      setExecutionMessage({
-        type: 'error',
-        text: `[ERROR] ${err.message}`,
-      });
+      setExecutionMessage(null);
       setBrokerModalData({
         ...executionContext,
         status: 500,
@@ -533,6 +678,30 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
       payload: putPayload,
     };
 
+    // 1. Verificación preventiva de Buying Power disponible en el broker
+    const buyingPower = Number(portfolioAccount?.buyingPower ?? -1);
+    const estSpot = Number(targetCandidate.spotPrice || targetCandidate.referenceSpot || 200);
+    const requiredStock = putBuyUnderlying ? putSharesCount * estSpot : 0;
+    const putContracts = Math.max(1, Math.ceil(putSharesCount / 100));
+    const putPrem = Number(targetCandidate.putFloor?.marketPremium || targetCandidate.putFloor?.premium || 4.5);
+    const requiredPut = putContracts * putPrem * 100;
+    const totalRequired = requiredStock + requiredPut;
+
+    if (buyingPower >= 0 && totalRequired > buyingPower) {
+      const reasonMsg = `Poder de compra insuficiente en ${brokerTarget}: La cobertura Protective Put requiere aprox. $${totalRequired.toFixed(2)} USD (${putBuyUnderlying ? `${putSharesCount} acciones ($${requiredStock.toFixed(2)}) + ` : ''}${putContracts} Put ($${requiredPut.toFixed(2)})), pero tu cuenta solo dispone de $${buyingPower.toFixed(2)} USD de Buying Power disponible.`;
+      setExecutionMessage(null);
+      setBrokerModalData({
+        ...executionContext,
+        status: 400,
+        ok: false,
+        data: { message: reasonMsg, reason: 'INSUFFICIENT_BUYING_POWER', required: totalRequired, buyingPower },
+        rawError: reasonMsg,
+      });
+      setIsBrokerModalOpen(true);
+      setExecutingSymbols((pending) => pending.filter((symbol) => symbol !== targetCandidate.symbol));
+      return;
+    }
+
     try {
       let currentToken = session.token;
       if (isMockToken(currentToken)) {
@@ -553,6 +722,23 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
 
       if (response && response.ok) {
         const data = await response.json();
+        const hasExecutionErrors = (data.data?.brokerExecution?.errors?.length || 0) > 0;
+        const executedOrdersCount = data.data?.brokerExecution?.orders?.length || 0;
+
+        if (hasExecutionErrors || executedOrdersCount === 0) {
+          const errorDetails = data.data?.brokerExecution?.errors?.map((e) => `[${e.legRole}]: ${e.error}`).join(' | ') || 'El matching engine rechazó las órdenes de la cobertura.';
+          setExecutionMessage(null);
+          setBrokerModalData({
+            ...executionContext,
+            status: 400,
+            ok: false,
+            data: { message: errorDetails, errors: data.data?.brokerExecution?.errors },
+            rawError: errorDetails,
+          });
+          setIsBrokerModalOpen(true);
+          return;
+        }
+
         setExecutionMessage({
           type: 'success',
           text: `[PROTECTIVE PUT REAL EXITOSO] Cobertura emitida a ${brokerTarget} para ${targetCandidate.symbol}: Put Strike $${putPayload.putStrike} ${putBuyUnderlying ? `+ ${putSharesCount} acciones` : '(cobertura de acciones en cartera)'}. Persistido en ${databaseTarget.toUpperCase()}.`,
@@ -569,10 +755,7 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
       } else {
         const errJson = await response.json().catch(() => ({}));
         const rawMsg = errJson.message || `El broker devolvió código HTTP ${response?.status}.`;
-        setExecutionMessage({
-          type: 'error',
-          text: `[RESPUESTA DEL BROKER ${brokerTarget}]: ${rawMsg}`,
-        });
+        setExecutionMessage(null);
 
         setBrokerModalData({
           ...executionContext,
@@ -584,10 +767,7 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
         setIsBrokerModalOpen(true);
       }
     } catch (err) {
-      setExecutionMessage({
-        type: 'error',
-        text: `[ERROR PROTECTIVE PUT] ${err.message}`,
-      });
+      setExecutionMessage(null);
       setBrokerModalData({
         ...executionContext,
         status: 500,
@@ -636,6 +816,80 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
         if (!currentToken) return;
       }
 
+      // 1. Verificación preventiva de tenencia antes de vender (Anti short-selling guard)
+      if (equitySide.toUpperCase() === 'SELL') {
+        let livePositions = portfolioPositions;
+        try {
+          const checkRes = await fetch(`${apiBase}/api/v1/broker/positions?broker=${brokerTarget}`, {
+            headers: {
+              Authorization: `Bearer ${currentToken}`,
+              'x-broker-selection': brokerTarget,
+              'x-database-selection': databaseTarget,
+            },
+          });
+          if (checkRes.ok) {
+            const checkData = await checkRes.json();
+            livePositions = Array.isArray(checkData) ? checkData : (checkData?.positions || []);
+            setPortfolioPositions(livePositions);
+          }
+        } catch (_) {}
+
+        const currentPos = livePositions.find(
+          (p) => (p.symbol || p.assetId || '').toUpperCase() === symbol.toUpperCase()
+        );
+        const ownedQty = Number(currentPos?.qty || 0);
+        const requestedQty = Number(orderPayload.qty) || 1;
+
+        if (ownedQty <= 0) {
+          const reasonMsg = `No posees acciones de ${symbol} en tu portafolio de ${brokerTarget} (Tienes 0 acciones). Venta rechazada para evitar ventas cortas al descubierto.`;
+          setExecutionMessage(null);
+          setBrokerModalData({
+            ...executionContext,
+            status: 400,
+            ok: false,
+            data: { message: reasonMsg, reason: 'INSUFFICIENT_SHARES_HOLDINGS', ownedQty: 0, requestedQty },
+            rawError: reasonMsg,
+          });
+          setIsBrokerModalOpen(true);
+          return;
+        }
+
+        if (requestedQty > ownedQty) {
+          const reasonMsg = `No puedes vender ${requestedQty} acciones de ${symbol}: solo posees ${ownedQty} acciones disponibles en tu cuenta de ${brokerTarget}.`;
+          setExecutionMessage(null);
+          setBrokerModalData({
+            ...executionContext,
+            status: 400,
+            ok: false,
+            data: { message: reasonMsg, reason: 'EXCEEDS_OWNED_SHARES', ownedQty, requestedQty },
+            rawError: reasonMsg,
+          });
+          setIsBrokerModalOpen(true);
+          return;
+        }
+      }
+
+      // 2. Verificación preventiva de Buying Power antes de comprar acciones (Buying power guard)
+      if (equitySide.toUpperCase() === 'BUY') {
+        const buyingPower = Number(portfolioAccount?.buyingPower ?? -1);
+        const estPrice = equityOrderType === 'LIMIT' && equityLimitPrice ? Number(equityLimitPrice) : Number(selectedAsset.spotPrice || 0);
+        const totalEstCost = Number(orderPayload.qty) * estPrice;
+
+        if (buyingPower >= 0 && totalEstCost > buyingPower) {
+          const reasonMsg = `Poder de compra insuficiente en ${brokerTarget}: Comprar ${orderPayload.qty} acciones de ${symbol} requiere aprox. $${totalEstCost.toFixed(2)} USD, pero tu cuenta solo dispone de $${buyingPower.toFixed(2)} USD de Buying Power disponible.`;
+          setExecutionMessage(null);
+          setBrokerModalData({
+            ...executionContext,
+            status: 400,
+            ok: false,
+            data: { message: reasonMsg, reason: 'INSUFFICIENT_BUYING_POWER', required: totalEstCost, buyingPower },
+            rawError: reasonMsg,
+          });
+          setIsBrokerModalOpen(true);
+          return;
+        }
+      }
+
       const response = await fetch(`${apiBase}/api/v1/broker/orders?broker=${brokerTarget}`, {
         method: 'POST',
         headers: {
@@ -665,10 +919,7 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
       } else {
         const errJson = await response.json().catch(() => ({}));
         const rawMsg = errJson.message || `El matching engine devolvió código HTTP ${response?.status}.`;
-        setExecutionMessage({
-          type: 'error',
-          text: `[RECHAZO DEL MATCHING ENGINE ${brokerTarget}]: ${rawMsg}`,
-        });
+        setExecutionMessage(null);
 
         setBrokerModalData({
           ...executionContext,
@@ -680,10 +931,7 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
         setIsBrokerModalOpen(true);
       }
     } catch (err) {
-      setExecutionMessage({
-        type: 'error',
-        text: `[ERROR ORDEN ACCIONES] ${err.message}`,
-      });
+      setExecutionMessage(null);
       setBrokerModalData({
         ...executionContext,
         status: 500,
@@ -698,87 +946,13 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
   };
 
   return (
-    <div className="flex min-w-0 flex-col bg-[var(--ui-bg)] text-[var(--ui-ink)] w-full">
-      {/* HEADER GLOBAL: Contexto de Sesión Institucional */}
-      <header className="border-b border-[var(--ui-border)] bg-[var(--ui-card)] px-3 py-3 sm:px-5 lg:px-6 w-full">
-        <div className="flex w-full flex-wrap items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--ui-soft)] text-[var(--ui-green)] font-bold shadow-sm">
-                <Activity className="h-5 w-5" aria-hidden="true" />
-              </span>
-              <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
-                Los Eddies Quant Terminal
-              </h1>
-            </div>
-            <p className="text-sm text-[var(--ui-muted)] mt-0.5">
-              Laboratorio de Servicios Web · Screener Cuantitativo Black-Scholes &amp; Multi-Broker LIVE
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2.5" aria-label="Contexto de sesión">
-            <label className="ui-chip text-sm font-semibold">
-              <Database className="h-4 w-4 shrink-0 text-[var(--ui-green)]" aria-hidden="true" />
-              <span>Base:</span>
-              <select
-                className="rounded bg-transparent font-bold text-sm text-[var(--ui-ink)] disabled:cursor-wait disabled:opacity-60"
-                value={databaseTarget}
-                disabled={executionPending}
-                onChange={(event) => onSessionChange({ databaseTarget: event.target.value })}
-              >
-                {databaseOptions.map(({ value, label }) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="ui-chip text-sm font-semibold">
-              <Server className="h-4 w-4 shrink-0 text-[var(--ui-green)]" aria-hidden="true" />
-              <span>Broker:</span>
-              <select
-                className="rounded bg-transparent font-bold text-sm text-[var(--ui-ink)] disabled:cursor-wait disabled:opacity-60"
-                value={brokerTarget}
-                disabled={executionPending}
-                onChange={(event) => onSessionChange({ brokerTarget: event.target.value })}
-              >
-                {brokerOptions.map(({ value, label }) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <div
-              className="flex items-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-900 shadow-sm"
-              title="Operación bursátil real y directa hacia el broker seleccionado"
-            >
-              <Zap className="h-4 w-4 shrink-0 text-emerald-700" aria-hidden="true" />
-              <span>Órdenes:</span>
-              <span className="font-black uppercase">Real ({brokerTarget})</span>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* AVISO / TOAST DE EJECUCIÓN */}
-      {executionMessage && (
-        <div className="w-full px-3 pt-3 sm:px-5 lg:px-6">
-          <div
-            className={`flex items-start justify-between gap-3 rounded-xl border p-3.5 text-sm shadow-sm ${
-              executionMessage.type === 'success'
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-950'
-                : 'border-red-200 bg-red-50 text-red-950'
-            }`}
-          >
+    <div className="flex flex-col h-full min-h-0 w-full overflow-hidden bg-[var(--ui-bg)] text-[var(--ui-ink)]">
+      {/* AVISO / TOAST DE EJECUCIÓN EXITOSA (LOS ERRORES SE MUESTRAN EXCLUSIVAMENTE EN EL MODAL, NUNCA EN EL HEADER) */}
+      {executionMessage && executionMessage.type === 'success' && (
+        <div className="shrink-0 w-full px-3 pt-2 sm:px-5 lg:px-6 z-10">
+          <div className="flex items-start justify-between gap-3 rounded-xl border p-2.5 sm:p-3 text-xs sm:text-sm shadow-sm border-emerald-200 bg-emerald-50 text-emerald-950">
             <div className="flex min-w-0 items-start gap-2" role="status">
-              {executionMessage.type === 'success' ? (
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" aria-hidden="true" />
-              ) : (
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-700" aria-hidden="true" />
-              )}
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" aria-hidden="true" />
               <span className="min-w-0 break-words font-medium">{executionMessage.text}</span>
             </div>
             <button
@@ -787,20 +961,88 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
               className="ui-button ui-icon-button"
               aria-label="Cerrar aviso de ejecución"
             >
-              <X className="h-4 w-4" aria-hidden="true" />
+              <X className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
           </div>
         </div>
       )}
 
-      {/* CONTENEDOR PRINCIPAL: ARQUITECTURA SANTO GRIAL (3 COLUMNAS - FLUIDA & COMPLETA) */}
-      <main className="w-full px-3 py-4 sm:px-5 lg:px-6">
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[350px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)_425px] 2xl:grid-cols-[380px_minmax(0,1fr)_450px]">
+      {/* CONTENEDOR PRINCIPAL: ARQUITECTURA SANTO GRIAL (3 COLUMNAS - FLUIDA & SIN SCROLL DE PÁGINA) */}
+      <main ref={mainContainerRef} className="flex-1 min-h-0 w-full p-3 sm:p-4 lg:p-5 overflow-hidden flex flex-col">
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[350px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)_425px] 2xl:grid-cols-[380px_minmax(0,1fr)_450px] flex-1 min-h-0">
           {/* ============================================================== */}
           {/* COLUMNA 1 (IZQUIERDA): MOTORES CUANTITATIVOS & PARÁMETROS      */}
           {/* ============================================================== */}
-          <aside className="space-y-4">
-            {/* Panel de Filtros del Screener */}
+          <aside
+            style={{
+              height: isMultiColumn && syncedColumnHeight ? `${syncedColumnHeight}px` : undefined,
+            }}
+            className="min-w-0 flex flex-col rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-xs overflow-hidden"
+          >
+            <div
+              className="flex-1 min-h-0 overflow-y-auto no-scrollbar p-3 sm:p-3.5"
+              style={{ overscrollBehaviorY: 'contain' }}
+            >
+              <div ref={col1InnerRef} className="space-y-3.5 pb-2">
+                {/* SELECTORES DE BROKER & BASE DE DATOS */}
+              <section className="ui-panel" aria-labelledby="session-targets-title">
+                <div className="flex items-center gap-2 border-b border-[var(--ui-border)] p-3">
+                  <SlidersHorizontal className="h-4 w-4 text-[var(--ui-green)]" aria-hidden="true" />
+                  <h2 id="session-targets-title" className="text-sm font-bold tracking-tight text-[var(--ui-ink)]">
+                    Conexión &amp; Persistencia
+                  </h2>
+                </div>
+
+                <div className="p-3 space-y-3 text-xs sm:text-sm">
+                  {/* Selector de Broker */}
+                  <div>
+                    <label className="ui-label text-xs font-semibold flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Server className="h-3.5 w-3.5 text-[var(--ui-green)]" aria-hidden="true" />
+                        Broker Bursátil:
+                      </span>
+                      <span className="text-[10px] text-[var(--ui-muted)]">Mercado en vivo</span>
+                    </label>
+                    <select
+                      value={brokerTarget}
+                      disabled={executionPending}
+                      onChange={(event) => onSessionChange({ brokerTarget: event.target.value })}
+                      className="ui-field text-xs sm:text-sm font-bold py-1.5 px-2.5 h-9"
+                    >
+                      {brokerOptions.map(({ value, label, detail }) => (
+                        <option key={value} value={value}>
+                          {label} {detail ? `· ${detail}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Selector de Base de Datos */}
+                  <div>
+                    <label className="ui-label text-xs font-semibold flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Database className="h-3.5 w-3.5 text-[var(--ui-green)]" aria-hidden="true" />
+                        Base de Datos:
+                      </span>
+                      <span className="text-[10px] text-[var(--ui-muted)]">Persistencia</span>
+                    </label>
+                    <select
+                      value={databaseTarget}
+                      disabled={executionPending}
+                      onChange={(event) => onSessionChange({ databaseTarget: event.target.value })}
+                      className="ui-field text-xs sm:text-sm font-bold py-1.5 px-2.5 h-9"
+                    >
+                      {databaseOptions.map(({ value, label, detail }) => (
+                        <option key={value} value={value}>
+                          {label} {detail || ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </section>
+
+              {/* Panel de Filtros del Screener */}
             <section className="ui-panel" aria-labelledby="controls-title">
               <div className="flex items-center gap-2.5 border-b border-[var(--ui-border)] p-3.5">
                 <SlidersHorizontal className="h-5 w-5 text-[var(--ui-green)]" aria-hidden="true" />
@@ -952,18 +1194,29 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                 extraSymbols={customSymbols}
                 onSignIn={onSignIn}
                 hideAssetList={true}
-                onScreenerResults={(data) => {
-                  setScreenerData(data);
-                  setSortBy('cores'); // Reordenar el ranking automáticamente según los Cores
-                }}
+                onEvaluatingChange={setEvaluatingCores}
+                onEvaluatingError={setCoresError}
+                onScreenerResults={handleScreenerResults}
               />
             </div>
-          </aside>
+          </div>
+        </div>
+      </aside>
 
-          {/* ============================================================== */}
-          {/* COLUMNA 2 (CENTRAL): NÚCLEO CUANTITATIVO, GRÁFICO & RANKING     */}
-          {/* ============================================================== */}
-          <section className="min-w-0 space-y-4">
+      {/* ============================================================== */}
+      {/* COLUMNA 2 (CENTRAL): NÚCLEO CUANTITATIVO, GRÁFICO & RANKING     */}
+      {/* ============================================================== */}
+      <section
+        style={{
+          height: isMultiColumn && syncedColumnHeight ? `${syncedColumnHeight}px` : undefined,
+        }}
+        className="min-w-0 flex flex-col rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-xs overflow-hidden"
+      >
+        <div
+          className="flex-1 min-h-0 overflow-y-auto no-scrollbar p-3 sm:p-4"
+          style={{ overscrollBehaviorY: 'contain' }}
+        >
+          <div ref={col2InnerRef} className="space-y-4 pb-2">
             {/* Gráfico TradingView Interactivo */}
             <div className="ui-panel overflow-hidden">
               <div className="flex flex-wrap items-center justify-between border-b border-[var(--ui-border)] px-4 py-3">
@@ -1015,25 +1268,63 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                     </span>
                   </p>
                 </div>
-                <span className="rounded-lg bg-[var(--ui-soft)] px-3 py-1 text-sm font-semibold text-[var(--ui-green)]">
-                  {screenerData ? `${sortedCandidates.length} activos evaluados` : 'Pendiente de evaluación'}
-                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => fetchScanner()}
+                    disabled={isRankingLoading}
+                    title="Actualizar ranking de opciones en vivo"
+                    className="rounded-lg p-1.5 text-[var(--ui-muted)] hover:text-[var(--ui-ink)] hover:bg-[var(--ui-page)] border border-[var(--ui-border)] transition-colors disabled:opacity-50"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${isRankingLoading ? 'animate-spin text-[var(--ui-green)]' : ''}`} />
+                  </button>
+                  <span className="rounded-lg bg-[var(--ui-soft)] px-3 py-1 text-sm font-semibold text-[var(--ui-green)]">
+                    {evaluatingCores ? 'Evaluando Cores en vivo...' : screenerData ? `${sortedCandidates.length} activos evaluados` : 'Pendiente de evaluación'}
+                  </span>
+                </div>
               </div>
 
-              {!screenerData ? (
-                <div className="px-4 py-16 text-center" role="status">
-                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--ui-soft)] text-[var(--ui-green)] border border-[var(--ui-border)] shadow-xs">
-                    <Sparkles className="h-7 w-7" aria-hidden="true" />
+              {/* Mensaje de error si falla la consulta del escáner o evaluación de Cores */}
+              {(error || coresError) && !isRankingLoading && (
+                <div className="p-3 bg-red-50 border-b border-red-200 text-red-900 text-xs">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" aria-hidden="true" />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold">
+                        {coresError
+                          ? 'Error al evaluar Cores Cuantitativos'
+                          : `No se pudieron cargar los datos del escáner (${brokerTarget})`}
+                      </p>
+                      <p className="mt-0.5 text-red-800 leading-snug break-words">{coresError || error}</p>
+                      <p className="mt-1 text-[11px] font-semibold text-red-700">
+                        {coresError
+                          ? 'Verifica las fuentes seleccionadas o reintenta la evaluación.'
+                          : 'Selecciona un broker disponible en el panel de Conexión para traer los datos.'}
+                      </p>
+                    </div>
                   </div>
+                </div>
+              )}
+
+              {!screenerData && !evaluatingCores ? (
+                <div className="px-4 py-16 text-center" role="status">
                   <h3 className="text-base sm:text-lg font-bold text-[var(--ui-ink)]">
                     Ranking Cuantitativo no Evaluado
                   </h3>
                   <p className="mt-2 max-w-md mx-auto text-sm text-[var(--ui-muted)] leading-relaxed">
-                    Para mostrar el ranking debe hacer clic en el botón de evaluar cores{' '}
-                    <strong className="text-[var(--ui-green)] font-bold">"Consultar ranking por cores"</strong> en el panel de fuentes de la izquierda.
+                    Para mostrar el ranking debe hacer clic en el botón de{' '}
+                    <strong className="text-[var(--ui-green)] font-bold">"Evaluar Cores Cuantitativos"</strong> en el panel de fuentes de la izquierda.
                   </p>
                 </div>
-              ) : loading ? (
+              ) : !screenerData && evaluatingCores ? (
+                <div className="px-4 py-16 text-center text-sm text-[var(--ui-muted)]" role="status">
+                  <div
+                    className="mx-auto mb-3 h-8 w-8 rounded-full border-2 border-[var(--ui-green)] border-t-transparent motion-safe:animate-spin"
+                    aria-hidden="true"
+                  />
+                  <span className="font-semibold text-[var(--ui-ink)]">Evaluando Cores Cuantitativos en vivo por primera vez...</span>
+                </div>
+              ) : sortedCandidates.length === 0 && isRankingLoading ? (
                 <div className="px-4 py-12 text-center text-sm text-[var(--ui-muted)]" role="status">
                   <div
                     className="mx-auto mb-3 h-8 w-8 rounded-full border-2 border-[var(--ui-green)] border-t-transparent motion-safe:animate-spin"
@@ -1043,11 +1334,30 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                 </div>
               ) : sortedCandidates.length === 0 ? (
                 <div className="px-4 py-12 text-center text-sm text-[var(--ui-muted)]" role="status">
-                  No se encontraron candidatos para los criterios especificados.
+                  {error || coresError ? 'No se pudo obtener información del broker o fuentes.' : 'No se encontraron candidatos para los criterios especificados.'}
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="ranking-table w-full text-left text-sm tabular-nums" role="table" aria-labelledby="ranking-title">
+                <div className="relative">
+                  {/* OVERLAY DE CARGA CON CÍRCULO GIRATORIO */}
+                  {isRankingLoading && (
+                    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/70 dark:bg-black/40 backdrop-blur-[1px] transition-all duration-200">
+                      <div
+                        className="h-9 w-9 rounded-full border-3 border-[var(--ui-green)] border-t-transparent animate-spin shadow-sm"
+                        aria-label="Cargando ranking de opciones"
+                      />
+                      <span className="mt-2.5 text-xs font-bold text-[var(--ui-ink)]">
+                        {evaluatingCores
+                          ? 'Recalculando ranking con Cores Cuantitativos en vivo...'
+                          : `Calculando opciones y griegas (${brokerTarget})...`}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* TABLA: SE OPACA MIENTRAS CARGA O SI HUBO ERROR */}
+                  <div className={`overflow-x-auto transition-opacity duration-300 ${
+                    (isRankingLoading || error || coresError) ? 'opacity-30 pointer-events-none select-none' : 'opacity-100'
+                  }`}>
+                    <table className="ranking-table w-full text-left text-sm tabular-nums" role="table" aria-labelledby="ranking-title">
                     <thead className="bg-[var(--ui-soft)] text-[var(--ui-muted)]" role="rowgroup">
                       <tr role="row">
                         <th scope="col" role="columnheader" className="px-3 py-3 text-xs font-bold uppercase tracking-wider">Rank</th>
@@ -1223,16 +1533,29 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                     Haz clic en cualquier fila para seleccionarla y configurar tu orden en la terminal derecha.
                   </p>
                 </div>
+              </div>
               )}
             </section>
-          </section>
+          </div>
+        </div>
+      </section>
 
-          {/* ============================================================== */}
-          {/* COLUMNA 3 (DERECHA): RESUMEN DE PORTAFOLIO & TERMINAL DE ORDENES */}
-          {/* ============================================================== */}
-          <aside className="space-y-4">
+      {/* ============================================================== */}
+      {/* COLUMNA 3 (DERECHA): RESUMEN DE PORTAFOLIO & TERMINAL DE ORDENES */}
+      {/* ============================================================== */}
+      <aside
+        style={{
+          height: isMultiColumn && syncedColumnHeight ? `${syncedColumnHeight}px` : undefined,
+        }}
+        className="min-w-0 flex flex-col rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-xs overflow-hidden"
+      >
+        <div
+          className="flex-1 min-h-0 overflow-y-auto no-scrollbar p-3 sm:p-4"
+          style={{ overscrollBehaviorY: 'contain' }}
+        >
+          <div ref={col3InnerRef} className="space-y-4 pb-2">
             {/* RESUMEN DE PORTAFOLIO EN VIVO */}
-            <section className="ui-panel" aria-labelledby="portfolio-summary-title">
+            <section className="ui-panel relative overflow-hidden" aria-labelledby="portfolio-summary-title">
               <div className="flex items-center justify-between border-b border-[var(--ui-border)] p-3.5">
                 <div className="flex items-center gap-2">
                   <Wallet className="h-5 w-5 text-[var(--ui-green)]" aria-hidden="true" />
@@ -1243,145 +1566,184 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={fetchPortfolioSummary}
+                    onClick={() => fetchPortfolioSummary(brokerTarget)}
                     disabled={portfolioLoading}
                     title="Actualizar tenencias y saldos en tiempo real"
-                    className="rounded-lg p-1.5 text-[var(--ui-muted)] hover:text-[var(--ui-ink)] hover:bg-[var(--ui-page)] border border-[var(--ui-border)] transition-colors"
+                    className="rounded-lg p-1.5 text-[var(--ui-muted)] hover:text-[var(--ui-ink)] hover:bg-[var(--ui-page)] border border-[var(--ui-border)] transition-colors disabled:opacity-50"
                   >
                     <RefreshCw className={`h-3.5 w-3.5 ${portfolioLoading ? 'animate-spin text-[var(--ui-green)]' : ''}`} />
                   </button>
-                  <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-800 uppercase border border-emerald-200">
+                  <span className={`rounded-md px-2 py-0.5 text-xs font-bold uppercase border ${
+                    portfolioError
+                      ? 'bg-red-50 text-red-700 border-red-200'
+                      : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                  }`}>
                     {brokerTarget}
                   </span>
                 </div>
               </div>
 
-              <div className="p-4 space-y-4 text-sm">
-                {/* 1. Cantidad de acciones de la empresa seleccionada */}
-                <div className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-page)] p-3.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs uppercase font-semibold tracking-wider text-[var(--ui-muted)]">
-                      Tenencia en {selectedAsset.symbol}:
-                    </span>
-                    <span className="text-xs font-medium text-[var(--ui-muted)] truncate max-w-[140px]">
-                      {selectedAsset.companyName}
+              {/* CONTENEDOR CON OVERLAY DE CARGA Y ESTADO OPACO */}
+              <div className="relative">
+                {/* 1. OVERLAY DE CARGA: CÍRCULO GIRATORIO */}
+                {portfolioLoading && (
+                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/70 dark:bg-black/40 backdrop-blur-[1.5px] transition-all duration-200 rounded-b-xl">
+                    <div
+                      className="h-9 w-9 rounded-full border-3 border-[var(--ui-green)] border-t-transparent animate-spin shadow-sm"
+                      aria-label="Cargando datos de portafolio"
+                    />
+                    <span className="mt-2.5 text-xs font-bold text-[var(--ui-ink)]">
+                      Consultando {brokerTarget}...
                     </span>
                   </div>
-                  <div className="mt-1 flex items-baseline justify-between">
-                    <div className="text-2xl font-black text-[var(--ui-ink)]">
-                      {selectedStockShares}{' '}
-                      <span className="text-sm font-semibold text-[var(--ui-muted)]">acciones</span>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-bold text-[var(--ui-green)]">
-                        ${selectedStockValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                )}
+
+                {/* 2. AVISO EXPLICATIVO SI NO PUDO CARGAR LOS DATOS */}
+                {portfolioError && !portfolioLoading && (
+                  <div className="p-3 bg-red-50 border-b border-red-200 text-red-900 text-xs">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" aria-hidden="true" />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold">No se pudieron cargar los datos de portafolio ({brokerTarget})</p>
+                        <p className="mt-0.5 text-red-800 leading-snug break-words">{portfolioError}</p>
+                        <p className="mt-1 text-[11px] font-semibold text-red-700">
+                          Selecciona un broker disponible en el panel de Conexión para traer los datos.
+                        </p>
                       </div>
-                      <div className="text-[11px] text-[var(--ui-muted)]">Valor estimado</div>
                     </div>
                   </div>
-                  <div className="mt-2.5 flex items-center gap-2 border-t border-[var(--ui-border)] pt-2 text-xs">
-                    {selectedStockShares >= 100 ? (
-                      <span className="inline-flex items-center gap-1 font-semibold text-emerald-700">
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        Apto para Collar / Covered Call (≥100 acc.)
+                )}
+
+                {/* 3. DATOS DE PORTAFOLIO: SE OPACAN DURANTE LA CARGA Y CONTINÚAN OPACOS SI FALLA */}
+                <div className={`p-4 space-y-4 text-sm transition-opacity duration-300 ${
+                  (portfolioLoading || portfolioError) ? 'opacity-30 pointer-events-none select-none' : 'opacity-100'
+                }`}>
+                  {/* 1. Cantidad de acciones de la empresa seleccionada */}
+                  <div className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-page)] p-3.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs uppercase font-semibold tracking-wider text-[var(--ui-muted)]">
+                        Tenencia en {selectedAsset.symbol}:
                       </span>
+                      <span className="text-xs font-medium text-[var(--ui-muted)] truncate max-w-[140px]">
+                        {selectedAsset.companyName}
+                      </span>
+                    </div>
+                    <div className="mt-1 flex items-baseline justify-between">
+                      <div className="text-2xl font-black text-[var(--ui-ink)]">
+                        {selectedStockShares}{' '}
+                        <span className="text-sm font-semibold text-[var(--ui-muted)]">acciones</span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-bold text-[var(--ui-green)]">
+                          ${selectedStockValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                        </div>
+                        <div className="text-[11px] text-[var(--ui-muted)]">Valor estimado</div>
+                      </div>
+                    </div>
+                    <div className="mt-2.5 flex items-center gap-2 border-t border-[var(--ui-border)] pt-2 text-xs">
+                      {selectedStockShares >= 100 ? (
+                        <span className="inline-flex items-center gap-1 font-semibold text-emerald-700">
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          Apto para Collar / Covered Call (≥100 acc.)
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[var(--ui-muted)]">
+                          <Info className="h-3.5 w-3.5 shrink-0" />
+                          {selectedStockShares > 0
+                            ? `Faltan ${100 - selectedStockShares} acc. para lote de opciones (100)`
+                            : 'Sin posición abierta en esta empresa'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 2. Top 5 empresas de las que más tiene acciones */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold uppercase tracking-wider text-[var(--ui-muted)]">
+                        Top 5 Posiciones con Mayor Tenencia
+                      </span>
+                      <span className="text-[11px] text-[var(--ui-muted)]">
+                        {top5Holdings.length} en cartera
+                      </span>
+                    </div>
+                    {top5Holdings.length === 0 ? (
+                      <div className="rounded-lg border border-dashed border-[var(--ui-border)] p-3 text-center text-xs text-[var(--ui-muted)]">
+                        {portfolioLoading ? 'Cargando posiciones del broker...' : 'No hay acciones registradas en esta cuenta.'}
+                      </div>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-[var(--ui-muted)]">
-                        <Info className="h-3.5 w-3.5 shrink-0" />
-                        {selectedStockShares > 0
-                          ? `Faltan ${100 - selectedStockShares} acc. para lote de opciones (100)`
-                          : 'Sin posición abierta en esta empresa'}
-                      </span>
+                      <div className="space-y-1.5">
+                        {top5Holdings.map((h, idx) => {
+                          const isCurrent = selectedAsset.symbol.toUpperCase() === h.symbol.toUpperCase();
+                          return (
+                            <button
+                              key={h.symbol}
+                              type="button"
+                              onClick={() => {
+                                setSelectedAsset({
+                                  symbol: h.symbol,
+                                  tvSymbol: `NASDAQ:${h.symbol}`,
+                                  companyName: h.symbol,
+                                  spotPrice: h.currentPrice || selectedAsset.spotPrice,
+                                });
+                              }}
+                              className={`w-full flex items-center justify-between rounded-lg border px-3 py-2 text-left transition-all ${
+                                isCurrent
+                                  ? 'border-[var(--ui-green)] bg-emerald-50/50 shadow-sm'
+                                  : 'border-[var(--ui-border)] bg-[var(--ui-card)] hover:bg-[var(--ui-page)] hover:border-gray-400'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--ui-page)] text-[11px] font-bold text-[var(--ui-muted)]">
+                                  #{idx + 1}
+                                </span>
+                                <div>
+                                  <span className="font-bold text-sm text-[var(--ui-ink)]">{h.symbol}</span>
+                                  {isCurrent && (
+                                    <span className="ml-1.5 rounded bg-[var(--ui-green)] px-1.5 py-0.2 text-[10px] font-bold text-white">
+                                      En pantalla
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-xs font-extrabold text-[var(--ui-ink)]">
+                                  {h.qty} <span className="font-normal text-[var(--ui-muted)]">acc</span>
+                                </div>
+                                <div className="text-[11px] font-medium text-[var(--ui-green)]">
+                                  ${h.marketValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
-                </div>
 
-                {/* 2. Top 5 empresas de las que más tiene acciones */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold uppercase tracking-wider text-[var(--ui-muted)]">
-                      Top 5 Posiciones con Mayor Tenencia
-                    </span>
-                    <span className="text-[11px] text-[var(--ui-muted)]">
-                      {top5Holdings.length} en cartera
-                    </span>
-                  </div>
-                  {top5Holdings.length === 0 ? (
-                    <div className="rounded-lg border border-dashed border-[var(--ui-border)] p-3 text-center text-xs text-[var(--ui-muted)]">
-                      {portfolioLoading ? 'Cargando posiciones del broker...' : 'No hay acciones registradas en esta cuenta.'}
-                    </div>
-                  ) : (
-                    <div className="space-y-1.5">
-                      {top5Holdings.map((h, idx) => {
-                        const isCurrent = selectedAsset.symbol.toUpperCase() === h.symbol.toUpperCase();
-                        return (
-                          <button
-                            key={h.symbol}
-                            type="button"
-                            onClick={() => {
-                              setSelectedAsset({
-                                symbol: h.symbol,
-                                tvSymbol: `NASDAQ:${h.symbol}`,
-                                companyName: h.symbol,
-                                spotPrice: h.currentPrice || selectedAsset.spotPrice,
-                              });
-                            }}
-                            className={`w-full flex items-center justify-between rounded-lg border px-3 py-2 text-left transition-all ${
-                              isCurrent
-                                ? 'border-[var(--ui-green)] bg-emerald-50/50 shadow-sm'
-                                : 'border-[var(--ui-border)] bg-[var(--ui-card)] hover:bg-[var(--ui-page)] hover:border-gray-400'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--ui-page)] text-[11px] font-bold text-[var(--ui-muted)]">
-                                #{idx + 1}
-                              </span>
-                              <div>
-                                <span className="font-bold text-sm text-[var(--ui-ink)]">{h.symbol}</span>
-                                {isCurrent && (
-                                  <span className="ml-1.5 rounded bg-[var(--ui-green)] px-1.5 py-0.2 text-[10px] font-bold text-white">
-                                    En pantalla
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-xs font-extrabold text-[var(--ui-ink)]">
-                                {h.qty} <span className="font-normal text-[var(--ui-muted)]">acc</span>
-                              </div>
-                              <div className="text-[11px] font-medium text-[var(--ui-green)]">
-                                ${h.marketValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
-                              </div>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* 3. Buying Power (Poder de compra) */}
-                <div className="rounded-xl border border-[var(--ui-border)] bg-gradient-to-br from-[var(--ui-page)] to-emerald-50/40 p-3.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs uppercase font-semibold tracking-wider text-[var(--ui-muted)]">
-                      Poder de Compra (Buying Power):
-                    </span>
-                    <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 rounded px-1.5 py-0.5 uppercase">
-                      Fondos Disponibles
-                    </span>
-                  </div>
-                  <div className="mt-1 text-2xl font-black text-emerald-900 tracking-tight">
-                    ${buyingPowerUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{' '}
-                    <span className="text-xs font-semibold text-[var(--ui-muted)]">USD</span>
-                  </div>
-                  {portfolioAccount?.cash != null && (
-                    <div className="mt-1.5 flex items-center justify-between text-xs text-[var(--ui-muted)] pt-1.5 border-t border-[var(--ui-border)]">
-                      <span>Efectivo Líquido (Cash):</span>
-                      <span className="font-bold text-[var(--ui-ink)]">
-                        ${Number(portfolioAccount.cash).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                  {/* 3. Buying Power (Poder de compra) */}
+                  <div className="rounded-xl border border-[var(--ui-border)] bg-gradient-to-br from-[var(--ui-page)] to-emerald-50/40 p-3.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs uppercase font-semibold tracking-wider text-[var(--ui-muted)]">
+                        Poder de Compra (Buying Power):
+                      </span>
+                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 rounded px-1.5 py-0.5 uppercase">
+                        Fondos Disponibles
                       </span>
                     </div>
-                  )}
+                    <div className="mt-1 text-2xl font-black text-emerald-900 tracking-tight">
+                      ${buyingPowerUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{' '}
+                      <span className="text-xs font-semibold text-[var(--ui-muted)]">USD</span>
+                    </div>
+                    {portfolioAccount?.cash != null && (
+                      <div className="mt-1.5 flex items-center justify-between text-xs text-[var(--ui-muted)] pt-1.5 border-t border-[var(--ui-border)]">
+                        <span>Efectivo Líquido (Cash):</span>
+                        <span className="font-bold text-[var(--ui-ink)]">
+                          ${Number(portfolioAccount.cash).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </section>
@@ -1708,30 +2070,13 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                 )}
               </div>
             </section>
-          </aside>
-        </div>
-      </main>
-
-      {/* FOOTER DEL SISTEMA: Estado Institucional & Conexión */}
-      <footer className="mt-8 border-t border-[var(--ui-border)] bg-[var(--ui-card)] px-4 py-3.5 text-center text-sm text-[var(--ui-muted)] sm:px-6">
-        <div className="mx-auto flex w-full flex-wrap items-center justify-between gap-3">
-          <span className="font-medium">
-            Equipo 1 Los Eddies • IT Tepic • Microservicio de Coberturas Cuantitativas (F0 &amp; F2)
-          </span>
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 font-bold text-emerald-800">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              Modo Real Estricto (Cero Simulación)
-            </span>
-            <span>•</span>
-            <span>Broker: <strong>{brokerTarget}</strong></span>
-            <span>•</span>
-            <span>BD: <strong>{databaseTarget.toUpperCase()}</strong></span>
           </div>
         </div>
-      </footer>
+      </aside>
+    </div>
+  </main>
 
-      {/* Modal de Criterios Oficiales */}
+  {/* Modal de Criterios Oficiales */}
       <CriteriaModal isOpen={isCriteriaOpen} onClose={() => setIsCriteriaOpen(false)} />
 
       {/* Modal de Respuesta Detallada del Broker */}

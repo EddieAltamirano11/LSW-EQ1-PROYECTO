@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Server, Database } from 'lucide-react';
 import { brokerOptions, databaseOptions, DEFAULT_BROKER, DEFAULT_DATABASE } from '../sessionTargets';
 
 const textoNoDisponible = 'No disponible';
@@ -132,7 +132,7 @@ function TablaCoberturas({ coberturas }) {
   return <TablaPortafolio titulo="titulo-coberturas" columnas={['Portafolio', 'Símbolo', 'Tipo', 'Estado']} filas={filas} />;
 }
 
-export default function VistaPortafolio({ sesion, urlBaseApi }) {
+export default function VistaPortafolio({ sesion, urlBaseApi, onSessionChange }) {
   const corredorSeleccionado = sesion.brokerTarget || DEFAULT_BROKER;
   const baseDatosSeleccionada = sesion.databaseTarget || DEFAULT_DATABASE;
   const tokenSesion = sesion.token;
@@ -141,6 +141,8 @@ export default function VistaPortafolio({ sesion, urlBaseApi }) {
   const nombreBaseDatos = databaseOptions.find((opcion) => opcion.value === baseDatosSeleccionada)?.label ?? baseDatosSeleccionada;
   const [numeroActualizacion, asignarNumeroActualizacion] = useState(0);
   const [resultado, guardarResultado] = useState(null);
+  const [cargando, setCargando] = useState(false);
+  const [ultimasLecturas, setUltimasLecturas] = useState({});
   const contexto = useMemo(() => ({
     urlBaseApi, tokenSesion, corredorSeleccionado, baseDatosSeleccionada, esDemoSinConexion, numeroActualizacion,
   }), [urlBaseApi, tokenSesion, corredorSeleccionado, baseDatosSeleccionada, esDemoSinConexion, numeroActualizacion]);
@@ -148,10 +150,19 @@ export default function VistaPortafolio({ sesion, urlBaseApi }) {
 
   useEffect(() => {
     if (contexto.esDemoSinConexion) return;
+    setCargando(true);
     const controlador = new AbortController();
     const encabezadosSesion = { Authorization: `Bearer ${contexto.tokenSesion}` };
     const encabezadosBroker = { ...encabezadosSesion, 'x-broker-selection': contexto.corredorSeleccionado };
     const encabezadosBase = { ...encabezadosSesion, 'x-database-selection': contexto.baseDatosSeleccionada };
+
+    let pendingCount = 3;
+    const checkDone = () => {
+      pendingCount -= 1;
+      if (pendingCount <= 0 && !controlador.signal.aborted) {
+        setCargando(false);
+      }
+    };
 
     async function cargarLectura(nombre, ruta, encabezados, leerDatos, mensajeError) {
       let lectura;
@@ -164,14 +175,18 @@ export default function VistaPortafolio({ sesion, urlBaseApi }) {
         if (respuesta.status === 401) {
           lectura = { error: `${mensajeError} Se requiere una sesión válida. Vuelve a iniciar sesión.` };
         } else {
-          const datos = respuesta.ok ? leerDatos(await respuesta.json()) : null;
-          lectura = datos === null ? { error: mensajeError } : { datos };
+          const json = await respuesta.json().catch(() => null);
+          const datos = respuesta.ok && json ? leerDatos(json) : null;
+          lectura = datos === null ? { error: json?.message || mensajeError } : { datos };
         }
-      } catch {
-        lectura = { error: mensajeError };
+      } catch (e) {
+        lectura = { error: e.message || mensajeError };
       }
 
       if (!controlador.signal.aborted) {
+        if (lectura.datos) {
+          setUltimasLecturas((ant) => ({ ...ant, [nombre]: lectura.datos }));
+        }
         guardarResultado((anterior) => ({
           contexto,
           lecturas: {
@@ -180,33 +195,77 @@ export default function VistaPortafolio({ sesion, urlBaseApi }) {
           },
         }));
       }
+      checkDone();
     }
 
     cargarLectura('cuenta', '/broker/account?strict=true', encabezadosBroker,
-      (respuesta) => leerCuentaConfirmada(respuesta, contexto.corredorSeleccionado), 'Cuenta no disponible.');
+      (respuesta) => leerCuentaConfirmada(respuesta, contexto.corredorSeleccionado), `Cuenta no disponible en ${contexto.corredorSeleccionado}.`);
     cargarLectura('posiciones', '/broker/positions?strict=true', encabezadosBroker,
-      (respuesta) => leerPosicionesConfirmadas(respuesta, contexto.corredorSeleccionado), 'Posiciones no disponibles.');
-    cargarLectura('coberturas', '/hedging', encabezadosBase, leerCoberturasGuardadas, 'Coberturas no disponibles.');
+      (respuesta) => leerPosicionesConfirmadas(respuesta, contexto.corredorSeleccionado), `Posiciones no disponibles en ${contexto.corredorSeleccionado}.`);
+    cargarLectura('coberturas', '/hedging', encabezadosBase, leerCoberturasGuardadas, `Coberturas no disponibles en ${contexto.baseDatosSeleccionada}.`);
 
-    return () => controlador.abort();
+    return () => {
+      controlador.abort();
+      setCargando(false);
+    };
   }, [contexto]);
+
+  const hayErrorBroker = !!(lecturas.cuenta?.error || lecturas.posiciones?.error);
 
   return (
     <main className="mx-auto w-full max-w-7xl space-y-5 px-4 py-6 sm:px-6 lg:px-8">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--ui-border)] pb-4">
         <div>
-          <h1 className="text-2xl font-semibold leading-tight tracking-tight sm:text-4xl">Portafolio</h1>
-          <p className="mt-2 text-sm text-[var(--ui-muted)]">Consulta de cuenta, posiciones y estrategias de cobertura.</p>
+          <h1 className="text-2xl font-bold leading-tight tracking-tight sm:text-3xl text-[var(--ui-ink)]">Portafolio</h1>
+          <p className="mt-1 text-sm text-[var(--ui-muted)]">Consulta en vivo de cuenta, posiciones abiertas y coberturas guardadas.</p>
         </div>
         {!esDemoSinConexion && (
-          <button
-            type="button"
-            className="ui-button"
-            onClick={() => asignarNumeroActualizacion((actual) => actual + 1)}
-          >
-            <RefreshCw className="h-4 w-4" aria-hidden="true" />
-            Actualizar
-          </button>
+          <div className="flex flex-wrap items-center gap-2.5">
+            {onSessionChange && (
+              <div className="flex items-center gap-2 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-1.5 shadow-2xs">
+                <div className="flex items-center gap-1.5 px-1.5 text-xs font-semibold text-[var(--ui-muted)]">
+                  <Server className="h-3.5 w-3.5 text-[var(--ui-green)]" />
+                  <span>Broker:</span>
+                  <select
+                    value={corredorSeleccionado}
+                    onChange={(e) => onSessionChange({ brokerTarget: e.target.value })}
+                    className="ui-field py-1 px-2 text-xs font-bold h-7.5 bg-transparent"
+                  >
+                    {brokerOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label} {opt.detail || ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="h-4 w-px bg-[var(--ui-border)]" />
+                <div className="flex items-center gap-1.5 px-1.5 text-xs font-semibold text-[var(--ui-muted)]">
+                  <Database className="h-3.5 w-3.5 text-[var(--ui-green)]" />
+                  <span>BD:</span>
+                  <select
+                    value={baseDatosSeleccionada}
+                    onChange={(e) => onSessionChange({ databaseTarget: e.target.value })}
+                    className="ui-field py-1 px-2 text-xs font-bold h-7.5 bg-transparent"
+                  >
+                    {databaseOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label} {opt.detail || ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+            <button
+              type="button"
+              className="ui-button font-bold text-xs"
+              disabled={cargando}
+              onClick={() => asignarNumeroActualizacion((actual) => actual + 1)}
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${cargando ? 'animate-spin text-[var(--ui-green)]' : ''}`} aria-hidden="true" />
+              Actualizar
+            </button>
+          </div>
         )}
       </div>
 
@@ -216,28 +275,54 @@ export default function VistaPortafolio({ sesion, urlBaseApi }) {
         </p>
       ) : (
         <>
-          <section aria-labelledby="titulo-broker" className="ui-panel min-w-0 space-y-5 p-4 sm:p-5">
+          <section aria-labelledby="titulo-broker" className="ui-panel min-w-0 space-y-5 p-4 sm:p-5 relative overflow-hidden">
+            {cargando && (
+              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/70 backdrop-blur-[1px] transition-all">
+                <div className="h-8 w-8 rounded-full border-3 border-[var(--ui-green)] border-t-transparent animate-spin" />
+                <span className="mt-2 text-xs font-semibold text-[var(--ui-ink)]">Actualizando datos de {nombreCorredor}...</span>
+              </div>
+            )}
             <div>
-              <h2 id="titulo-broker" className="text-lg font-semibold">Broker</h2>
-              <p className="mt-1 text-sm text-[var(--ui-muted)]">{nombreCorredor}</p>
+              <div className="flex items-center justify-between">
+                <h2 id="titulo-broker" className="text-lg font-semibold">Broker</h2>
+                <span className={`text-xs font-bold uppercase px-2 py-0.5 rounded border ${
+                  hayErrorBroker ? 'bg-red-50 text-red-700 border-red-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                }`}>
+                  {nombreCorredor}
+                </span>
+              </div>
+              <p className="mt-1 text-sm text-[var(--ui-muted)]">Datos en vivo de la cuenta y posiciones abiertas.</p>
             </div>
-            <ResultadoConsulta lectura={lecturas.cuenta} etiqueta="la cuenta">
-              {(cuenta) => <ResumenCuenta cuenta={cuenta} />}
-            </ResultadoConsulta>
-            <div className="space-y-2">
-              <h3 id="titulo-posiciones" className="font-semibold">Posiciones abiertas</h3>
-              <ResultadoConsulta lectura={lecturas.posiciones} etiqueta="las posiciones">
-                {(posiciones) => <TablaPosiciones posiciones={posiciones} />}
+
+            {hayErrorBroker && !cargando && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-xs">
+                <p className="font-bold">No se pudieron cargar todos los datos de {nombreCorredor}:</p>
+                <p className="mt-0.5">{lecturas.cuenta?.error || lecturas.posiciones?.error}</p>
+                <p className="mt-1 text-[11px] font-semibold text-red-700">Selecciona otro broker o verifica tu conexión.</p>
+              </div>
+            )}
+
+            <div className={`space-y-5 transition-opacity duration-300 ${
+              (cargando || hayErrorBroker) ? 'opacity-30 pointer-events-none select-none' : 'opacity-100'
+            }`}>
+              <ResultadoConsulta lectura={lecturas.cuenta || (ultimasLecturas.cuenta ? { datos: ultimasLecturas.cuenta } : null)} etiqueta="la cuenta">
+                {(cuenta) => <ResumenCuenta cuenta={cuenta} />}
               </ResultadoConsulta>
+              <div className="space-y-2">
+                <h3 id="titulo-posiciones" className="font-semibold">Posiciones abiertas</h3>
+                <ResultadoConsulta lectura={lecturas.posiciones || (ultimasLecturas.posiciones ? { datos: ultimasLecturas.posiciones } : null)} etiqueta="las posiciones">
+                  {(posiciones) => <TablaPosiciones posiciones={posiciones} />}
+                </ResultadoConsulta>
+              </div>
             </div>
           </section>
 
-          <section aria-labelledby="titulo-coberturas" className="ui-panel min-w-0 space-y-3 p-4 sm:p-5">
+          <section aria-labelledby="titulo-coberturas" className="ui-panel min-w-0 space-y-3 p-4 sm:p-5 relative overflow-hidden">
             <div>
               <h2 id="titulo-coberturas" className="text-lg font-semibold">Coberturas guardadas</h2>
               <p className="mt-1 text-sm text-[var(--ui-muted)]">Estrategias registradas en {nombreBaseDatos}</p>
             </div>
-            <ResultadoConsulta lectura={lecturas.coberturas} etiqueta="las coberturas">
+            <ResultadoConsulta lectura={lecturas.coberturas || (ultimasLecturas.coberturas ? { datos: ultimasLecturas.coberturas } : null)} etiqueta="las coberturas">
               {(coberturas) => <TablaCoberturas coberturas={coberturas} />}
             </ResultadoConsulta>
           </section>

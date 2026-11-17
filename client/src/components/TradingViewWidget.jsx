@@ -3,7 +3,21 @@ import { ExternalLink, LineChart, Gauge } from 'lucide-react';
 
 export default function TradingViewWidget({ symbol = 'NASDAQ:AAPL', companyName = 'Apple Inc.' }) {
   const [isDiagnosticOpen, setIsDiagnosticOpen] = useState(false);
+  const [isChartActive, setIsChartActive] = useState(false);
   const techContainerRef = useRef(null);
+  const chartWrapperRef = useRef(null);
+
+  // Desactivar interacción si el usuario hace clic fuera del contenedor del gráfico
+  useEffect(() => {
+    if (!isChartActive) return;
+    const handleOutsideClick = (e) => {
+      if (chartWrapperRef.current && !chartWrapperRef.current.contains(e.target)) {
+        setIsChartActive(false);
+      }
+    };
+    window.addEventListener('mousedown', handleOutsideClick);
+    return () => window.removeEventListener('mousedown', handleOutsideClick);
+  }, [isChartActive]);
 
   // Normalizar símbolo asegurando prefijo de mercado para TradingView
   const cleanSymbol = symbol.includes(':') ? symbol : `NASDAQ:${symbol}`;
@@ -11,7 +25,7 @@ export default function TradingViewWidget({ symbol = 'NASDAQ:AAPL', companyName 
   // URL del iframe interactivo oficial de TradingView (autónomo, sin inyecciones globales que contaminen la consola)
   const chartEmbedUrl = `https://s.tradingview.com/widgetembed/?symbol=${encodeURIComponent(
     cleanSymbol
-  )}&interval=D&hidesidetoolbar=0&symboledit=1&saveimage=0&toolbarbg=f1f3ef&studies=%5B%22STD%3BSMA%22%2C%22STD%3BRSI%22%5D&theme=light&style=1&timezone=Etc%2FUTC&locale=es&utm_source=localhost`;
+  )}&interval=D&hidesidetoolbar=0&symboledit=1&saveimage=0&toolbarbg=f1f3ef&theme=light&style=1&timezone=Etc%2FUTC&locale=es&utm_source=localhost`;
 
   // Cargar el Widget de Análisis Técnico ÚNICAMENTE cuando el usuario despliega el panel
   useEffect(() => {
@@ -85,15 +99,32 @@ export default function TradingViewWidget({ symbol = 'NASDAQ:AAPL', companyName 
 
       {/* Gráfico TradingView Principal a 100% de Ancho */}
       <div className="space-y-4">
-        <div className="min-w-0 w-full rounded-xl border border-[var(--ui-border)] bg-[var(--ui-page)] p-2">
+        <div
+          ref={chartWrapperRef}
+          className="relative min-w-0 w-full rounded-xl border border-[var(--ui-border)] bg-[var(--ui-page)] p-2"
+          onMouseLeave={() => setIsChartActive(false)}
+        >
+          {/* Iframe interactivo de TradingView */}
           <iframe
             key={cleanSymbol}
             src={chartEmbedUrl}
             title={`Gráfico Interactivo TradingView - ${cleanSymbol}`}
-            className="w-full rounded-lg border-none"
-            style={{ height: '480px' }}
-            allow="fullscreen"
+            className={`w-full rounded-lg border-none ${
+              isChartActive ? 'pointer-events-auto' : 'pointer-events-none'
+            }`}
+            style={{ height: '700px' }}
+            allow="clipboard-write; fullscreen; unload"
+            loading="eager"
           />
+
+          {/* Protector de Scroll 100% transparente y sin texto: permite scroll libre en la columna hasta que el usuario hace clic */}
+          {!isChartActive && (
+            <div
+              onClick={() => setIsChartActive(true)}
+              className="absolute inset-0 z-10 cursor-pointer bg-transparent"
+              aria-label="Activar interacción con el gráfico"
+            />
+          )}
         </div>
 
         {/* Diagnóstico Técnico y Osciladores (Debajo del gráfico para preservar el 100% de ancho del gráfico) */}

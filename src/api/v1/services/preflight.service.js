@@ -111,7 +111,7 @@ export const assertBrokerAndDatabasesReadiness = async ({ dbTarget = 'mongodb', 
   // Validar base de datos solicitada para persistencia
   if (target === 'mongodb' && dbHealth.mongo !== 'CONNECTED') {
     throw boom.serverUnavailable(
-      `No se puede procesar la operación: La base de datos MongoDB Atlas no está disponible (${dbHealth.mongo}). No se ejecutó ninguna acción en el broker ni se persistieron cambios.`
+      `No se puede procesar la operación: La base de datos MongoDB Atlas no respondió (${dbHealth.mongo}). Causa común: Tu IP pública actual o VPN no está autorizada en 'Network Access' del clúster MongoDB Atlas. Solución: Agrega 0.0.0.0/0 (o tu IP) en MongoDB Atlas, o selecciona Supabase en el selector de base de datos de la columna izquierda para operar de inmediato.`
     );
   }
   if (target === 'supabase' && dbHealth.supabase !== 'CONNECTED') {

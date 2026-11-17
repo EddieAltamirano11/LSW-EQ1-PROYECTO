@@ -348,16 +348,23 @@ paths:
                 executeOrders: { type: boolean, default: false, example: true, description: 'Si es true, emite las órdenes bursátiles al broker de inmediato' }
       responses:
         '201':
-          description: Cobertura Collar emitida automáticamente y opcionalmente enviada al broker
+          description: Cobertura Collar emitida automáticamente y ejecutada en vivo
+        '400':
+          description: Error de parámetros o poder de compra (Buying Power) insuficiente en el broker
+        '503':
+          description: Falla de ejecución en vivo en el broker o túnel desconectado
 
   /hedging/protective-put:
     post:
       tags: [Coberturas]
-      summary: Estructurar y emitir cobertura Protective Put (F2 Parte B)
+      summary: Estructurar y emitir cobertura Protective Put con validación de Buying Power y ejecución en vivo (F2 Parte B)
       parameters:
         - in: header
           name: x-database-selection
           schema: { type: string, enum: [mongodb, supabase] }
+        - in: header
+          name: x-broker-selection
+          schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
       requestBody:
         required: true
         content:
@@ -374,9 +381,15 @@ paths:
                 putStrike: { type: number, example: 220.00 }
                 putPremium: { type: number, example: 4.20 }
                 expirationDate: { type: string, format: date-time, example: '2026-10-16T00:00:00Z' }
+                executeOrders: { type: boolean, default: true, description: Indica si se emiten las órdenes en tiempo real al broker }
+                buyUnderlying: { type: boolean, default: true, description: Indica si se compran las acciones o si ya se poseen en cartera }
       responses:
         '201':
-          description: Cobertura Protective Put emitida con suelo blindado
+          description: Cobertura Protective Put emitida con suelo blindado y órdenes confirmadas
+        '400':
+          description: Error de validación o poder de compra (Buying Power) insuficiente en el broker
+        '503':
+          description: Falla de ejecución bursátil o broker no disponible
 
   /hedging/collar-spread:
     post:
@@ -954,7 +967,7 @@ paths:
           description: Historial de órdenes bursátiles
     post:
       tags: [Brokers Bursátiles]
-      summary: Emitir una nueva orden bursátil (mercado/límite) en Webull o Alpaca
+      summary: Emitir una nueva orden bursátil (mercado/límite) en Webull, Alpaca o IBKR con verificación estricta de tenencia y Buying Power
       parameters:
         - in: header
           name: x-broker-selection
@@ -970,7 +983,11 @@ paths:
               $ref: '#/components/schemas/BrokerOrderInput'
       responses:
         '201':
-          description: Orden emitida y enviada a la rueda bursátil del broker
+          description: Orden emitida y confirmada en la rueda bursátil del broker
+        '400':
+          description: Rechazo por venta corta no permitida (0 acciones en cartera) o poder de compra insuficiente
+        '503':
+          description: Broker no disponible o matching engine sin conexión
 
   /broker/orders/{id}:
     delete:

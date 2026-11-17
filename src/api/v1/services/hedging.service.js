@@ -2,7 +2,7 @@ import boom from '@hapi/boom';
 import { getHedgingRepo } from '../repositories/hedging.repository.js';
 import { getUnderlyingRepo } from '../repositories/underlying.repository.js';
 import { calculateBlackScholes } from './quant.service.js';
-import { getBrokerQuote, getBrokerOptionsChain, createBrokerOrder, getBrokerOrders } from './broker.service.js';
+import { getBrokerQuote, getBrokerOptionsChain, createBrokerOrder, getBrokerOrders, getBrokerAccount } from './broker.service.js';
 import { randomUUID } from 'crypto';
 import config from '../../../config/config.js';
 import { assertBrokerAndDatabasesReadiness } from './preflight.service.js';
@@ -237,6 +237,29 @@ export const createProtectivePut = async (payload, dbTarget = 'mongodb') => {
   const shouldExecute = payload.executeOrders === true || payload.executeOrders === 'true' || payload.executeOnBroker === true;
 
   if (shouldExecute) {
+    // Verificación preventiva de Buying Power en la cuenta del broker
+    try {
+      const brokerAcc = await getBrokerAccount(targetBroker);
+      const buyingPower = Number(brokerAcc?.buyingPower ?? -1);
+      if (buyingPower >= 0) {
+        let estimatedCost = 0;
+        if (payload.buyUnderlying !== false) {
+          estimatedCost += count * S;
+        }
+        estimatedCost += contracts * premium * 100;
+        if (estimatedCost > buyingPower) {
+          throw boom.badRequest(
+            `Poder de compra insuficiente en ${targetBroker}: La cobertura Protective Put requiere aprox. $${estimatedCost.toFixed(2)} USD ` +
+            `(${payload.buyUnderlying !== false ? `${count} acciones ($${(count * S).toFixed(2)}) + ` : ''}${contracts} contrato(s) Put ($${(contracts * premium * 100).toFixed(2)})), ` +
+            `pero tu cuenta solo dispone de $${buyingPower.toFixed(2)} USD de Buying Power disponible.`
+          );
+        }
+      }
+    } catch (err) {
+      if (err.isBoom) throw err;
+      console.warn(`[Protective Put] No se pudo verificar Buying Power previo: ${err.message}`);
+    }
+
     // 1. Pata de Acciones Subyacentes (si buyUnderlying !== false)
     if (payload.buyUnderlying !== false) {
       try {
@@ -308,6 +331,14 @@ export const createProtectivePut = async (payload, dbTarget = 'mongodb') => {
         legType: 'PUT',
         error: err.message,
       });
+    }
+
+    // Si el broker rechazó alguna pata o falló la ejecución, abortar sin persistir en la base de datos
+    if (executionErrors.length > 0 || executedOrders.length === 0) {
+      const errMsg = executionErrors.map((e) => `[${e.legRole}]: ${e.error}`).join(' | ');
+      throw boom.badRequest(
+        `Falla de ejecución bursátil en ${targetBroker}: ${errMsg || 'El broker rechazó las órdenes de la cobertura'}. Por integridad transaccional, la estrategia no fue registrada ni persistida.`
+      );
     }
   }
 
@@ -638,6 +669,29 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
   if (shouldExecute) {
     const contracts = Number(params.contracts) || Math.max(1, Math.ceil(sharesCount / 100));
 
+    // Verificación preventiva de Buying Power en la cuenta del broker
+    try {
+      const brokerAcc = await getBrokerAccount(targetBroker);
+      const buyingPower = Number(brokerAcc?.buyingPower ?? -1);
+      if (buyingPower >= 0) {
+        let estimatedCost = 0;
+        if (buyUnderlying !== false) {
+          estimatedCost += contracts * 100 * spotPrice;
+        }
+        estimatedCost += contracts * optimalPut.premium * 100;
+        if (estimatedCost > buyingPower) {
+          throw boom.badRequest(
+            `Poder de compra insuficiente en ${targetBroker}: La estrategia Collar Spread requiere aprox. $${estimatedCost.toFixed(2)} USD ` +
+            `(${buyUnderlying !== false ? `${contracts * 100} acciones ($${(contracts * 100 * spotPrice).toFixed(2)}) + ` : ''}${contracts} Put ($${(contracts * optimalPut.premium * 100).toFixed(2)})), ` +
+            `pero tu cuenta solo dispone de $${buyingPower.toFixed(2)} USD de Buying Power disponible.`
+          );
+        }
+      }
+    } catch (err) {
+      if (err.isBoom) throw err;
+      console.warn(`[Collar Spread] No se pudo verificar Buying Power previo: ${err.message}`);
+    }
+
     if (targetBroker === 'WEBULL') {
       // 1. Pata Call Financiador + Acciones (Webull OpenAPI exige combo COVERED_STOCK)
       // Agrupa atómicamente la compra de acciones y la venta de la Call bajo una única orden
@@ -659,7 +713,7 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
             side: 'sell',
             type: 'limit',
             limitPrice: optimalCall.premium,
-            timeInForce: 'gtc',
+            timeInForce: 'day',
           }, 'WEBULL');
 
           const comboOrderId = comboOrder.order?.id || comboOrder.id;
@@ -713,7 +767,7 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
             side: 'sell',
             type: 'limit',
             limitPrice: optimalCall.premium,
-            timeInForce: 'gtc',
+            timeInForce: 'day',
           }, 'WEBULL');
 
           const callOrderId = callOrder.order?.id || callOrder.id;
@@ -754,7 +808,7 @@ export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb')
           side: 'buy',
           type: 'limit',
           limitPrice: optimalPut.premium,
-          timeInForce: 'gtc',
+          timeInForce: 'day',
         }, 'WEBULL');
 
         executedOrders.push({

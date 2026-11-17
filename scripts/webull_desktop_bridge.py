@@ -212,7 +212,7 @@ def cmd_place_order(args):
             "quantity": str(qty),
             "support_trading_session": "CORE",
             "side": action,
-            "time_in_force": "GTC",
+            "time_in_force": (getattr(args, 'time_in_force', None) or 'DAY').upper(),
             "entrust_type": "QTY"
         }
     ]
@@ -320,7 +320,7 @@ def cmd_place_option(args):
                 "limit_price": str(stock_quote_price),
                 "option_strategy": "COVERED_STOCK",
                 "side": "BUY",
-                "time_in_force": "GTC",
+                "time_in_force": (getattr(args, 'time_in_force', None) or 'DAY').upper(),
                 "entrust_type": "QTY",
                 "legs": [
                     {
@@ -418,7 +418,7 @@ def cmd_place_option(args):
             "limit_price": price,
             "option_strategy": "SINGLE",
             "side": action,
-            "time_in_force": "GTC",
+            "time_in_force": (getattr(args, 'time_in_force', None) or 'DAY').upper(),
             "entrust_type": "QTY",
             "legs": [
                 {
@@ -531,6 +531,7 @@ def main():
     p_order.add_argument('--action', default='BUY')
     p_order.add_argument('--price', type=float, default=0.0)
     p_order.add_argument('--type', default='LIMIT')
+    p_order.add_argument('--time_in_force', default='DAY')
     p_order.add_argument('--preview', action='store_true', default=False)
 
     # place_option (calls & puts)
@@ -545,6 +546,7 @@ def main():
     p_opt.add_argument('--stock_price', type=float, default=0.0)
     p_opt.add_argument('--strategy', default='SINGLE', choices=['SINGLE', 'COVERED_STOCK'])
     p_opt.add_argument('--type', default='LIMIT')
+    p_opt.add_argument('--time_in_force', default='DAY')
     p_opt.add_argument('--preview', action='store_true', default=False)
 
     # cancel_order

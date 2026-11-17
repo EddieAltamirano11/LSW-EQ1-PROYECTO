@@ -282,6 +282,7 @@ export const createWebullOrder = async (orderPayload) => {
       '--price', String(effectivePrice),
       '--stock_price', String(stockPrice),
       '--strategy', optStrategy,
+      '--time_in_force', String(timeInForce || 'DAY').toUpperCase(),
     ];
 
     const bridgeRes = runBridge('place_option', bridgeArgs);
@@ -333,6 +334,7 @@ export const createWebullOrder = async (orderPayload) => {
     '--action', side.toUpperCase(),
     '--type', type.toUpperCase(),
     '--price', String(effectivePrice),
+    '--time_in_force', String(timeInForce || 'DAY').toUpperCase(),
   ]);
 
   if (bridgeRes && bridgeRes.success) {

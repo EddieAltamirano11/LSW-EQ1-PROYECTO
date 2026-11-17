@@ -24,17 +24,18 @@ export default function BrokerExecutionModal({ isOpen, onClose, modalData }) {
 
   if (!isOpen || !modalData) return null;
 
-  const { candidate, liveMode, broker, databaseTarget, status, ok, data, rawError } = modalData;
+  const { candidate, liveMode, broker, databaseTarget, status, ok, data, rawError, strategyType, payload } = modalData;
 
+  const resolvedStrategy = strategyType || data?.strategyType || data?.data?.strategyType || 'COLLAR_SPREAD';
   const dbLabel = (databaseTarget || modalData.database || 'MONGODB').toString().toUpperCase();
   const brokerLabel = (broker || 'BROKER').toString().toUpperCase();
-  const expLabel = candidate?.optimalExpiration || modalData.payload?.expirationDate || 'Vencimiento Activo';
+  const expLabel = candidate?.optimalExpiration || payload?.expirationDate || modalData.payload?.expirationDate || 'Vencimiento Activo';
 
   const isSuccess = ok && (status === 200 || status === 201);
   const analysis = data?.analysis || candidate;
-  const execution = data?.brokerExecution;
-  const strategy = data?.strategy;
-  const orders = execution?.orders || [];
+  const execution = data?.brokerExecution || data?.data?.brokerExecution;
+  const strategy = data?.strategy || data?.data;
+  const orders = execution?.orders || data?.orders || [];
 
   const handleCopyJson = () => {
     try {
@@ -61,7 +62,11 @@ export default function BrokerExecutionModal({ isOpen, onClose, modalData }) {
             </div>
             <div className="min-w-0">
               <h2 id="execution-result-title" className="break-words text-base font-semibold leading-tight tracking-tight sm:text-lg">
-                Respuesta de Ejecución Bursátil ({candidate?.symbol || 'COLLAR'})
+                {resolvedStrategy === 'PROTECTIVE_PUT'
+                  ? `Respuesta de Cobertura — Protective Put (${candidate?.symbol || payload?.symbol})`
+                  : resolvedStrategy === 'EQUITY_ORDER'
+                  ? `Respuesta de Ejecución — Orden de Acciones (${payload?.symbol || candidate?.symbol})`
+                  : `Respuesta de Ejecución Bursátil — Zero-Cost Collar (${candidate?.symbol || 'COLLAR'})`}
               </h2>
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
                 <span
@@ -80,8 +85,10 @@ export default function BrokerExecutionModal({ isOpen, onClose, modalData }) {
               </div>
               <p className="text-xs text-[var(--ui-muted)] mt-2 break-words">
                 Broker: <strong className="text-[var(--ui-ink)]">{brokerLabel}</strong> • Persistencia:{' '}
-                <strong className="text-[var(--ui-ink)]">{dbLabel}</strong> • Vencimiento:{' '}
-                <strong className="text-[var(--ui-ink)]">{expLabel}</strong>
+                <strong className="text-[var(--ui-ink)]">{dbLabel}</strong>
+                {resolvedStrategy !== 'EQUITY_ORDER' && (
+                  <> • Vencimiento: <strong className="text-[var(--ui-ink)]">{expLabel}</strong></>
+                )}
               </p>
             </div>
           </div>
@@ -111,66 +118,172 @@ export default function BrokerExecutionModal({ isOpen, onClose, modalData }) {
             <p>{data?.message || rawError || 'Respuesta procesada correctamente.'}</p>
           </div>
 
-          {/* Las 3 Patas Bursátiles (Estructura de la Orden) */}
-          <div>
-            <h3 className="text-xs font-bold text-[var(--ui-ink)] uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-              <Layers className="w-4 h-4 text-[var(--ui-green)]" />
-              <span>Desglose de las 3 Patas de Cobertura (Collar Spread)</span>
-            </h3>
+          {/* ESTRUCTURA SEGÚN ESTRATEGIA EJECUTADA */}
+          {resolvedStrategy === 'PROTECTIVE_PUT' && (
+            <div>
+              <h3 className="text-xs font-bold text-[var(--ui-ink)] uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-sky-700" />
+                <span>Desglose de la Cobertura Protective Put (Suelo Blindado)</span>
+              </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {/* Pata 1: Subyacente */}
-              <div className="p-3.5 bg-[var(--ui-page)] border border-[var(--ui-border)] rounded-xl space-y-1.5">
-                <div className="flex flex-wrap items-center justify-between gap-1">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--ui-muted)]">Pata 1 • Subyacente</span>
-                  <span className="text-xs font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded">
-                    BUY (Largo)
-                  </span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* Pata 1: Subyacente */}
+                <div className="p-3.5 bg-[var(--ui-page)] border border-[var(--ui-border)] rounded-xl space-y-1.5">
+                  <div className="flex flex-wrap items-center justify-between gap-1">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[var(--ui-muted)]">Pata 1 • Subyacente</span>
+                    <span className="text-xs font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded">
+                      {payload?.buyUnderlying ? 'BUY (Compra)' : 'PORTAFOLIO (En Cartera)'}
+                    </span>
+                  </div>
+                  <div className="text-sm font-bold text-[var(--ui-ink)]">
+                    {payload?.sharesCount || 100} Acciones {candidate?.symbol || payload?.symbol}
+                  </div>
+                  <div className="text-xs text-[var(--ui-muted)]">
+                    Precio Spot: <span className="text-[var(--ui-ink)] font-mono">${candidate?.spotPrice?.toFixed(2)} USD</span>
+                  </div>
+                  <div className="text-xs text-[var(--ui-muted)] pt-1 border-t border-[var(--ui-border)]">
+                    Rol: Activo a Proteger contra caídas
+                  </div>
                 </div>
-                <div className="text-sm font-bold text-[var(--ui-ink)]">100 Acciones {candidate?.symbol}</div>
-                <div className="text-xs text-[var(--ui-muted)]">
-                  Precio Spot: <span className="text-[var(--ui-ink)] font-mono">${candidate?.spotPrice?.toFixed(2)}</span>
-                </div>
-                <div className="text-xs text-[var(--ui-muted)] pt-1 border-t border-[var(--ui-border)]">
-                  Rol: Activo a Proteger
-                </div>
-              </div>
 
-              {/* Pata 2: Put Protector */}
-              <div className="p-3.5 bg-[var(--ui-page)] border border-[var(--ui-border)] rounded-xl space-y-1.5">
-                <div className="flex flex-wrap items-center justify-between gap-1">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--ui-muted)]">Pata 2 • Piso Protector</span>
-                  <span className="text-xs font-semibold text-red-800 bg-red-50 px-1.5 py-0.5 rounded">
-                    BUY PUT
-                  </span>
-                </div>
-                <div className="text-sm font-bold text-[var(--ui-ink)]">Strike ${candidate?.putFloor?.strike} Put</div>
-                <div className="text-xs text-[var(--ui-muted)]">
-                  Prima: <span className="text-[var(--ui-ink)] font-mono">${candidate?.putFloor?.marketPremium}</span> ({candidate?.putFloor?.moneyness})
-                </div>
-                <div className="text-xs text-[var(--ui-muted)] pt-1 border-t border-[var(--ui-border)]">
-                  Rol: Póliza de Seguro (Piso de Pérdida)
-                </div>
-              </div>
-
-              {/* Pata 3: Call Cubierto */}
-              <div className="p-3.5 bg-[var(--ui-page)] border border-[var(--ui-border)] rounded-xl space-y-1.5">
-                <div className="flex flex-wrap items-center justify-between gap-1">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--ui-muted)]">Pata 3 • Techo Financ.</span>
-                  <span className="text-xs font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded">
-                    SELL CALL
-                  </span>
-                </div>
-                <div className="text-sm font-bold text-[var(--ui-ink)]">Strike ${candidate?.callCeiling?.strike} Call</div>
-                <div className="text-xs text-[var(--ui-muted)]">
-                  Prima: <span className="text-[var(--ui-ink)] font-mono">${candidate?.callCeiling?.marketPremium}</span> ({candidate?.callCeiling?.moneyness})
-                </div>
-                <div className="text-xs text-[var(--ui-muted)] pt-1 border-t border-[var(--ui-border)]">
-                  Rol: Financia la Put (Costo Cero)
+                {/* Pata 2: Put Protector */}
+                <div className="p-3.5 bg-[var(--ui-page)] border border-[var(--ui-border)] rounded-xl space-y-1.5">
+                  <div className="flex flex-wrap items-center justify-between gap-1">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[var(--ui-muted)]">Pata 2 • Suelo Blindado</span>
+                    <span className="text-xs font-semibold text-red-800 bg-red-50 px-1.5 py-0.5 rounded">
+                      BUY PUT
+                    </span>
+                  </div>
+                  <div className="text-sm font-bold text-[var(--ui-ink)]">
+                    Strike ${payload?.putStrike || candidate?.putFloor?.strike} Put
+                  </div>
+                  <div className="text-xs text-[var(--ui-muted)]">
+                    Prima: <span className="text-[var(--ui-ink)] font-mono">${payload?.putPremium || candidate?.putFloor?.marketPremium} USD/acc</span>
+                  </div>
+                  <div className="text-xs text-[var(--ui-muted)] pt-1 border-t border-[var(--ui-border)]">
+                    Rol: Póliza de Seguro (Piso de Venta Garantizado)
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
+
+          {resolvedStrategy === 'EQUITY_ORDER' && (
+            <div>
+              <h3 className="text-xs font-bold text-[var(--ui-ink)] uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                <Layers className="w-4 h-4 text-[var(--ui-green)]" />
+                <span>Detalle de la Orden Bursátil de Acciones (Renta Variable)</span>
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="p-3.5 bg-[var(--ui-page)] border border-[var(--ui-border)] rounded-xl space-y-1.5">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--ui-muted)]">Operación</span>
+                  <div className="text-sm font-bold text-[var(--ui-ink)]">
+                    {payload?.side?.toUpperCase()} {payload?.qty} Acciones
+                  </div>
+                  <div className="text-xs text-[var(--ui-muted)]">
+                    Ticker: <strong className="text-[var(--ui-ink)]">{payload?.symbol}</strong>
+                  </div>
+                  <div className="text-xs text-[var(--ui-muted)] pt-1 border-t border-[var(--ui-border)]">
+                    Instrumento: Renta Variable (Spot)
+                  </div>
+                </div>
+
+                <div className="p-3.5 bg-[var(--ui-page)] border border-[var(--ui-border)] rounded-xl space-y-1.5">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--ui-muted)]">Tipo &amp; Precio</span>
+                  <div className="text-sm font-bold text-[var(--ui-ink)]">
+                    {payload?.type?.toUpperCase()}
+                  </div>
+                  <div className="text-xs text-[var(--ui-muted)]">
+                    Precio:{' '}
+                    <strong className="text-[var(--ui-ink)]">
+                      {payload?.type === 'limit' && payload?.limitPrice
+                        ? `$${payload.limitPrice} USD`
+                        : `$${candidate?.spotPrice?.toFixed(2) || 'Mercado'} USD`}
+                    </strong>
+                  </div>
+                  <div className="text-xs text-[var(--ui-muted)] pt-1 border-t border-[var(--ui-border)]">
+                    Vigencia: DAY (Día bursátil)
+                  </div>
+                </div>
+
+                <div className="p-3.5 bg-[var(--ui-page)] border border-[var(--ui-border)] rounded-xl space-y-1.5">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--ui-muted)]">Capital Estimado</span>
+                  <div className="text-sm font-bold text-[var(--ui-green)]">
+                    ${((payload?.qty || 1) * (candidate?.spotPrice || 0)).toFixed(2)} USD
+                  </div>
+                  <div className="text-xs text-[var(--ui-muted)]">
+                    Broker: <strong className="text-[var(--ui-ink)]">{brokerLabel}</strong>
+                  </div>
+                  <div className="text-xs text-[var(--ui-muted)] pt-1 border-t border-[var(--ui-border)]">
+                    Persistencia: {dbLabel}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {resolvedStrategy === 'COLLAR_SPREAD' && (
+            <div>
+              <h3 className="text-xs font-bold text-[var(--ui-ink)] uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                <Layers className="w-4 h-4 text-[var(--ui-green)]" />
+                <span>Desglose de las 3 Patas de Cobertura (Collar Spread)</span>
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {/* Pata 1: Subyacente */}
+                <div className="p-3.5 bg-[var(--ui-page)] border border-[var(--ui-border)] rounded-xl space-y-1.5">
+                  <div className="flex flex-wrap items-center justify-between gap-1">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[var(--ui-muted)]">Pata 1 • Subyacente</span>
+                    <span className="text-xs font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded">
+                      BUY (Largo)
+                    </span>
+                  </div>
+                  <div className="text-sm font-bold text-[var(--ui-ink)]">100 Acciones {candidate?.symbol}</div>
+                  <div className="text-xs text-[var(--ui-muted)]">
+                    Precio Spot: <span className="text-[var(--ui-ink)] font-mono">${candidate?.spotPrice?.toFixed(2)}</span>
+                  </div>
+                  <div className="text-xs text-[var(--ui-muted)] pt-1 border-t border-[var(--ui-border)]">
+                    Rol: Activo a Proteger
+                  </div>
+                </div>
+
+                {/* Pata 2: Put Protector */}
+                <div className="p-3.5 bg-[var(--ui-page)] border border-[var(--ui-border)] rounded-xl space-y-1.5">
+                  <div className="flex flex-wrap items-center justify-between gap-1">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[var(--ui-muted)]">Pata 2 • Piso Protector</span>
+                    <span className="text-xs font-semibold text-red-800 bg-red-50 px-1.5 py-0.5 rounded">
+                      BUY PUT
+                    </span>
+                  </div>
+                  <div className="text-sm font-bold text-[var(--ui-ink)]">Strike ${candidate?.putFloor?.strike} Put</div>
+                  <div className="text-xs text-[var(--ui-muted)]">
+                    Prima: <span className="text-[var(--ui-ink)] font-mono">${candidate?.putFloor?.marketPremium}</span> ({candidate?.putFloor?.moneyness})
+                  </div>
+                  <div className="text-xs text-[var(--ui-muted)] pt-1 border-t border-[var(--ui-border)]">
+                    Rol: Póliza de Seguro (Piso de Pérdida)
+                  </div>
+                </div>
+
+                {/* Pata 3: Call Cubierto */}
+                <div className="p-3.5 bg-[var(--ui-page)] border border-[var(--ui-border)] rounded-xl space-y-1.5">
+                  <div className="flex flex-wrap items-center justify-between gap-1">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[var(--ui-muted)]">Pata 3 • Techo Financ.</span>
+                    <span className="text-xs font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded">
+                      SELL CALL
+                    </span>
+                  </div>
+                  <div className="text-sm font-bold text-[var(--ui-ink)]">Strike ${candidate?.callCeiling?.strike} Call</div>
+                  <div className="text-xs text-[var(--ui-muted)]">
+                    Prima: <span className="text-[var(--ui-ink)] font-mono">${candidate?.callCeiling?.marketPremium}</span> ({candidate?.callCeiling?.moneyness})
+                  </div>
+                  <div className="text-xs text-[var(--ui-muted)] pt-1 border-t border-[var(--ui-border)]">
+                    Rol: Financia la Put (Costo Cero)
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Órdenes Confirmadas en el Broker si se ejecutó en vivo */}
           {orders.length > 0 && (
@@ -227,45 +340,122 @@ export default function BrokerExecutionModal({ isOpen, onClose, modalData }) {
             </div>
           )}
 
-          {/* Métricas Financieras de la Cobertura */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3.5 bg-[var(--ui-page)] rounded-xl border border-[var(--ui-border)] text-center">
-            <div>
-              <div className="text-xs text-[var(--ui-muted)] uppercase tracking-wider">Flujo de Prima Neta</div>
-              <div
-                className={`text-sm font-bold mt-0.5 ${
-                  candidate?.financialMetrics?.netDebitCredit >= 0 ? 'text-emerald-800' : 'text-[var(--ui-ink)]'
-                }`}
-              >
-                {candidate?.financialMetrics?.netDebitCredit >= 0 ? '+' : ''}$
-                {candidate?.financialMetrics?.netDebitCredit}/acc
+          {/* Métricas Financieras según Estrategia */}
+          {resolvedStrategy === 'PROTECTIVE_PUT' && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3.5 bg-[var(--ui-page)] rounded-xl border border-[var(--ui-border)] text-center">
+              <div>
+                <div className="text-xs text-[var(--ui-muted)] uppercase tracking-wider">Suelo Asegurado</div>
+                <div className="text-sm font-bold text-red-800 mt-0.5">
+                  ${payload?.putStrike || candidate?.putFloor?.strike} USD
+                </div>
+                <div className="text-xs text-[var(--ui-muted)]">Precio Mínimo de Venta</div>
               </div>
-              <div className="text-xs text-[var(--ui-muted)]">Costo Cero</div>
-            </div>
 
-            <div>
-              <div className="text-xs text-[var(--ui-muted)] uppercase tracking-wider">Probabilidad de Piso Seguro</div>
-              <div className="text-sm font-bold text-emerald-800 mt-0.5">
-                {candidate?.probabilities?.floorProtectionPct}%
+              <div>
+                <div className="text-xs text-[var(--ui-muted)] uppercase tracking-wider">Costo de Seguro</div>
+                <div className="text-sm font-bold text-[var(--ui-ink)] mt-0.5">
+                  ${payload?.putPremium || candidate?.putFloor?.marketPremium} USD/acc
+                </div>
+                <div className="text-xs text-[var(--ui-muted)]">Prima Neta Pagada</div>
               </div>
-              <div className="text-xs text-[var(--ui-muted)]">Black-Scholes N(d₂)</div>
-            </div>
 
-            <div>
-              <div className="text-xs text-[var(--ui-muted)] uppercase tracking-wider">Retorno Máximo</div>
-              <div className="text-sm font-bold text-[var(--ui-green)] mt-0.5">
-                +{candidate?.financialMetrics?.maxReturnPct}%
+              <div>
+                <div className="text-xs text-[var(--ui-muted)] uppercase tracking-wider">Riesgo Máximo</div>
+                <div className="text-sm font-bold text-amber-800 mt-0.5">
+                  ${(
+                    ((candidate?.spotPrice || 200) - (payload?.putStrike || candidate?.putFloor?.strike || 190)) +
+                    (payload?.putPremium || candidate?.putFloor?.marketPremium || 4.5)
+                  ).toFixed(2)} USD/acc
+                </div>
+                <div className="text-xs text-[var(--ui-muted)]">Pérdida Acotada</div>
               </div>
-              <div className="text-xs text-[var(--ui-muted)]">+${candidate?.financialMetrics?.maxProfitUSD} USD</div>
-            </div>
 
-            <div>
-              <div className="text-xs text-[var(--ui-muted)] uppercase tracking-wider">Sweet Spot (Ganancia Pura)</div>
-              <div className="text-sm font-bold text-sky-800 mt-0.5">
-                {candidate?.probabilities?.sweetSpotPct}%
+              <div>
+                <div className="text-xs text-[var(--ui-muted)] uppercase tracking-wider">Potencial Alcista</div>
+                <div className="text-sm font-bold text-[var(--ui-green)] mt-0.5">
+                  ILIMITADO
+                </div>
+                <div className="text-xs text-[var(--ui-muted)]">Sin Techo de Ganancia</div>
               </div>
-              <div className="text-xs text-[var(--ui-muted)]">Piso &lt; S_T &lt; Techo</div>
             </div>
-          </div>
+          )}
+
+          {resolvedStrategy === 'EQUITY_ORDER' && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3.5 bg-[var(--ui-page)] rounded-xl border border-[var(--ui-border)] text-center">
+              <div>
+                <div className="text-xs text-[var(--ui-muted)] uppercase tracking-wider">Ticker</div>
+                <div className="text-sm font-bold text-[var(--ui-ink)] mt-0.5">
+                  {payload?.symbol || candidate?.symbol}
+                </div>
+                <div className="text-xs text-[var(--ui-muted)]">Activo Subyacente</div>
+              </div>
+
+              <div>
+                <div className="text-xs text-[var(--ui-muted)] uppercase tracking-wider">Operación</div>
+                <div className="text-sm font-bold text-[var(--ui-green)] mt-0.5">
+                  {payload?.side?.toUpperCase() === 'BUY' ? 'COMPRA (Long)' : 'VENTA (Liquidación)'}
+                </div>
+                <div className="text-xs text-[var(--ui-muted)]">{payload?.type?.toUpperCase()}</div>
+              </div>
+
+              <div>
+                <div className="text-xs text-[var(--ui-muted)] uppercase tracking-wider">Cantidad</div>
+                <div className="text-sm font-bold text-[var(--ui-ink)] mt-0.5">
+                  {payload?.qty} acciones
+                </div>
+                <div className="text-xs text-[var(--ui-muted)]">Unidades operadas</div>
+              </div>
+
+              <div>
+                <div className="text-xs text-[var(--ui-muted)] uppercase tracking-wider">Monto Total</div>
+                <div className="text-sm font-bold text-[var(--ui-green)] mt-0.5">
+                  ${((payload?.qty || 1) * (candidate?.spotPrice || 0)).toFixed(2)} USD
+                </div>
+                <div className="text-xs text-[var(--ui-muted)]">Estimado en Bolsa</div>
+              </div>
+            </div>
+          )}
+
+          {resolvedStrategy === 'COLLAR_SPREAD' && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3.5 bg-[var(--ui-page)] rounded-xl border border-[var(--ui-border)] text-center">
+              <div>
+                <div className="text-xs text-[var(--ui-muted)] uppercase tracking-wider">Flujo de Prima Neta</div>
+                <div
+                  className={`text-sm font-bold mt-0.5 ${
+                    candidate?.financialMetrics?.netDebitCredit >= 0 ? 'text-emerald-800' : 'text-[var(--ui-ink)]'
+                  }`}
+                >
+                  {candidate?.financialMetrics?.netDebitCredit >= 0 ? '+' : ''}$
+                  {candidate?.financialMetrics?.netDebitCredit}/acc
+                </div>
+                <div className="text-xs text-[var(--ui-muted)]">Costo Cero</div>
+              </div>
+
+              <div>
+                <div className="text-xs text-[var(--ui-muted)] uppercase tracking-wider">Probabilidad de Piso Seguro</div>
+                <div className="text-sm font-bold text-emerald-800 mt-0.5">
+                  {candidate?.probabilities?.floorProtectionPct}%
+                </div>
+                <div className="text-xs text-[var(--ui-muted)]">Black-Scholes N(d₂)</div>
+              </div>
+
+              <div>
+                <div className="text-xs text-[var(--ui-muted)] uppercase tracking-wider">Retorno Máximo</div>
+                <div className="text-sm font-bold text-[var(--ui-green)] mt-0.5">
+                  +{candidate?.financialMetrics?.maxReturnPct}%
+                </div>
+                <div className="text-xs text-[var(--ui-muted)]">+${candidate?.financialMetrics?.maxProfitUSD} USD</div>
+              </div>
+
+              <div>
+                <div className="text-xs text-[var(--ui-muted)] uppercase tracking-wider">Sweet Spot (Ganancia Pura)</div>
+                <div className="text-sm font-bold text-sky-800 mt-0.5">
+                  {candidate?.probabilities?.sweetSpotPct}%
+                </div>
+                <div className="text-xs text-[var(--ui-muted)]">Piso &lt; S_T &lt; Techo</div>
+              </div>
+            </div>
+          )}
 
           {/* Sección Colapsable: Respuesta JSON Cruda para el Profesor */}
           <div className="border border-[var(--ui-border)] rounded-xl overflow-hidden bg-[var(--ui-page)]">

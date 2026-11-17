@@ -8,6 +8,8 @@ import { fileURLToPath } from 'url';
 import { apiReference } from '@scalar/express-api-reference';
 
 import config from './config/config.js';
+import { getMongoStatus } from './config/mongo.config.js';
+import { getSupabaseStatus } from './config/supabase.config.js';
 import routerAPI from './api/v1/routes/index.js';
 import routerAPIv2 from './api/v2/routes/index.js';
 import { strategyScreenerRoutes } from './api/v2/routes/strategyScreener.routes.js';
@@ -96,8 +98,8 @@ app.get('/', (req, res) => {
     health: `${config.API_URL}/health`,
     preflight: `${config.API_URL}/preflight/readiness`,
     databases: {
-      mongodb: 'CONNECTED',
-      supabase: 'CONNECTED',
+      mongodb: getMongoStatus(),
+      supabase: getSupabaseStatus(),
     },
     brokers: ['ALPACA', 'WEBULL', 'INTERACTIVE_BROKERS'],
   });

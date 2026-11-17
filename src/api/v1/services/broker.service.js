@@ -271,6 +271,54 @@ export const getBrokerOrders = async (status = 'all', broker = 'WEBULL') => {
  */
 export const createBrokerOrder = async (orderPayload, broker = 'WEBULL') => {
   const targetBroker = (orderPayload.broker || broker || config.DEFAULT_BROKER || 'WEBULL').toUpperCase();
+  const targetSymbol = (orderPayload.contractSymbol || orderPayload.symbol || '').toUpperCase();
+  const { qty = 1, side = 'buy', type = 'limit', limit_price, limitPrice, price, time_in_force = 'day', timeInForce = 'day' } = orderPayload;
+  const effectiveLimitPrice = limit_price !== undefined ? limit_price : (limitPrice !== undefined ? limitPrice : price);
+
+  if (!targetSymbol) {
+    throw boom.badRequest('El campo symbol o contractSymbol es obligatorio para emitir la orden al broker.');
+  }
+
+  // 1. Salvaguarda institucional de venta: validar que el usuario tenga acciones en cartera (anti short-selling)
+  if (orderPayload.instrumentType === 'EQUITY' && String(side).toLowerCase() === 'sell') {
+    try {
+      const positions = await getBrokerPositions(targetBroker);
+      const posList = Array.isArray(positions) ? positions : (positions?.positions || []);
+      const match = posList.find((p) => (p.symbol || p.assetId || '').toUpperCase() === targetSymbol.toUpperCase());
+      const owned = Number(match?.qty || 0);
+      if (owned <= 0) {
+        throw boom.badRequest(`Venta rechazada: No posees acciones de ${targetSymbol} en tu portafolio de ${targetBroker} (Posición: 0 acciones). Venta corta no permitida.`);
+      }
+      if (Number(qty) > owned) {
+        throw boom.badRequest(`Venta rechazada: Intentas vender ${qty} acciones de ${targetSymbol}, pero solo tienes ${owned} acciones disponibles en ${targetBroker}.`);
+      }
+    } catch (e) {
+      if (e.isBoom) throw e;
+    }
+  }
+
+  // 2. Salvaguarda institucional de compra: validar Buying Power disponible en el broker
+  if (String(side).toLowerCase() === 'buy') {
+    try {
+      const acc = await getBrokerAccount(targetBroker);
+      const buyingPower = Number(acc?.buyingPower ?? -1);
+      if (buyingPower >= 0) {
+        let estimatedCost = 0;
+        if (orderPayload.instrumentType === 'OPTION') {
+          estimatedCost = Number(qty) * Number(effectiveLimitPrice || 0) * 100;
+        } else {
+          estimatedCost = Number(qty) * Number(effectiveLimitPrice || 0);
+        }
+        if (estimatedCost > 0 && estimatedCost > buyingPower) {
+          throw boom.badRequest(
+            `Poder de compra insuficiente en ${targetBroker}: La orden de compra de ${qty}x ${targetSymbol} requiere un capital estimado de $${estimatedCost.toFixed(2)} USD, pero tu cuenta solo dispone de $${buyingPower.toFixed(2)} USD de Buying Power disponible.`
+          );
+        }
+      }
+    } catch (e) {
+      if (e.isBoom) throw e;
+    }
+  }
 
   if (targetBroker === 'WEBULL') {
     return await WebullService.createWebullOrder(orderPayload);
@@ -280,14 +328,7 @@ export const createBrokerOrder = async (orderPayload, broker = 'WEBULL') => {
     return await IBKRService.createIBKROrder(orderPayload);
   }
 
-  const targetSymbol = (orderPayload.contractSymbol || orderPayload.symbol || '').toUpperCase();
-  const { qty = 1, side = 'buy', type = 'limit', limit_price, limitPrice, price, time_in_force = 'day', timeInForce = 'day' } = orderPayload;
-  const effectiveLimitPrice = limit_price !== undefined ? limit_price : (limitPrice !== undefined ? limitPrice : price);
-
   // Flujo Alpaca
-  if (!targetSymbol) {
-    throw boom.badRequest('El campo symbol o contractSymbol es obligatorio para emitir la orden al broker.');
-  }
 
   if (isAlpacaConfigured()) {
     try {

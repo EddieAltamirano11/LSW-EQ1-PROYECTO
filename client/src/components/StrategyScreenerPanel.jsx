@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { Layers, RefreshCw, CheckCircle2 } from 'lucide-react';
 
 const LABELS = {
@@ -130,52 +130,94 @@ export default function StrategyScreenerPanel({
   onSignIn,
   hideAssetList = false,
   onScreenerResults,
+  onEvaluatingChange,
+  onEvaluatingError,
 }) {
   const [activeCores, setActiveCores] = useState(SELECTABLE);
   const [run, setRun] = useState(0);
+  const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState(null);
   const [rejectedSession, setRejectedSession] = useState(null);
   const session = useMemo(() => ({ apiBase, token }), [apiBase, token]);
-  const query = useMemo(() => ({ session, run, activeCores, limit, dteHorizon, extraSymbols }), [session, run, activeCores, limit, dteHorizon, extraSymbols]);
   const needsSignIn = isOfflineDemo || !token || rejectedSession === session;
-  const current = response?.query === query ? response : null;
-  const loading = !needsSignIn && run > 0 && activeCores.length > 0 && !current;
+
+  // Mantener referencias actualizadas de los parámetros y callbacks para usarlos al pulsar "Evaluar"
+  // sin provocar bucles infinitos de re-renderizado
+  const paramsRef = useRef({ session, activeCores, dteHorizon, extraSymbols });
+  useEffect(() => {
+    paramsRef.current = { session, activeCores, dteHorizon, extraSymbols };
+  }, [session, activeCores, dteHorizon, extraSymbols]);
+
+  const callbacksRef = useRef({ onScreenerResults, onEvaluatingError, onEvaluatingChange });
+  useEffect(() => {
+    callbacksRef.current = { onScreenerResults, onEvaluatingError, onEvaluatingChange };
+  });
 
   useEffect(() => {
-    if (needsSignIn || !query.run || !query.activeCores.length) return undefined;
+    callbacksRef.current.onEvaluatingChange?.(loading);
+  }, [loading]);
+
+  // Ejecutar ÚNICAMENTE cuando el usuario pulsa explícitamente el botón "Evaluar Cores" (run > 0)
+  // evitando bucles de re-ejecución por cambios de callbacks en el componente padre.
+  useEffect(() => {
+    if (needsSignIn || run === 0) return undefined;
+    const { session: currentSession, activeCores: currentCores, dteHorizon: currentDte, extraSymbols: currentSymbols } = paramsRef.current;
+    if (!currentCores.length) return undefined;
+
     const controller = new AbortController();
+    setLoading(true);
+
     const request = async () => {
       try {
-        const res = await fetch(`${query.session.apiBase}/api/v2/strategy-screener/run`, {
-          method: 'POST', signal: controller.signal,
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${query.session.token}` },
+        const res = await fetch(`${currentSession.apiBase}/api/v2/strategy-screener/run`, {
+          method: 'POST',
+          signal: controller.signal,
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentSession.token}` },
           body: JSON.stringify({
-            mode: 'BY_STRATEGY', strategy: 'COLLAR_SPREAD', activeCores: query.activeCores,
-            limit: query.limit, dteHorizon: query.dteHorizon, extraSymbols: query.extraSymbols,
+            mode: 'BY_STRATEGY',
+            strategy: 'COLLAR_SPREAD',
+            activeCores: currentCores,
+            limit: 25, // Evaluar canasta completa para que el ranking central ordene todos los activos
+            dteHorizon: currentDte,
+            extraSymbols: currentSymbols,
           }),
         });
         if (res.status === 401) {
-          if (!controller.signal.aborted) setRejectedSession(query.session);
+          if (!controller.signal.aborted) {
+            setRejectedSession(currentSession);
+            setLoading(false);
+          }
           return;
         }
         const data = await res.json();
         if (!res.ok) throw new Error(data.message ?? 'El proveedor no entregó datos suficientes.');
         if (!controller.signal.aborted) {
-          setResponse({ query, data });
-          onScreenerResults?.(data);
+          setResponse({ data });
+          callbacksRef.current.onEvaluatingError?.(null);
+          callbacksRef.current.onScreenerResults?.(data);
+          setLoading(false);
         }
       } catch (error) {
-        if (!controller.signal.aborted) setResponse({ query, error: error.message });
+        if (!controller.signal.aborted) {
+          setResponse({ error: error.message });
+          callbacksRef.current.onEvaluatingError?.(error.message);
+          setLoading(false);
+        }
       }
     };
-    const timer = setTimeout(request, 250);
-    return () => { clearTimeout(timer); controller.abort(); };
-  }, [needsSignIn, query, onScreenerResults]);
+
+    const timer = setTimeout(request, 150);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [run, needsSignIn]);
 
   function toggle(id) {
     setActiveCores(previous => SELECTABLE.filter(core => core === id ? !previous.includes(id) : previous.includes(core)));
   }
 
+  const current = response;
   const data = needsSignIn ? null : current?.data;
 
   if (hideAssetList) {
@@ -246,18 +288,6 @@ export default function StrategyScreenerPanel({
 
               {!activeCores.length && <p role="status" className="text-xs text-amber-700">Selecciona al menos una fuente.</p>}
               {current?.error && <p role="alert" className="break-words text-xs text-red-700">{current.error}</p>}
-
-              {data && (
-                <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-2.5 text-emerald-950">
-                  <div className="flex items-center gap-1.5 font-bold text-xs sm:text-sm">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-700 shrink-0" aria-hidden="true" />
-                    <span>Cores sincronizados en vivo</span>
-                  </div>
-                  <p className="mt-1 text-xs text-emerald-800">
-                    {data.candidates?.length || 0} empresas viables evaluadas con corte {new Date(data.asOf).toLocaleTimeString()}. Reflejado en el ranking central.
-                  </p>
-                </div>
-              )}
             </div>
           )}
         </div>

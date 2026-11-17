@@ -84,7 +84,7 @@ test('[v2-scanner] admite horizonte temporal de 30 y 60 días', async () => {
 });
 
 test('[v2-scanner] rechaza parámetros de consulta inválidos con 400 Bad Request', async () => {
-  const badLimit = await get('/api/v2/market/scanner/top-collars?limit=25');
+  const badLimit = await get('/api/v2/market/scanner/top-collars?limit=99');
   assert.equal(badLimit.status, 400);
 
   const badSort = await get('/api/v2/market/scanner/top-collars?sortBy=arbitrario');
