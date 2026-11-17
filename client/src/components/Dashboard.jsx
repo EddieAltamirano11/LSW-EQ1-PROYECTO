@@ -187,7 +187,8 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
     const selectedStockValue = current ? current.marketValue : 0;
 
     const top5Holdings = Object.values(map)
-      .sort((a, b) => b.qty - a.qty)
+      .filter((h) => h.qty > 0)
+      .sort((a, b) => (b.marketValue || 0) - (a.marketValue || 0) || b.qty - a.qty)
       .slice(0, 5);
 
     const buyingPowerUSD = Number(portfolioAccount?.buyingPower ?? portfolioAccount?.cash ?? 0);
@@ -219,6 +220,43 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
     }
     return list.slice(0, limit).map((item, idx) => ({ ...item, displayRank: idx + 1 }));
   }, [candidates, sortBy, screenerData, limit]);
+
+  // Control de selección manual del usuario para evitar sobreescritura indeseada
+  const hasUserSelectedRef = useRef(false);
+
+  // Al cambiar de broker, resetear la selección manual para sincronizar con el nuevo portafolio
+  useEffect(() => {
+    hasUserSelectedRef.current = false;
+  }, [brokerTarget]);
+
+  // Sincronizar automáticamente el activo seleccionado:
+  // 1. Si el usuario tiene posiciones en su portafolio, seleccionar siempre el Top 1 de su portafolio.
+  // 2. Si NO hay posiciones en su portafolio, seleccionar el Top 1 del ranking / TradingView.
+  useEffect(() => {
+    if (hasUserSelectedRef.current) return;
+
+    if (top5Holdings.length > 0) {
+      const topHolding = top5Holdings[0];
+      const matchCand = candidates.find((c) => c.symbol.toUpperCase() === topHolding.symbol.toUpperCase());
+      setSelectedAsset({
+        symbol: topHolding.symbol,
+        tvSymbol: matchCand ? matchCand.tradingViewSymbol : (topHolding.symbol === 'SPY' ? 'AMEX:SPY' : `NASDAQ:${topHolding.symbol}`),
+        companyName: matchCand ? matchCand.companyName : `${topHolding.symbol}`,
+        spotPrice: topHolding.currentPrice || matchCand?.spotPrice || 200,
+      });
+      return;
+    }
+
+    if (sortedCandidates.length > 0) {
+      const topRank = sortedCandidates[0];
+      setSelectedAsset({
+        symbol: topRank.symbol,
+        tvSymbol: topRank.tradingViewSymbol,
+        companyName: topRank.companyName,
+        spotPrice: topRank.spotPrice,
+      });
+    }
+  }, [top5Holdings, sortedCandidates, candidates]);
 
   // Candidato actualmente seleccionado para operaciones
   const activeCandidate = sortedCandidates.find((c) => c.symbol === selectedAsset.symbol) || {
@@ -414,17 +452,6 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
 
       const scanCandidates = Array.isArray(data?.candidates) ? data.candidates : [];
       setScanResult({ broker: brokerTarget, candidates: scanCandidates, criteria: data?.criteria || null });
-
-      // Si hay candidatos, sincronizar el primero con TradingView
-      const [top] = scanCandidates;
-      if (top) {
-        setSelectedAsset({
-          symbol: top.symbol,
-          tvSymbol: top.tradingViewSymbol,
-          companyName: top.companyName,
-          spotPrice: top.spotPrice,
-        });
-      }
     } catch (err) {
       if (!signal.aborted) setError(err.message);
     } finally {
@@ -1387,14 +1414,15 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                         return (
                           <tr
                             key={c.symbol}
-                            onClick={() =>
+                            onClick={() => {
+                              hasUserSelectedRef.current = true;
                               setSelectedAsset({
                                 symbol: c.symbol,
                                 tvSymbol: c.tradingViewSymbol,
                                 companyName: c.companyName,
                                 spotPrice: c.spotPrice,
-                              })
-                            }
+                              });
+                            }}
                             role="row"
                             data-selected={isSelected}
                             className={`cursor-pointer transition-colors hover:bg-[var(--ui-soft)] ${
@@ -1687,10 +1715,12 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                               key={h.symbol}
                               type="button"
                               onClick={() => {
+                                hasUserSelectedRef.current = true;
+                                const matchCand = candidates.find((cand) => cand.symbol.toUpperCase() === h.symbol.toUpperCase());
                                 setSelectedAsset({
                                   symbol: h.symbol,
-                                  tvSymbol: `NASDAQ:${h.symbol}`,
-                                  companyName: h.symbol,
+                                  tvSymbol: matchCand ? matchCand.tradingViewSymbol : (h.symbol === 'SPY' ? 'AMEX:SPY' : `NASDAQ:${h.symbol}`),
+                                  companyName: matchCand ? matchCand.companyName : h.symbol,
                                   spotPrice: h.currentPrice || selectedAsset.spotPrice,
                                 });
                               }}

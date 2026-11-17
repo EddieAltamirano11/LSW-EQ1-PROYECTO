@@ -22,10 +22,13 @@ export default function TradingViewWidget({ symbol = 'NASDAQ:AAPL', companyName 
   // Normalizar símbolo asegurando prefijo de mercado para TradingView
   const cleanSymbol = symbol.includes(':') ? symbol : `NASDAQ:${symbol}`;
 
+  // Estudios predeterminados: SMA y RSI (14) superpuestos en el gráfico interactivo
+  const studiesParam = encodeURIComponent(JSON.stringify(['STD;SMA', 'STD;RSI']));
+
   // URL del iframe interactivo oficial de TradingView (autónomo, sin inyecciones globales que contaminen la consola)
   const chartEmbedUrl = `https://s.tradingview.com/widgetembed/?symbol=${encodeURIComponent(
     cleanSymbol
-  )}&interval=D&hidesidetoolbar=0&symboledit=1&saveimage=0&toolbarbg=f1f3ef&theme=light&style=1&timezone=Etc%2FUTC&locale=es&utm_source=localhost`;
+  )}&interval=D&hidesidetoolbar=0&symboledit=1&saveimage=0&toolbarbg=f1f3ef&studies=${studiesParam}&theme=light&style=1&timezone=Etc%2FUTC&locale=es&utm_source=localhost`;
 
   // Cargar el Widget de Análisis Técnico ÚNICAMENTE cuando el usuario despliega el panel
   useEffect(() => {
