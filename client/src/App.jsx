@@ -104,7 +104,7 @@ export default function App() {
   }
 
   return (
-    <div className={`app-shell ${session ? 'h-screen flex flex-col overflow-hidden' : ''}`}>
+    <div className={`app-shell ${session ? 'min-h-screen lg:h-screen flex flex-col lg:overflow-hidden' : ''}`}>
       {session ? (
         <>
           <header className="workspace-header shrink-0">

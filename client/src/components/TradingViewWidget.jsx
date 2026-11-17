@@ -7,7 +7,7 @@ export default function TradingViewWidget({ symbol = 'NASDAQ:AAPL', companyName 
   const techContainerRef = useRef(null);
   const chartWrapperRef = useRef(null);
 
-  // Desactivar interacción si el usuario hace clic fuera del contenedor del gráfico
+  // Desactivar interacción si el usuario hace clic o toca fuera del contenedor del gráfico
   useEffect(() => {
     if (!isChartActive) return;
     const handleOutsideClick = (e) => {
@@ -16,7 +16,11 @@ export default function TradingViewWidget({ symbol = 'NASDAQ:AAPL', companyName 
       }
     };
     window.addEventListener('mousedown', handleOutsideClick);
-    return () => window.removeEventListener('mousedown', handleOutsideClick);
+    window.addEventListener('touchstart', handleOutsideClick, { passive: true });
+    return () => {
+      window.removeEventListener('mousedown', handleOutsideClick);
+      window.removeEventListener('touchstart', handleOutsideClick);
+    };
   }, [isChartActive]);
 
   // Normalizar símbolo asegurando prefijo de mercado para TradingView
@@ -96,21 +100,32 @@ export default function TradingViewWidget({ symbol = 'NASDAQ:AAPL', companyName 
       <div className="space-y-4">
         <div
           ref={chartWrapperRef}
-          className="relative min-w-0 w-full rounded-xl border border-[var(--ui-border)] bg-[var(--ui-page)] p-2"
+          className="relative min-w-0 w-full rounded-xl border border-[var(--ui-border)] bg-[var(--ui-page)] p-1.5 sm:p-2"
           onMouseLeave={() => setIsChartActive(false)}
         >
-          {/* Iframe interactivo de TradingView */}
+          {/* Iframe interactivo de TradingView con altura responsive para celulares y escritorio */}
           <iframe
             key={cleanSymbol}
             src={chartEmbedUrl}
             title={`Gráfico Interactivo TradingView - ${cleanSymbol}`}
-            className={`w-full rounded-lg border-none ${
+            className={`w-full rounded-lg border-none h-[400px] sm:h-[500px] lg:h-[700px] ${
               isChartActive ? 'pointer-events-auto' : 'pointer-events-none'
             }`}
-            style={{ height: '700px' }}
             allow="clipboard-write; fullscreen; unload"
             loading="eager"
           />
+
+          {/* Botón flotante para desactivar interacción en celulares y reanudar scroll */}
+          {isChartActive && (
+            <button
+              type="button"
+              onClick={() => setIsChartActive(false)}
+              className="absolute top-3 right-3 z-20 rounded-md bg-[var(--ui-forest)] text-white text-xs font-bold px-2.5 py-1.5 shadow-md flex items-center gap-1.5 opacity-90 hover:opacity-100"
+              aria-label="Bloquear gráfico para permitir scroll"
+            >
+              <span>Bloquear Gráfico</span>
+            </button>
+          )}
 
           {/* Protector de Scroll 100% transparente y sin texto: permite scroll libre en la columna hasta que el usuario hace clic */}
           {!isChartActive && (

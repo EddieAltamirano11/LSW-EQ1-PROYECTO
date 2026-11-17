@@ -973,7 +973,7 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0 w-full overflow-hidden bg-[var(--ui-bg)] text-[var(--ui-ink)]">
+    <div className="flex flex-col min-h-full lg:h-full lg:min-h-0 w-full lg:overflow-hidden bg-[var(--ui-bg)] text-[var(--ui-ink)]">
       {/* AVISO / TOAST DE EJECUCIÓN EXITOSA (LOS ERRORES SE MUESTRAN EXCLUSIVAMENTE EN EL MODAL, NUNCA EN EL HEADER) */}
       {executionMessage && executionMessage.type === 'success' && (
         <div className="shrink-0 w-full px-3 pt-2 sm:px-5 lg:px-6 z-10">
@@ -994,8 +994,8 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
         </div>
       )}
 
-      {/* CONTENEDOR PRINCIPAL: ARQUITECTURA SANTO GRIAL (3 COLUMNAS - FLUIDA & SIN SCROLL DE PÁGINA) */}
-      <main ref={mainContainerRef} className="flex-1 min-h-0 w-full p-3 sm:p-4 lg:p-5 overflow-hidden flex flex-col">
+      {/* CONTENEDOR PRINCIPAL: ARQUITECTURA SANTO GRIAL (3 COLUMNAS - FLUIDA EN ESCRITORIO Y SCROLL VERTICAL NATURAL EN CELULARES) */}
+      <main ref={mainContainerRef} className="flex-1 min-h-0 w-full p-2.5 sm:p-3.5 lg:p-5 flex flex-col overflow-y-auto lg:overflow-hidden">
         <div
           className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,11fr)_minmax(0,18fr)_minmax(0,11fr)] flex-1 min-h-0 w-full"
           style={{
@@ -1014,8 +1014,8 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
             className="min-w-0 flex flex-col rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-xs overflow-hidden"
           >
             <div
-              className="flex-1 min-h-0 overflow-y-auto no-scrollbar p-3 sm:p-3.5"
-              style={{ overscrollBehaviorY: 'contain' }}
+              className="flex-1 min-h-0 no-scrollbar p-3 sm:p-3.5 overflow-visible lg:overflow-y-auto"
+              style={{ overscrollBehaviorY: isMultiColumn ? 'contain' : 'auto' }}
             >
               <div ref={col1InnerRef} className="space-y-3.5 pb-2">
                 {/* SELECTORES DE BROKER & BASE DE DATOS */}
@@ -1247,8 +1247,8 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
         className="min-w-0 flex flex-col rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-xs overflow-hidden"
       >
         <div
-          className="flex-1 min-h-0 overflow-y-auto no-scrollbar p-3 sm:p-4"
-          style={{ overscrollBehaviorY: 'contain' }}
+          className="flex-1 min-h-0 p-3 sm:p-4 no-scrollbar overflow-visible lg:overflow-y-auto"
+          style={{ overscrollBehaviorY: isMultiColumn ? 'contain' : 'auto' }}
         >
           <div ref={col2InnerRef} className="space-y-4 pb-2">
             {/* Gráfico TradingView Interactivo */}
@@ -1585,8 +1585,8 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
         className="min-w-0 flex flex-col rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-xs overflow-hidden"
       >
         <div
-          className="flex-1 min-h-0 overflow-y-auto no-scrollbar p-3 sm:p-4"
-          style={{ overscrollBehaviorY: 'contain' }}
+          className="flex-1 min-h-0 p-3 sm:p-4 no-scrollbar overflow-visible lg:overflow-y-auto"
+          style={{ overscrollBehaviorY: isMultiColumn ? 'contain' : 'auto' }}
         >
           <div ref={col3InnerRef} className="space-y-4 pb-2">
             {/* RESUMEN DE PORTAFOLIO EN VIVO */}
@@ -1868,8 +1868,8 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                 {/* ======================================================== */}
                 {activeStrategyTab === 'collar' && (
                   <div className="mt-4 space-y-3.5">
-                    <div className="rounded-xl border border-emerald-500/40 bg-transparent p-3.5 text-sm">
-                      <div className="font-bold text-emerald-800 dark:text-emerald-400">
+                    <div className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-page)] p-3.5 text-sm shadow-xs">
+                      <div className="font-bold text-sm text-[var(--ui-ink)]">
                         <span>Estructura Zero-Cost Collar:</span>
                       </div>
                       <ul className="mt-2 space-y-1 text-xs sm:text-sm text-[var(--ui-ink)]">
@@ -1923,8 +1923,8 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                 {/* ======================================================== */}
                 {activeStrategyTab === 'protective_put' && (
                   <div className="mt-4 space-y-3.5 text-sm">
-                    <div className="rounded-xl border border-sky-500/40 bg-transparent p-3.5 text-sm">
-                      <div className="font-bold text-sky-800 dark:text-sky-400">
+                    <div className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-page)] p-3.5 text-sm shadow-xs">
+                      <div className="font-bold text-sm text-[var(--ui-ink)]">
                         <span>Cobertura Protective Put:</span>
                       </div>
                       <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-[var(--ui-muted)]">
@@ -1996,8 +1996,8 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                 {/* ======================================================== */}
                 {activeStrategyTab === 'equity' && (
                   <div className="mt-4 space-y-3.5 text-sm">
-                    <div className="rounded-xl border border-indigo-500/40 bg-transparent p-3.5 text-sm">
-                      <div className="font-bold text-indigo-800 dark:text-indigo-400">
+                    <div className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-page)] p-3.5 text-sm shadow-xs">
+                      <div className="font-bold text-sm text-[var(--ui-ink)]">
                         <span>Operación Simple de Acciones:</span>
                       </div>
                       <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-[var(--ui-muted)]">
