@@ -12,11 +12,11 @@ import { available, observation, SourceError } from '../src/api/v2/services/stra
 import { technicalCore, directSignalsCore } from '../src/api/v2/services/strategyScreener/technicalCore.js';
 import { eventRisk, fundamentalCore } from '../src/api/v2/services/strategyScreener/fundamentalCore.js';
 import { institutionalCore, strategyCore } from '../src/api/v2/services/strategyScreener/optionsCores.js';
-import { confluenceCore, newsCore, SOURCE_CORES } from '../src/api/v2/services/strategyScreener/confluenceCores.js';
+import { calcularCoreConfluencia, calcularCoreNoticias, CORES_SELECCIONABLES } from '../src/api/v2/services/strategyScreener/confluenceCores.js';
 
 const asOf = Date.parse('2026-11-12T22:00:00Z');
 const observed = observation('Fuente controlada', '2026-11-12T21:00:00Z', 'Observación de prueba');
-const criteria = { mode: 'BY_STRATEGY', strategy: 'COLLAR_SPREAD', activeCores: SOURCE_CORES };
+const criteria = { mode: 'BY_STRATEGY', strategy: 'COLLAR_SPREAD', activeCores: CORES_SELECCIONABLES };
 const stock = { price: 100, evidence: observed };
 const earnings = { start: '2027-01-20', end: '2027-01-21', estimated: true, evidence: observed };
 
@@ -90,25 +90,25 @@ test('005 respeta el lado observado y 006 distingue ventanas vacías de fallas',
   data[0].trades = trades.map(row => ({ ...row, side: null }));
   assert.equal(institutionalCore(data, {}, observed).result.direction, 'UNDETERMINED');
   const article = { id: 1, source: 'Fuente', headline: 'Company beats earnings estimates', symbols: ['TEST'], created_at: observed.observedAt };
-  const news = newsCore({ evidence: observed, articles: [article, { ...article, id: 2 }] }, asOf);
+  const news = calcularCoreNoticias({ evidence: observed, articles: [article, { ...article, id: 2 }] }, asOf);
   assert.equal(news.result.observed, 1);
   assert.equal(news.result.sentiment, 'POSITIVE');
-  assert.equal(newsCore({ evidence: observed, articles: [] }, asOf).result.sentiment, 'NEUTRAL');
-  assert.equal(newsCore(null, asOf).status, 'UNAVAILABLE');
+  assert.equal(calcularCoreNoticias({ evidence: observed, articles: [] }, asOf).result.sentiment, 'NEUTRAL');
+  assert.equal(calcularCoreNoticias(null, asOf).status, 'UNAVAILABLE');
 });
 
 test('007 combina pesos sin tratar 001 y 003 como confirmaciones independientes', () => {
-  const cores = Object.fromEntries(SOURCE_CORES.map(id => [id, available({}, [observed], { score: 80, confidence: 1, direction: 1 })]));
-  for (const id of SOURCE_CORES) {
-    const result = confluenceCore([id], cores, asOf).result;
+  const cores = Object.fromEntries(CORES_SELECCIONABLES.map(id => [id, available({}, [observed], { score: 80, confidence: 1, direction: 1 })]));
+  for (const id of CORES_SELECCIONABLES) {
+    const result = calcularCoreConfluencia([id], cores, asOf).result;
     assert.equal(result.mode, 'INDIVIDUAL');
     assert.equal(result.signal, null);
     assert.equal(result.score, 80);
   }
-  assert.equal(confluenceCore(['001', '003'], cores, asOf).result.signal, 'HOLD');
-  assert.equal(confluenceCore(['001', '006'], cores, asOf).result.signal, 'BUY');
+  assert.equal(calcularCoreConfluencia(['001', '003'], cores, asOf).result.signal, 'HOLD');
+  assert.equal(calcularCoreConfluencia(['001', '006'], cores, asOf).result.signal, 'BUY');
   cores['006'].direction = -1;
-  const result = confluenceCore(['001', '006'], cores, asOf).result;
+  const result = calcularCoreConfluencia(['001', '006'], cores, asOf).result;
   assert.equal(result.signal, 'HOLD');
   assert.ok(result.confidence < 0.95);
   assert.ok(result.conflicts.length);
@@ -127,9 +127,9 @@ test('ruta autenticada entrega resultados completos y parciales, veta, valida y 
         if (phase === 'DOWN' || (phase === 'PARTIAL' && symbol === 'CCC')) throw new SourceError('SEC', 'Sin estados financieros.');
         return financial(phase === 'VETO' || symbol === 'BBB' ? 'MARGINAL' : 'VIABLE');
       } },
-    marketData: { marketSession: async () => { calls++; return {}; }, stockSpot: async () => stock,
-      stockHistory: async () => history(), earnings: async () => earnings, optionsChain: async () => successful(),
-      stockNews: async () => ({ articles: [], evidence: observed }), optionFlow: async () => [{ contract: chain().contracts[0],
+    marketData: { obtenerSesionBursatil: async () => { calls++; return {}; }, obtenerPrecioSubyacente: async () => stock,
+      obtenerHistorialVelas: async () => history(), obtenerFechaResultados: async () => earnings, obtenerCadenaOpciones: async () => successful(),
+      obtenerNoticiasAccion: async () => ({ articles: [], evidence: observed }), obtenerFlujoOpciones: async () => [{ contract: chain().contracts[0],
         trades: [{ price: 2, size: 2, side: null }], evidence: observed }] },
   });
   const app = express();

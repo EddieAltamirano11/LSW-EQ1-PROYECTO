@@ -3,212 +3,220 @@ import config from '../../../../config/config.js';
 import { getAlpacaHeaders, isAlpacaConfigured } from '../../../../config/broker.config.js';
 import { DAY, MINUTE, SourceError, assertObservedFeed, iso, mapConcurrent, number, observation, pages, request, time, uniqueBy, within } from './observations.js';
 
-const ALPACA = 'Alpaca Market Data IEX';
-const WEBULL = 'Webull OpenAPI';
-const easternDay = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
-const easternOffset = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', timeZoneName: 'shortOffset' });
+const FUENTE_ALPACA = 'Alpaca Market Data IEX';
+const FUENTE_WEBULL = 'Webull OpenAPI';
+const formatoFechaEste = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
+const formatoDesfaseEste = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', timeZoneName: 'shortOffset' });
 
-function sessionTime(date, clock) {
-  const offset = easternOffset.formatToParts(new Date(`${date}T16:00:00Z`)).find(part => part.type === 'timeZoneName').value;
-  const hours = Number(offset.slice(3));
-  return Date.parse(`${date}T${clock}:00Z`) - hours * 60 * MINUTE;
+function convertirHoraSesion(fecha, hora) {
+  const desfase = formatoDesfaseEste.formatToParts(new Date(`${fecha}T16:00:00Z`)).find(parte => parte.type === 'timeZoneName').value;
+  const horasDesfase = Number(desfase.slice(3));
+  return Date.parse(`${fecha}T${hora}:00Z`) - horasDesfase * 60 * MINUTE;
 }
 
-function url(origin, path, params) {
-  const target = new URL(path, origin);
-  for (const [key, value] of Object.entries(params)) {
-    if (value != null) target.searchParams.set(key, String(value));
+function construirUrl(origen, ruta, parametros) {
+  const destino = new URL(ruta, origen);
+  for (const [clave, valor] of Object.entries(parametros)) {
+    if (valor != null) destino.searchParams.set(clave, String(valor));
   }
-  return target;
+  return destino;
 }
 
-function alpaca(source, path, params, signal, origin = 'https://data.alpaca.markets') {
-  if (!isAlpacaConfigured()) throw new SourceError(source, 'Faltan credenciales de Alpaca Market Data.');
-  return request(source, url(origin, path, params), { headers: getAlpacaHeaders(), signal });
+function consultarAlpaca(fuente, ruta, parametros, senalCancelacion, origen = 'https://data.alpaca.markets') {
+  if (!isAlpacaConfigured()) throw new SourceError(fuente, 'Faltan credenciales de Alpaca Market Data.');
+  return request(fuente, construirUrl(origen, ruta, parametros), { headers: getAlpacaHeaders(), signal: senalCancelacion });
 }
 
-function webull(path, params, signal) {
+function consultarWebull(ruta, parametros, senalCancelacion) {
   if (!config.WEBULL_APP_KEY || !config.WEBULL_APP_SECRET) {
-    throw new SourceError(WEBULL, 'Faltan credenciales de Webull OpenAPI.');
+    throw new SourceError(FUENTE_WEBULL, 'Faltan credenciales de Webull OpenAPI.');
   }
-  const host = process.env.WEBULL_ENDPOINT || 'api.sandbox.webull.com';
-  if (!['api.sandbox.webull.com', 'api.webull.com'].includes(host)) {
-    throw new SourceError(WEBULL, 'El dominio configurado para datos de opciones no es un servidor admitido de Webull.');
+  const dominio = process.env.WEBULL_ENDPOINT || 'api.sandbox.webull.com';
+  if (!['api.sandbox.webull.com', 'api.webull.com'].includes(dominio)) {
+    throw new SourceError(FUENTE_WEBULL, 'El dominio configurado para datos de opciones no es un servidor admitido de Webull.');
   }
-  const headers = {
+  const encabezados = {
     'x-app-key': config.WEBULL_APP_KEY,
     'x-timestamp': new Date().toISOString().slice(0, 19) + 'Z',
     'x-signature-algorithm': 'HMAC-SHA1',
     'x-signature-version': '1.0',
     'x-signature-nonce': randomUUID().replaceAll('-', ''),
   };
-  const fields = { ...params, ...headers, host };
-  const values = Object.keys(fields).sort().map(key => `${key}=${fields[key]}`).join('&');
-  headers['x-signature'] = createHmac('sha1', `${config.WEBULL_APP_SECRET}&`)
-    .update(encodeURIComponent(`${path}&${values}`)).digest('base64');
-  headers['x-version'] = 'v3';
-  if (process.env.WEBULL_ACCESS_TOKEN) headers['x-access-token'] = process.env.WEBULL_ACCESS_TOKEN;
-  return request(WEBULL, url(`https://${host}`, path, params), { headers, signal });
+  const camposFirma = { ...parametros, ...encabezados, host: dominio };
+  const valoresFirma = Object.keys(camposFirma).sort().map(clave => `${clave}=${camposFirma[clave]}`).join('&');
+  encabezados['x-signature'] = createHmac('sha1', `${config.WEBULL_APP_SECRET}&`)
+    .update(encodeURIComponent(`${ruta}&${valoresFirma}`)).digest('base64');
+  encabezados['x-version'] = 'v3';
+  if (process.env.WEBULL_ACCESS_TOKEN) encabezados['x-access-token'] = process.env.WEBULL_ACCESS_TOKEN;
+  return request(FUENTE_WEBULL, construirUrl(`https://${dominio}`, ruta, parametros), { headers: encabezados, signal: senalCancelacion });
 }
 
-export async function marketSession(asOf, signal) {
-  const cutoff = asOf - 15 * MINUTE;
-  const days = await alpaca('Calendario Alpaca', '/v2/calendar', {
-    start: easternDay.format(asOf - 10 * DAY), end: easternDay.format(asOf),
-  }, signal, 'https://paper-api.alpaca.markets');
-  if (!Array.isArray(days)) throw new SourceError(ALPACA, 'Calendario bursátil incompleto.');
-  const sessions = days.map(day => ({
-    date: day.date, open: sessionTime(day.date, day.open), close: sessionTime(day.date, day.close),
-  })).filter(day => Number.isFinite(day.open) && Number.isFinite(day.close)).sort((a, b) => a.open - b.open);
-  const session = sessions.findLast(day => day.open <= cutoff);
-  const lastClosed = sessions.findLast(day => day.close <= cutoff);
-  if (!session || !lastClosed) throw new SourceError(ALPACA, 'No se encontró una sesión bursátil verificable.');
-  const quoteCut = Math.min(cutoff, session.close);
-  return { asOf, cutoff, session, lastClosed, quoteCut, quoteStart: Math.max(session.open, quoteCut - 60 * MINUTE) };
+export async function obtenerSesionBursatil(fechaCorte, senalCancelacion) {
+  const corteMercado = fechaCorte - 15 * MINUTE;
+  const dias = await consultarAlpaca('Calendario Alpaca', '/v2/calendar', {
+    start: formatoFechaEste.format(fechaCorte - 10 * DAY), end: formatoFechaEste.format(fechaCorte),
+  }, senalCancelacion, 'https://paper-api.alpaca.markets');
+  if (!Array.isArray(dias)) throw new SourceError(FUENTE_ALPACA, 'Calendario bursátil incompleto.');
+  const sesiones = dias.map(dia => ({
+    date: dia.date, open: convertirHoraSesion(dia.date, dia.open), close: convertirHoraSesion(dia.date, dia.close),
+  })).filter(dia => Number.isFinite(dia.open) && Number.isFinite(dia.close)).sort((a, b) => a.open - b.open);
+  const sesion = sesiones.findLast(dia => dia.open <= corteMercado);
+  const ultimaSesionCerrada = sesiones.findLast(dia => dia.close <= corteMercado);
+  if (!sesion || !ultimaSesionCerrada) throw new SourceError(FUENTE_ALPACA, 'No se encontró una sesión bursátil verificable.');
+  const corteCotizacion = Math.min(corteMercado, sesion.close);
+  return { asOf: fechaCorte, cutoff: corteMercado, session: sesion, lastClosed: ultimaSesionCerrada,
+    quoteCut: corteCotizacion, quoteStart: Math.max(sesion.open, corteCotizacion - 60 * MINUTE) };
 }
 
-async function bars(symbol, timeframe, start, end, signal) {
-  const feed = 'iex';
-  assertObservedFeed(ALPACA, feed);
-  const path = `/v2/stocks/${encodeURIComponent(symbol)}/bars`;
-  const rows = await pages(ALPACA, async pageToken => {
-    const body = await alpaca(ALPACA, path, {
-      start: iso(start), end: iso(end), timeframe, feed, adjustment: 'split', limit: 1500, page_token: pageToken,
-    }, signal);
-    return { items: body.bars ?? [], cursor: body.next_page_token };
+async function consultarVelas(simbolo, temporalidad, inicio, fin, senalCancelacion) {
+  const flujoDatos = 'iex';
+  assertObservedFeed(FUENTE_ALPACA, flujoDatos);
+  const ruta = `/v2/stocks/${encodeURIComponent(simbolo)}/bars`;
+  const registros = await pages(FUENTE_ALPACA, async cursorPagina => {
+    const respuesta = await consultarAlpaca(FUENTE_ALPACA, ruta, {
+      start: iso(inicio), end: iso(fin), timeframe: temporalidad, feed: flujoDatos, adjustment: 'split', limit: 1500, page_token: cursorPagina,
+    }, senalCancelacion);
+    return { items: respuesta.bars ?? [], cursor: respuesta.next_page_token };
   });
-  return uniqueBy(rows, row => row.t).filter(row => within(row.t, start, end)).map(row => ({
-    at: time(row.t), open: number(row.o), high: number(row.h), low: number(row.l), close: number(row.c), volume: number(row.v),
-  })).filter(row => row.open > 0 && row.close > 0 && row.low > 0 && row.high >= Math.max(row.open, row.close, row.low)
-    && row.low <= Math.min(row.open, row.close) && row.volume >= 0 && row.volume !== null).sort((a, b) => a.at - b.at);
+  return uniqueBy(registros, registro => registro.t).filter(registro => within(registro.t, inicio, fin)).map(registro => ({
+    at: time(registro.t), open: number(registro.o), high: number(registro.h), low: number(registro.l), close: number(registro.c), volume: number(registro.v),
+  })).filter(vela => vela.open > 0 && vela.close > 0 && vela.low > 0 && vela.high >= Math.max(vela.open, vela.close, vela.low)
+    && vela.low <= Math.min(vela.open, vela.close) && vela.volume >= 0 && vela.volume !== null).sort((a, b) => a.at - b.at);
 }
 
-export async function stockSpot(symbol, clock, signal) {
-  const rows = await bars(symbol, '1Min', clock.quoteStart, clock.quoteCut, signal);
-  const row = rows.findLast(bar => bar.at + MINUTE <= clock.quoteCut);
-  if (!row) throw new SourceError(ALPACA, 'No hay precio observado del subyacente en la sesión de análisis.');
-  return { price: row.close, at: row.at + MINUTE, evidence: observation(ALPACA, iso(row.at + MINUTE), `${symbol} · cierre de 1 minuto`) };
+export async function obtenerPrecioSubyacente(simbolo, sesionMercado, senalCancelacion) {
+  const velas = await consultarVelas(simbolo, '1Min', sesionMercado.quoteStart, sesionMercado.quoteCut, senalCancelacion);
+  const ultimaVela = velas.findLast(vela => vela.at + MINUTE <= sesionMercado.quoteCut);
+  if (!ultimaVela) throw new SourceError(FUENTE_ALPACA, 'No hay precio observado del subyacente en la sesión de análisis.');
+  return { price: ultimaVela.close, at: ultimaVela.at + MINUTE,
+    evidence: observation(FUENTE_ALPACA, iso(ultimaVela.at + MINUTE), `${simbolo} · cierre de 1 minuto`) };
 }
 
-export async function stockHistory(symbol, clock, signal) {
-  const ranges = [['1Day', 410 * DAY], ['1Hour', 35 * DAY], ['15Min', 24 * DAY]];
-  const series = await Promise.all(ranges.map(async ([period, lookback]) => {
-    const rows = await bars(symbol, period, clock.quoteCut - lookback, clock.quoteCut, signal);
-    const duration = (period === '1Hour' ? 60 : period === '15Min' ? 15 : 24 * 60) * MINUTE;
-    const closed = period === '1Day' ? rows.filter(row => easternDay.format(row.at) <= clock.lastClosed.date)
-      : rows.filter(row => {
-        const date = easternDay.format(row.at);
-        const open = sessionTime(date, period === '1Hour' ? '09:00' : '09:30');
-        const close = date === clock.session.date ? clock.session.close : sessionTime(date, '16:00');
-        return row.at >= open && row.at < close && Math.min(row.at + duration, close) <= clock.quoteCut;
+export async function obtenerHistorialVelas(simbolo, sesionMercado, senalCancelacion) {
+  const ventanas = [['1Day', 410 * DAY], ['1Hour', 35 * DAY], ['15Min', 24 * DAY]];
+  const series = await Promise.all(ventanas.map(async ([periodo, intervaloHistorico]) => {
+    const velas = await consultarVelas(simbolo, periodo, sesionMercado.quoteCut - intervaloHistorico, sesionMercado.quoteCut, senalCancelacion);
+    const duracionVela = (periodo === '1Hour' ? 60 : periodo === '15Min' ? 15 : 24 * 60) * MINUTE;
+    const velasCerradas = periodo === '1Day' ? velas.filter(vela => formatoFechaEste.format(vela.at) <= sesionMercado.lastClosed.date)
+      : velas.filter(vela => {
+        const fecha = formatoFechaEste.format(vela.at);
+        const apertura = convertirHoraSesion(fecha, periodo === '1Hour' ? '09:00' : '09:30');
+        const cierre = fecha === sesionMercado.session.date ? sesionMercado.session.close : convertirHoraSesion(fecha, '16:00');
+        return vela.at >= apertura && vela.at < cierre && Math.min(vela.at + duracionVela, cierre) <= sesionMercado.quoteCut;
       });
-    const lastBar = closed.at(-1);
-    const lastBarDate = lastBar ? easternDay.format(lastBar.at) : '';
-    const isToday = lastBarDate === clock.session.date;
-    const isLastClosed = lastBarDate === clock.lastClosed.date;
-    const lastBarEnd = lastBar ? Math.min(lastBar.at + duration, sessionTime(lastBarDate, '16:00')) : 0;
-    const recent = period === '1Day' ? isLastClosed
-      : (isToday && within(lastBarEnd, clock.quoteCut - 3 * 60 * MINUTE, clock.quoteCut + 5 * MINUTE))
-        || (isLastClosed && clock.quoteCut - clock.session.open < 2 * 60 * MINUTE);
-    if (closed.length < 60 || !recent) throw new SourceError(ALPACA, `Serie ${period} incompleta o fuera de vigencia para ${symbol}.`);
-    return [period, closed];
+    const ultimaVela = velasCerradas.at(-1);
+    const fechaUltimaVela = ultimaVela ? formatoFechaEste.format(ultimaVela.at) : '';
+    const esSesionActual = fechaUltimaVela === sesionMercado.session.date;
+    const esUltimaSesionCerrada = fechaUltimaVela === sesionMercado.lastClosed.date;
+    const cierreUltimaVela = ultimaVela ? Math.min(ultimaVela.at + duracionVela, convertirHoraSesion(fechaUltimaVela, '16:00')) : 0;
+    const serieVigente = periodo === '1Day' ? esUltimaSesionCerrada
+      : (esSesionActual && within(cierreUltimaVela, sesionMercado.quoteCut - 3 * 60 * MINUTE, sesionMercado.quoteCut + 5 * MINUTE))
+        || (esUltimaSesionCerrada && sesionMercado.quoteCut - sesionMercado.session.open < 2 * 60 * MINUTE);
+    if (velasCerradas.length < 60 || !serieVigente) throw new SourceError(FUENTE_ALPACA, `Serie ${periodo} incompleta o fuera de vigencia para ${simbolo}.`);
+    return [periodo, velasCerradas];
   }));
-  return { series: Object.fromEntries(series), evidence: series.map(([period, rows]) => observation(ALPACA, iso(rows.at(-1).at), `${symbol} · ${period} · ${rows.length} velas cerradas`)) };
+  return { series: Object.fromEntries(series), evidence: series.map(([periodo, velas]) => observation(FUENTE_ALPACA, iso(velas.at(-1).at), `${simbolo} · ${periodo} · ${velas.length} velas cerradas`)) };
 }
 
-export async function earnings(symbol, asOf, signal) {
+export async function obtenerFechaResultados(simbolo, fechaCorte, senalCancelacion) {
   try {
-    const body = await webull('/market-data/fundamentals/financial-alerts/get', { symbol, category: 'US_STOCK' }, signal);
-    if (body?.start_date && body?.end_date && within(body.start_date, asOf - DAY, asOf + 180 * DAY) && time(body.end_date) >= time(body.start_date)) {
+    const respuesta = await consultarWebull('/market-data/fundamentals/financial-alerts/get', { symbol: simbolo, category: 'US_STOCK' }, senalCancelacion);
+    if (respuesta?.start_date && respuesta?.end_date && within(respuesta.start_date, fechaCorte - DAY, fechaCorte + 180 * DAY)
+      && time(respuesta.end_date) >= time(respuesta.start_date)) {
       return {
-        start: body.start_date, end: body.end_date, estimated: true,
-        evidence: observation(`${WEBULL} · Financial Alerts`, iso(asOf), `${symbol} · ${body.start_date} a ${body.end_date}`),
+        start: respuesta.start_date, end: respuesta.end_date, estimated: true,
+        evidence: observation(`${FUENTE_WEBULL} · Financial Alerts`, iso(fechaCorte), `${simbolo} · ${respuesta.start_date} a ${respuesta.end_date}`),
       };
     }
-  } catch (_err) {
+  } catch (_error) {
     // Si la llamada falla o Webull no responde a tiempo, proyectamos estimación trimestral segura
   }
   // Estimación trimestral proyectada a 60 días para mantener la evaluación continua sin errores transitorios
-  const fallbackStart = iso(asOf + 60 * DAY).slice(0, 10);
-  const fallbackEnd = iso(asOf + 62 * DAY).slice(0, 10);
+  const inicioEstimado = iso(fechaCorte + 60 * DAY).slice(0, 10);
+  const finEstimado = iso(fechaCorte + 62 * DAY).slice(0, 10);
   return {
-    start: fallbackStart, end: fallbackEnd, estimated: true,
-    evidence: observation(`${WEBULL} · Financial Alerts (Estimado)`, iso(asOf), `${symbol} · ${fallbackStart} a ${fallbackEnd}`),
+    start: inicioEstimado, end: finEstimado, estimated: true,
+    evidence: observation(`${FUENTE_WEBULL} · Financial Alerts (Estimado)`, iso(fechaCorte), `${simbolo} · ${inicioEstimado} a ${finEstimado}`),
   };
 }
 
-export async function stockNews(symbol, asOf, signal) {
-  const start = asOf - 7 * DAY;
-  const source = 'Alpaca News';
-  const articles = await pages(source, async pageToken => {
-    const body = await alpaca(source, '/v1beta1/news', {
-      symbols: symbol, start: iso(start), end: iso(asOf), limit: 50, page_token: pageToken,
-    }, signal);
-    return { items: body.news, cursor: body.next_page_token };
+export async function obtenerNoticiasAccion(simbolo, fechaCorte, senalCancelacion) {
+  const inicioVentana = fechaCorte - 7 * DAY;
+  const fuente = 'Alpaca News';
+  const articulos = await pages(fuente, async cursorPagina => {
+    const respuesta = await consultarAlpaca(fuente, '/v1beta1/news', {
+      symbols: simbolo, start: iso(inicioVentana), end: iso(fechaCorte), limit: 50, page_token: cursorPagina,
+    }, senalCancelacion);
+    return { items: respuesta.news, cursor: respuesta.next_page_token };
   });
-  return { articles: articles.filter(article => within(article.created_at, start, asOf)
-      && (!article.updated_at || time(article.updated_at) <= asOf) && article.symbols?.includes(symbol) && article.headline),
-    evidence: observation(source, iso(asOf), `${symbol} · noticias desde ${iso(start)}`) };
+  return { articles: articulos.filter(articulo => within(articulo.created_at, inicioVentana, fechaCorte)
+      && (!articulo.updated_at || time(articulo.updated_at) <= fechaCorte) && articulo.symbols?.includes(simbolo) && articulo.headline),
+    evidence: observation(fuente, iso(fechaCorte), `${simbolo} · noticias desde ${iso(inicioVentana)}`) };
 }
 
-function normalizeContract(row, symbol) {
-  const size = number(row.multiplier ?? row.size);
-  const standard = size === 100 && (!row.deliverables?.length || (row.deliverables.length === 1
-    && (row.deliverables[0].asset_type ?? row.deliverables[0].type) === 'equity' && row.deliverables[0].symbol === symbol
-    && Number(row.deliverables[0].amount) === size));
-  return { symbol: row.symbol, underlying: row.underlying_symbol, type: row.type, expiration: row.expiration_date,
-    strike: number(row.strike_price), multiplier: size, standard, interestDate: row.open_interest_date };
+function normalizarContrato(contrato, simbolo) {
+  const multiplicador = number(contrato.multiplier ?? contrato.size);
+  const esEstandar = multiplicador === 100 && (!contrato.deliverables?.length || (contrato.deliverables.length === 1
+    && (contrato.deliverables[0].asset_type ?? contrato.deliverables[0].type) === 'equity' && contrato.deliverables[0].symbol === simbolo
+    && Number(contrato.deliverables[0].amount) === multiplicador));
+  return { symbol: contrato.symbol, underlying: contrato.underlying_symbol, type: contrato.type, expiration: contrato.expiration_date,
+    strike: number(contrato.strike_price), multiplier: multiplicador, standard: esEstandar, interestDate: contrato.open_interest_date };
 }
 
-export async function optionsChain(symbol, spot, horizon, clock, signal) {
-  const source = 'Alpaca metadatos de contratos';
-  const target = Date.parse(easternDay.format(clock.asOf)) + horizon * DAY;
-  const contracts = await pages(source, async pageToken => {
-    const body = await alpaca(source, '/v2/options/contracts', {
-      underlying_symbols: symbol, expiration_date_gte: iso(target - 10 * DAY).slice(0, 10),
-      expiration_date_lte: iso(target + 10 * DAY).slice(0, 10), strike_price_gte: (spot.price * 0.88).toFixed(2),
-      strike_price_lte: (spot.price * 1.12).toFixed(2), status: 'active', show_deliverables: true,
-      limit: 1000, page_token: pageToken,
-    }, signal, 'https://paper-api.alpaca.markets');
-    return { items: body.option_contracts, cursor: body.next_page_token };
+export async function obtenerCadenaOpciones(simbolo, cotizacionSubyacente, horizonteDias, sesionMercado, senalCancelacion) {
+  const fuente = 'Alpaca metadatos de contratos';
+  const vencimientoObjetivo = Date.parse(formatoFechaEste.format(sesionMercado.asOf)) + horizonteDias * DAY;
+  const contratos = await pages(fuente, async cursorPagina => {
+    const respuesta = await consultarAlpaca(fuente, '/v2/options/contracts', {
+      underlying_symbols: simbolo, expiration_date_gte: iso(vencimientoObjetivo - 10 * DAY).slice(0, 10),
+      expiration_date_lte: iso(vencimientoObjetivo + 10 * DAY).slice(0, 10), strike_price_gte: (cotizacionSubyacente.price * 0.88).toFixed(2),
+      strike_price_lte: (cotizacionSubyacente.price * 1.12).toFixed(2), status: 'active', show_deliverables: true,
+      limit: 1000, page_token: cursorPagina,
+    }, senalCancelacion, 'https://paper-api.alpaca.markets');
+    return { items: respuesta.option_contracts, cursor: respuesta.next_page_token };
   });
-  const relevant = uniqueBy(contracts.filter(row => row.tradable), row => row.symbol).map(row => normalizeContract(row, symbol))
-    .filter(row => row.underlying === symbol && row.standard && row.strike > 0 && row.symbol);
-  const expiries = [...new Set(relevant.map(row => row.expiration))]
-    .sort((a, b) => Math.abs(time(a) - target) - Math.abs(time(b) - target) || a.localeCompare(b)).slice(0, 3);
-  const selected = expiries.flatMap(expiration => ['put', 'call'].flatMap(type => relevant
-    .filter(row => row.expiration === expiration && row.type === type && (type === 'put' ? row.strike < spot.price : row.strike > spot.price))
-    .sort((a, b) => Math.abs(a.strike - spot.price * (type === 'put' ? 0.95 : 1.05))
-      - Math.abs(b.strike - spot.price * (type === 'put' ? 0.95 : 1.05)) || a.symbol.localeCompare(b.symbol)).slice(0, 3)));
-  const evidence = [observation(source, iso(clock.asOf), `${symbol} · contratos activos dentro del horizonte solicitado`)];
-  if (!selected.length) return { contracts: [], evidence, target };
-  const quotes = await webull('/market-data/options/snapshots/list', { symbols: selected.map(row => row.symbol).join(','), category: 'US_OPTION' }, signal);
-  if (!Array.isArray(quotes)) throw new SourceError(WEBULL, 'La cadena no contiene cotizaciones reconocibles.');
-  const bySymbol = new Map(quotes.map(quote => [quote.symbol, quote]));
-  const quoted = selected.flatMap(row => {
-    const quote = bySymbol.get(row.symbol);
-    if (!quote || !within(number(quote.quote_time), clock.quoteStart, clock.asOf)) return [];
-    const { bid, ask, volume, open_interest, gamma, delay_minutes } = quote;
-    if (number(delay_minutes) !== null && number(delay_minutes) > 15) return [];
-    return [{ ...row, bid: number(bid), ask: number(ask), volume: number(volume), interest: number(open_interest),
-      gamma: number(gamma), at: number(quote.quote_time), delay: number(delay_minutes) ?? 0 }];
+  const contratosAptos = uniqueBy(contratos.filter(contrato => contrato.tradable), contrato => contrato.symbol)
+    .map(contrato => normalizarContrato(contrato, simbolo))
+    .filter(contrato => contrato.underlying === simbolo && contrato.standard && contrato.strike > 0 && contrato.symbol);
+  const vencimientos = [...new Set(contratosAptos.map(contrato => contrato.expiration))]
+    .sort((a, b) => Math.abs(time(a) - vencimientoObjetivo) - Math.abs(time(b) - vencimientoObjetivo) || a.localeCompare(b)).slice(0, 3);
+  const contratosSeleccionados = vencimientos.flatMap(vencimiento => ['put', 'call'].flatMap(tipo => contratosAptos
+    .filter(contrato => contrato.expiration === vencimiento && contrato.type === tipo
+      && (tipo === 'put' ? contrato.strike < cotizacionSubyacente.price : contrato.strike > cotizacionSubyacente.price))
+    .sort((a, b) => Math.abs(a.strike - cotizacionSubyacente.price * (tipo === 'put' ? 0.95 : 1.05))
+      - Math.abs(b.strike - cotizacionSubyacente.price * (tipo === 'put' ? 0.95 : 1.05)) || a.symbol.localeCompare(b.symbol)).slice(0, 3)));
+  const evidencia = [observation(fuente, iso(sesionMercado.asOf), `${simbolo} · contratos activos dentro del horizonte solicitado`)];
+  if (!contratosSeleccionados.length) return { contracts: [], evidence: evidencia, target: vencimientoObjetivo };
+  const cotizaciones = await consultarWebull('/market-data/options/snapshots/list', {
+    symbols: contratosSeleccionados.map(contrato => contrato.symbol).join(','), category: 'US_OPTION',
+  }, senalCancelacion);
+  if (!Array.isArray(cotizaciones)) throw new SourceError(FUENTE_WEBULL, 'La cadena no contiene cotizaciones reconocibles.');
+  const cotizacionesPorSimbolo = new Map(cotizaciones.map(cotizacion => [cotizacion.symbol, cotizacion]));
+  const contratosCotizados = contratosSeleccionados.flatMap(contrato => {
+    const cotizacion = cotizacionesPorSimbolo.get(contrato.symbol);
+    if (!cotizacion || !within(number(cotizacion.quote_time), sesionMercado.quoteStart, sesionMercado.asOf)) return [];
+    const { bid, ask, volume: volumen, open_interest: interesAbierto, gamma, delay_minutes: retrasoMinutos } = cotizacion;
+    if (number(retrasoMinutos) !== null && number(retrasoMinutos) > 15) return [];
+    return [{ ...contrato, bid: number(bid), ask: number(ask), volume: number(volumen), interest: number(interesAbierto),
+      gamma: number(gamma), at: number(cotizacion.quote_time), delay: number(retrasoMinutos) ?? 0 }];
   });
-  if (!quoted.length) throw new SourceError(WEBULL, 'Las cotizaciones de opciones disponibles no corresponden a la ventana de mercado.');
-  return { contracts: quoted, evidence, target };
+  if (!contratosCotizados.length) throw new SourceError(FUENTE_WEBULL, 'Las cotizaciones de opciones disponibles no corresponden a la ventana de mercado.');
+  return { contracts: contratosCotizados, evidence: evidencia, target: vencimientoObjetivo };
 }
 
-export async function optionFlow(chain, clock, signal) {
-  const active = chain.contracts.filter(row => row.volume > 0 && row.interest >= 0 && row.interest !== null)
+export async function obtenerFlujoOpciones(cadena, sesionMercado, senalCancelacion) {
+  const contratosActivos = cadena.contracts.filter(contrato => contrato.volume > 0 && contrato.interest >= 0 && contrato.interest !== null)
     .sort((a, b) => b.volume - a.volume || a.symbol.localeCompare(b.symbol)).slice(0, 2);
-  return mapConcurrent(active, 2, async contract => {
-    const body = await webull('/market-data/options/ticks/list', { symbol: contract.symbol, category: 'US_OPTION', count: 120 }, signal);
-    if (body.symbol !== contract.symbol || !Array.isArray(body.result) || number(body.delay_minutes) > 15) {
-      throw new SourceError(WEBULL, 'Operaciones de opciones con contrato o retraso incompatibles.');
+  return mapConcurrent(contratosActivos, 2, async contrato => {
+    const respuesta = await consultarWebull('/market-data/options/ticks/list', { symbol: contrato.symbol, category: 'US_OPTION', count: 120 }, senalCancelacion);
+    if (respuesta.symbol !== contrato.symbol || !Array.isArray(respuesta.result) || number(respuesta.delay_minutes) > 15) {
+      throw new SourceError(FUENTE_WEBULL, 'Operaciones de opciones con contrato o retraso incompatibles.');
     }
-    const trades = body.result.filter(row => within(number(row.time), clock.session.open, clock.asOf)
-      && number(row.price) > 0 && number(row.volume) > 0).map(row => ({
-      at: number(row.time), price: number(row.price), size: number(row.volume), side: ['B', 'S'].includes(row.side) ? row.side : null,
+    const operaciones = respuesta.result.filter(operacion => within(number(operacion.time), sesionMercado.session.open, sesionMercado.asOf)
+      && number(operacion.price) > 0 && number(operacion.volume) > 0).map(operacion => ({
+      at: number(operacion.time), price: number(operacion.price), size: number(operacion.volume), side: ['B', 'S'].includes(operacion.side) ? operacion.side : null,
     }));
-    return { contract, trades, evidence: observation(`${WEBULL} · Option Ticks`, trades[0] ? iso(trades[0].at) : iso(clock.cutoff), contract.symbol, number(body.delay_minutes) ?? 0) };
+    return { contract: contrato, trades: operaciones,
+      evidence: observation(`${FUENTE_WEBULL} · Option Ticks`, operaciones[0] ? iso(operaciones[0].at) : iso(sesionMercado.cutoff), contrato.symbol, number(respuesta.delay_minutes) ?? 0) };
   });
 }

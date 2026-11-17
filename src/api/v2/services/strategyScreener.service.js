@@ -6,7 +6,7 @@ import * as sec from './strategyScreener/edgar.js';
 import { technicalCore, directSignalsCore } from './strategyScreener/technicalCore.js';
 import { eventRisk, fundamentalCore } from './strategyScreener/fundamentalCore.js';
 import { institutionalCore, strategyCore } from './strategyScreener/optionsCores.js';
-import { confluenceCore, newsCore, SOURCE_CORES } from './strategyScreener/confluenceCores.js';
+import { calcularCoreConfluencia, calcularCoreNoticias, CORES_SELECCIONABLES } from './strategyScreener/confluenceCores.js';
 
 const ETFS = new Set(['SPY', 'QQQ']);
 const DEFAULT_UNIVERSE = MARKET_BASKET.filter(asset => !ETFS.has(asset.symbol));
@@ -19,12 +19,12 @@ export function parseScreenerInput(body) {
   const { mode, strategy, activeCores, limit = 5, dteHorizon = 45, extraSymbols = [] } = body;
   if (mode !== 'BY_STRATEGY' || strategy !== 'COLLAR_SPREAD') throw boom.badRequest('El modo admitido es BY_STRATEGY para COLLAR_SPREAD.');
   if (!Array.isArray(activeCores) || activeCores.length === 0 || new Set(activeCores).size !== activeCores.length
-      || activeCores.some(core => !SOURCE_CORES.includes(core))) {
+      || activeCores.some(core => !CORES_SELECCIONABLES.includes(core))) {
     throw boom.badRequest('Selecciona cores distintos del conjunto 001, 002, 003, 005 y 006.');
   }
   if (!Number.isInteger(limit) || limit < 1 || limit > 25) throw boom.badRequest('limit debe ser un entero entre 1 y 25.');
   if (![30, 45, 60].includes(dteHorizon)) throw boom.badRequest('dteHorizon debe ser 30, 45 o 60.');
-  return { mode, strategy, activeCores: SOURCE_CORES.filter(core => activeCores.includes(core)), limit, dteHorizon, extraSymbols };
+  return { mode, strategy, activeCores: CORES_SELECCIONABLES.filter(core => activeCores.includes(core)), limit, dteHorizon, extraSymbols };
 }
 
 async function capture(task) {
@@ -59,7 +59,7 @@ export function createStrategyScreener({ marketData = market, edgar = sec, unive
     };
     const includes = id => criteria.activeCores.includes(id);
     const [clock, issuerIndex] = await Promise.all([
-      use('clock', () => marketData.marketSession(asOf, signal)),
+      use('clock', () => marketData.obtenerSesionBursatil(asOf, signal)),
       use('issuers', () => edgar.issuerIndex(signal)),
     ]);
     if (!clock.value || !issuerIndex.value) {
@@ -83,11 +83,11 @@ export function createStrategyScreener({ marketData = market, edgar = sec, unive
     const rows = await mapConcurrent(activeUniverse, 3, async asset => {
       const { symbol, companyName } = asset;
       const [spot, facts, event, history, news] = await Promise.all([
-        use(`spot:${symbol}`, () => marketData.stockSpot(symbol, clock.value, signal)),
+        use(`spot:${symbol}`, () => marketData.obtenerPrecioSubyacente(symbol, clock.value, signal)),
         use(`facts:${symbol}`, () => edgar.statements(symbol, issuerIndex.value, asOf, signal)),
-        use(`earnings:${symbol}`, () => marketData.earnings(symbol, asOf, signal)),
-        includes('001') || includes('003') ? use(`history:${symbol}`, () => marketData.stockHistory(symbol, clock.value, signal)) : {},
-        includes('006') ? use(`news:${symbol}`, () => marketData.stockNews(symbol, asOf, signal)) : {},
+        use(`earnings:${symbol}`, () => marketData.obtenerFechaResultados(symbol, asOf, signal)),
+        includes('001') || includes('003') ? use(`history:${symbol}`, () => marketData.obtenerHistorialVelas(symbol, clock.value, signal)) : {},
+        includes('006') ? use(`news:${symbol}`, () => marketData.obtenerNoticiasAccion(symbol, asOf, signal)) : {},
       ]);
       const events = event.error ?? eventRisk(event.value, asOf);
       const fundamental = spot.error ?? facts.error ?? fundamentalCore(facts.value, spot.value, events);
@@ -95,14 +95,14 @@ export function createStrategyScreener({ marketData = market, edgar = sec, unive
       const technical = history.error ?? (history.value ? technicalCore(history.value) : NOT_SELECTED);
       const knownVeto = eligibility === 'MARGINAL' || eligibility === 'NO_VIABLE';
       const chain = eligibility === 'VIABLE' && spot.value
-        ? await use(`chain:${symbol}:${criteria.dteHorizon}`, () => marketData.optionsChain(symbol, spot.value, criteria.dteHorizon, clock.value, signal))
+        ? await use(`chain:${symbol}:${criteria.dteHorizon}`, () => marketData.obtenerCadenaOpciones(symbol, spot.value, criteria.dteHorizon, clock.value, signal))
         : {};
       const strategy = chain.error ?? (chain.value ? strategyCore(spot.value, chain.value)
         : unavailable(knownVeto ? `Veto de viabilidad ${eligibility}.` : 'Viabilidad de la empresa sin verificar.'));
       let institutional = NOT_SELECTED;
       if (includes('005')) {
         const report = await holdings;
-        const flow = chain.value ? await use(`flow:${symbol}:${criteria.dteHorizon}`, () => marketData.optionFlow(chain.value, clock.value, signal)) : {};
+        const flow = chain.value ? await use(`flow:${symbol}:${criteria.dteHorizon}`, () => marketData.obtenerFlujoOpciones(chain.value, clock.value, signal)) : {};
         institutional = flow.error ?? institutionalCore(flow.value, edgar.reportedHoldings(report.value, symbol), report.value?.evidence);
       }
       const cores = {
@@ -111,9 +111,9 @@ export function createStrategyScreener({ marketData = market, edgar = sec, unive
         '003': selected(includes('003') ? directSignalsCore(technical, events) : NOT_SELECTED, includes('003')),
         '004': strategy,
         '005': selected(institutional, includes('005')),
-        '006': selected(includes('006') ? (news.error ?? newsCore(news.value, asOf)) : NOT_SELECTED, includes('006')),
+        '006': selected(includes('006') ? (news.error ?? calcularCoreNoticias(news.value, asOf)) : NOT_SELECTED, includes('006')),
       };
-      const confluence = confluenceCore(criteria.activeCores, cores, asOf);
+      const confluence = calcularCoreConfluencia(criteria.activeCores, cores, asOf);
       cores['007'] = confluence;
       const row = { symbol, companyName, eligibility, cores };
       if (knownVeto) return { ...row, reason: `Veto de viabilidad ${eligibility}.` };
