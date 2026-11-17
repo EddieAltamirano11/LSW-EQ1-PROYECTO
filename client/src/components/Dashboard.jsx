@@ -969,7 +969,14 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
 
       {/* CONTENEDOR PRINCIPAL: ARQUITECTURA SANTO GRIAL (3 COLUMNAS - FLUIDA & SIN SCROLL DE PÁGINA) */}
       <main ref={mainContainerRef} className="flex-1 min-h-0 w-full p-3 sm:p-4 lg:p-5 overflow-hidden flex flex-col">
-        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[350px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)_425px] 2xl:grid-cols-[380px_minmax(0,1fr)_450px] flex-1 min-h-0">
+        <div
+          className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,11fr)_minmax(0,18fr)_minmax(0,11fr)] flex-1 min-h-0 w-full"
+          style={{
+            gridTemplateColumns: isMultiColumn
+              ? 'minmax(0, 27.5fr) minmax(0, 45fr) minmax(0, 27.5fr)'
+              : undefined,
+          }}
+        >
           {/* ============================================================== */}
           {/* COLUMNA 1 (IZQUIERDA): MOTORES CUANTITATIVOS & PARÁMETROS      */}
           {/* ============================================================== */}
@@ -1721,11 +1728,11 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                     )}
                   </div>
 
-                  {/* 3. Buying Power (Poder de compra) */}
+                  {/* 3. Buying Power */}
                   <div className="rounded-xl border border-[var(--ui-border)] bg-gradient-to-br from-[var(--ui-page)] to-emerald-50/40 p-3.5">
                     <div className="flex items-center justify-between">
                       <span className="text-xs uppercase font-semibold tracking-wider text-[var(--ui-muted)]">
-                        Poder de Compra (Buying Power):
+                        Buying Power:
                       </span>
                       <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 rounded px-1.5 py-0.5 uppercase">
                         Fondos Disponibles
@@ -1737,7 +1744,7 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                     </div>
                     {portfolioAccount?.cash != null && (
                       <div className="mt-1.5 flex items-center justify-between text-xs text-[var(--ui-muted)] pt-1.5 border-t border-[var(--ui-border)]">
-                        <span>Efectivo Líquido (Cash):</span>
+                        <span>Cash:</span>
                         <span className="font-bold text-[var(--ui-ink)]">
                           ${Number(portfolioAccount.cash).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
                         </span>
@@ -1831,15 +1838,14 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                 {/* ======================================================== */}
                 {activeStrategyTab === 'collar' && (
                   <div className="mt-4 space-y-3.5">
-                    <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3.5 text-sm text-emerald-950">
-                      <div className="font-bold flex items-center gap-1.5 text-emerald-900">
-                        <Zap className="h-4 w-4" aria-hidden="true" />
-                        <span>Estructura Zero-Cost Collar (3 Patas):</span>
+                    <div className="rounded-xl border border-emerald-500/40 bg-transparent p-3.5 text-sm">
+                      <div className="font-bold text-emerald-800 dark:text-emerald-400">
+                        <span>Estructura Zero-Cost Collar:</span>
                       </div>
-                      <ul className="mt-2 space-y-1 text-xs sm:text-sm">
+                      <ul className="mt-2 space-y-1 text-xs sm:text-sm text-[var(--ui-ink)]">
                         <li>• <strong>Subyacente:</strong> 100 acciones de {selectedAsset.symbol}</li>
-                        <li>• <strong>Piso Put:</strong> Strike ${activeCandidate.putFloor.strike} (Póliza de seguro)</li>
-                        <li>• <strong>Techo Call:</strong> Strike ${activeCandidate.callCeiling.strike} (Financiamiento)</li>
+                        <li>• <strong>Piso Put:</strong> Strike ${activeCandidate.putFloor.strike}</li>
+                        <li>• <strong>Techo Call:</strong> Strike ${activeCandidate.callCeiling.strike}</li>
                         <li>• <strong>Vencimiento:</strong> {activeCandidate.optimalExpiration}</li>
                       </ul>
                     </div>
@@ -1887,12 +1893,11 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                 {/* ======================================================== */}
                 {activeStrategyTab === 'protective_put' && (
                   <div className="mt-4 space-y-3.5 text-sm">
-                    <div className="rounded-xl border border-sky-200 bg-sky-50/60 p-3.5 text-sky-950">
-                      <div className="font-bold flex items-center gap-1.5 text-sky-900">
-                        <Shield className="h-4 w-4" aria-hidden="true" />
-                        <span>Cobertura Protective Put (Suelo Blindado):</span>
+                    <div className="rounded-xl border border-sky-500/40 bg-transparent p-3.5 text-sm">
+                      <div className="font-bold text-sky-800 dark:text-sky-400">
+                        <span>Cobertura Protective Put:</span>
                       </div>
-                      <p className="mt-1.5 text-xs sm:text-sm leading-relaxed">
+                      <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-[var(--ui-muted)]">
                         Protege contra caídas extremas asegurando un precio mínimo de venta (${activeCandidate.putFloor.strike} Put), manteniendo potencial alcista ilimitado.
                       </p>
                     </div>
@@ -1961,12 +1966,11 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                 {/* ======================================================== */}
                 {activeStrategyTab === 'equity' && (
                   <div className="mt-4 space-y-3.5 text-sm">
-                    <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-3.5 text-indigo-950">
-                      <div className="font-bold flex items-center gap-1.5 text-indigo-900">
-                        <ArrowRightLeft className="h-4 w-4" aria-hidden="true" />
-                        <span>Operación Simple de Acciones (Contado / Equity):</span>
+                    <div className="rounded-xl border border-indigo-500/40 bg-transparent p-3.5 text-sm">
+                      <div className="font-bold text-indigo-800 dark:text-indigo-400">
+                        <span>Operación Simple de Acciones:</span>
                       </div>
-                      <p className="mt-1.5 text-xs sm:text-sm leading-relaxed">
+                      <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-[var(--ui-muted)]">
                         Emite una orden directa de compra o venta en el matching engine de {brokerTarget} sin opciones.
                       </p>
                     </div>
@@ -1984,7 +1988,7 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                               : 'border border-[var(--ui-border)] bg-[var(--ui-card)] text-[var(--ui-muted)] hover:bg-[var(--ui-soft)]'
                           }`}
                         >
-                          BUY (Comprar)
+                          BUY
                         </button>
                         <button
                           type="button"
@@ -1995,7 +1999,7 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                               : 'border border-[var(--ui-border)] bg-[var(--ui-card)] text-[var(--ui-muted)] hover:bg-[var(--ui-soft)]'
                           }`}
                         >
-                          SELL (Vender)
+                          SELL
                         </button>
                       </div>
                     </div>
@@ -2020,8 +2024,8 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                           onChange={(e) => setEquityOrderType(e.target.value)}
                           className="ui-field mt-1 w-full px-2.5 py-2 text-sm font-bold"
                         >
-                          <option value="MARKET">Mercado (Market)</option>
-                          <option value="LIMIT">Límite (Limit)</option>
+                          <option value="MARKET">Market</option>
+                          <option value="LIMIT">Limit</option>
                         </select>
                       </div>
                     </div>

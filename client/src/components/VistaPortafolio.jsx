@@ -62,7 +62,7 @@ function ResumenCuenta({ cuenta }) {
   const importes = [
     { etiqueta: 'Efectivo', importe: cuenta.cash },
     { etiqueta: 'Valor de cuenta', importe: cuenta.portfolioValue },
-    { etiqueta: 'Poder de compra', importe: cuenta.buyingPower },
+    { etiqueta: 'Buying Power', importe: cuenta.buyingPower },
   ];
   return (
     <>

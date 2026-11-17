@@ -68,23 +68,15 @@ export default function TradingViewWidget({ symbol = 'NASDAQ:AAPL', companyName 
   return (
     <div className="min-w-0 p-4 sm:p-5" aria-labelledby="tradingview-title">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex min-w-0 flex-1 basis-72 items-start gap-3">
+        <div className="flex min-w-0 flex-1 basis-72 items-center gap-3">
           <span className="ui-section-icon"><LineChart className="h-5 w-5" aria-hidden="true" /></span>
           <div className="min-w-0">
             <h2 id="tradingview-title" className="text-lg font-bold tracking-tight sm:text-xl">
-              Análisis Técnico en Tiempo Real (TradingView Core)
+              Trading View
             </h2>
-            <p className="mt-1 break-words text-sm text-[var(--ui-muted)]">
-              Validación de soportes, medias móviles simples (SMA 50/200) y momentum (RSI) para{' '}
-              <span className="font-bold text-[var(--ui-green)]">{cleanSymbol}</span> ({companyName})
-            </p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="ui-chip text-sm font-semibold">
-            <span className="h-2.5 w-2.5 rounded-full bg-[var(--ui-focus)]" aria-hidden="true" />
-            TradingView Live Feed
-          </span>
           <a
             href={`https://www.tradingview.com/symbols/${cleanSymbol.replace(':', '-')}/`}
             target="_blank"
@@ -126,6 +118,12 @@ export default function TradingViewWidget({ symbol = 'NASDAQ:AAPL', companyName 
             />
           )}
         </div>
+
+        {/* Validación de soportes, medias y momentum justo antes del diagnóstico */}
+        <p className="px-1 text-sm text-[var(--ui-muted)] break-words">
+          Validación de soportes, medias móviles simples (SMA 50/200) y momentum (RSI) para{' '}
+          <span className="font-bold text-[var(--ui-green)]">{cleanSymbol}</span> ({companyName})
+        </p>
 
         {/* Diagnóstico Técnico y Osciladores (Debajo del gráfico para preservar el 100% de ancho del gráfico) */}
         <details
