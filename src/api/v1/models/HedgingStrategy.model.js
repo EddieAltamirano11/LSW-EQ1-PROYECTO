@@ -20,6 +20,16 @@ const legSchema = new mongoose.Schema(
     gamma: { type: Number, default: 0.0 },
     theta: { type: Number, default: 0.0 },
     vega: { type: Number, default: 0.0 },
+    // Lo que reportó el broker al ejecutar (null si no lo informó)
+    orderStatus: { type: String, default: null },
+    filledQuantity: { type: Number, default: null },
+    verifiedInBroker: { type: Boolean, default: null },
+    accepted: { type: Boolean, default: null },
+    brokerMessage: { type: String, default: null },
+    cancellation: {
+      type: new mongoose.Schema({ requested: Boolean, confirmed: Boolean, message: String }, { _id: false }),
+      default: null,
+    },
   },
   { _id: false }
 );
@@ -41,6 +51,7 @@ const financialMetricsSubSchema = new mongoose.Schema(
     floorProtectionPrice: { type: Number, required: true },
     maxLossTotalUSD: { type: Number, required: true },
     netDelta: { type: Number, default: 0.0 },
+    maxProfitTotalUSD: { type: Number, default: null },
   },
   { _id: false }
 );
@@ -64,7 +75,7 @@ const hedgingStrategySchema = new mongoose.Schema(
     status: {
       type: String,
       required: true,
-      enum: ['ACTIVE', 'CLOSED', 'EXPIRED'],
+      enum: ['ACTIVE', 'PARTIALLY_EXECUTED', 'CLOSED', 'EXPIRED'],
       default: 'ACTIVE',
     },
     underlying: { type: underlyingSubSchema, required: true },

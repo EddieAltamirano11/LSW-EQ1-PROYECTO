@@ -5,412 +5,395 @@ import { isAlpacaConfigured, getAlpacaHeaders, alpacaDataClient } from '../../..
 import { getUnderlyingRepo } from '../repositories/underlying.repository.js';
 import * as WebullService from './webull.service.js';
 import * as IBKRService from './ibkr.service.js';
+import { errorDeBroker, numeroReportado } from './brokerRespuestas.js';
+import { FUENTE_CADENA, contratoPublico, horizonteHasta, obtenerCadenaCobertura } from './cadenaOpciones.service.js';
 
-/**
- * Consulta de cuenta y balance del broker seleccionado (Webull, Alpaca o IBKR)
- */
-export const getBrokerAccount = async (broker = 'WEBULL') => {
-  const targetBroker = (broker || config.DEFAULT_BROKER || 'WEBULL').toUpperCase();
+// Órdenes y lecturas fieles al broker: solo se devuelve lo que reporta el broker (null si no lo reporta),
+// las órdenes incompletas se rechazan antes de contactarlo y los fallos se informan con 400, 502 o 503.
 
-  if (targetBroker === 'WEBULL') {
-    return await WebullService.getWebullAccount();
+const elegirBroker = broker => String(broker || config.DEFAULT_BROKER || 'WEBULL').toUpperCase();
+const dinero = valor => `$${Number(valor).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`;
+const OCC = /^([A-Z]{1,6})(\d{2})(\d{2})(\d{2})([CP])(\d{8})$/;
+const MULTIPLICADOR_ESTANDAR = 100;
+
+function exigirAlpaca() {
+  if (!isAlpacaConfigured()) {
+    throw boom.serverUnavailable('Alpaca Markets no está configurado (faltan credenciales ALPACA_API_KEY / ALPACA_SECRET_KEY).');
   }
+}
 
-  if (targetBroker === 'IBKR') {
-    return await IBKRService.getIBKRAccount();
-  }
-
-  // Flujo Alpaca Markets
-  if (isAlpacaConfigured()) {
+// ---------------------------------------------------------------------------------------------
+// Adaptador de Alpaca (los de Webull e IBKR viven en sus servicios)
+// ---------------------------------------------------------------------------------------------
+const Alpaca = {
+  async account() {
+    exigirAlpaca();
     try {
-      const resp = await axios.get(`${config.ALPACA_BASE_URL}/v2/account`, {
-        headers: getAlpacaHeaders(),
-        timeout: 5000,
-      });
-      const acc = resp.data;
+      const { data: acc } = await axios.get(`${config.ALPACA_BASE_URL}/v2/account`, { headers: getAlpacaHeaders(), timeout: 5000 });
       return {
         broker: 'ALPACA',
-        accountId: acc.id,
-        status: acc.status,
-        currency: acc.currency,
-        cash: Number(acc.cash),
-        portfolioValue: Number(acc.portfolio_value),
-        buyingPower: Number(acc.buying_power),
-        tradingBlocked: acc.trading_blocked,
-        transfersBlocked: acc.transfers_blocked,
-        accountBlocked: acc.account_blocked,
-        createdAt: acc.created_at,
+        accountId: acc.id ?? null,
+        status: acc.status ?? null,
+        currency: acc.currency ?? null,
+        cash: numeroReportado(acc.cash),
+        portfolioValue: numeroReportado(acc.portfolio_value),
+        buyingPower: numeroReportado(acc.buying_power),
+        tradingBlocked: acc.trading_blocked ?? null,
+        transfersBlocked: acc.transfers_blocked ?? null,
+        accountBlocked: acc.account_blocked ?? null,
+        createdAt: acc.created_at ?? null,
         source: 'Alpaca Paper Trading Account (Live)',
       };
     } catch (error) {
-      console.warn(`[Broker Alpaca Account] Error: ${error.message}`);
-      throw boom.serverUnavailable(`Error al consultar cuenta de Alpaca Markets: ${error.message}`);
+      throw errorDeBroker('Alpaca Markets', error);
     }
-  }
+  },
 
-  throw boom.serverUnavailable('Alpaca Markets no está configurado (faltan credenciales ALPACA_API_KEY / ALPACA_SECRET_KEY).');
-};
-
-/**
- * Consulta de cotización en tiempo real desde el broker seleccionado
- */
-export const getBrokerQuote = async (symbol, broker = 'WEBULL') => {
-  const targetBroker = (broker || config.DEFAULT_BROKER || 'WEBULL').toUpperCase();
-  const ticker = symbol.toUpperCase();
-
-  if (targetBroker === 'WEBULL') {
-    return await WebullService.getWebullQuote(ticker);
-  }
-
-  if (targetBroker === 'IBKR') {
-    return await IBKRService.getIBKRQuote(ticker);
-  }
-
-  // Flujo Alpaca Markets
-  if (isAlpacaConfigured()) {
+  async quote(ticker) {
+    exigirAlpaca();
+    let snap;
     try {
-      const response = await alpacaDataClient.get(`/stocks/${ticker}/snapshot?feed=iex`, {
-        headers: getAlpacaHeaders(),
-      });
-      const snap = response.data;
-      if (snap) {
-        const tradePrice = snap.latestTrade?.p;
-        const dailyClose = snap.dailyBar?.c || snap.prevDailyBar?.c;
-        const q = snap.latestQuote;
+      ({ data: snap } = await alpacaDataClient.get(`/stocks/${ticker}/snapshot?feed=iex`, { headers: getAlpacaHeaders() }));
+    } catch (error) {
+      throw errorDeBroker('Alpaca Markets', error);
+    }
+    const q = snap?.latestQuote;
+    const ultimo = numeroReportado(snap?.latestTrade?.p) ?? numeroReportado(snap?.dailyBar?.c) ?? numeroReportado(snap?.prevDailyBar?.c);
+    if (!(ultimo > 0)) throw boom.badGateway(`Alpaca no informó un precio para ${ticker}.`);
+    const positivo = valor => (numeroReportado(valor) > 0 ? numeroReportado(valor) : null);
+    return {
+      broker: 'ALPACA',
+      symbol: ticker,
+      companyName: null,
+      lastPrice: ultimo,
+      bid: positivo(q?.bp),
+      ask: positivo(q?.ap),
+      bidSize: positivo(q?.bs),
+      askSize: positivo(q?.as),
+      timestamp: snap?.latestTrade?.t ?? q?.t ?? null,
+      source: 'Alpaca Market Data v2 (IEX snapshot)',
+    };
+  },
 
-        const effectiveLastPrice = tradePrice || dailyClose || (q?.bp && q?.ap ? (q.bp + q.ap) / 2 : null);
-        if (!effectiveLastPrice) {
-          throw new Error('Alpaca snapshot no contiene precio de última transacción ni barra de cierre diaria');
-        }
-
-        let effectiveBid = (q?.bp && q.bp > 1) ? q.bp : Number((effectiveLastPrice - 0.05).toFixed(2));
-        let effectiveAsk = (q?.ap && q.ap > 1) ? q.ap : Number((effectiveLastPrice + 0.05).toFixed(2));
-
-        if (effectiveBid >= effectiveAsk || effectiveBid < effectiveLastPrice * 0.7 || effectiveAsk > effectiveLastPrice * 1.3) {
-          effectiveBid = Number((effectiveLastPrice - 0.05).toFixed(2));
-          effectiveAsk = Number((effectiveLastPrice + 0.05).toFixed(2));
-        }
-
+  async positions() {
+    exigirAlpaca();
+    try {
+      const { data } = await axios.get(`${config.ALPACA_BASE_URL}/v2/positions`, { headers: getAlpacaHeaders(), timeout: 5000 });
+      if (!Array.isArray(data)) throw boom.badGateway('Alpaca devolvió posiciones ilegibles.');
+      return data.map(pos => {
+        const esOpcion = pos.asset_class === 'us_option';
+        const qty = numeroReportado(pos.qty);
         return {
           broker: 'ALPACA',
-          symbol: ticker,
-          companyName: `${ticker} Inc.`,
-          lastPrice: Number(effectiveLastPrice.toFixed(2)),
-          bid: Number(effectiveBid.toFixed(2)),
-          ask: Number(effectiveAsk.toFixed(2)),
-          bidSize: q?.bs || 100,
-          askSize: q?.as || 100,
-          timestamp: snap.latestTrade?.t || q?.t || new Date().toISOString(),
-          source: 'Alpaca Market Data v2 (Paper Live Feed - Snapshot)',
+          assetId: pos.asset_id ?? null,
+          symbol: pos.symbol,
+          instrumentType: esOpcion ? 'OPTION' : 'EQUITY',
+          qty,
+          equityQty: esOpcion ? 0 : qty,
+          side: pos.side ?? null,
+          avgEntryPrice: numeroReportado(pos.avg_entry_price),
+          currentPrice: numeroReportado(pos.current_price),
+          marketValue: numeroReportado(pos.market_value),
+          costBasis: numeroReportado(pos.cost_basis),
+          unrealizedPL: numeroReportado(pos.unrealized_pl),
+          unrealizedPLPercent: numeroReportado(pos.unrealized_plpc) === null ? null : Number((Number(pos.unrealized_plpc) * 100).toFixed(2)),
+          changeToday: numeroReportado(pos.change_today) === null ? null : Number((Number(pos.change_today) * 100).toFixed(2)),
+          assetClass: pos.asset_class ?? null,
         };
-      }
+      });
     } catch (error) {
-      console.warn(`[Broker Alpaca Quote Error (${ticker})]: ${error.message}`);
-      throw boom.serverUnavailable(`No se pudo obtener cotización viva para ${ticker} desde Alpaca Markets: ${error.message}`);
+      throw errorDeBroker('Alpaca Markets', error);
     }
-  }
+  },
 
-  throw boom.serverUnavailable('Alpaca Markets no está configurado (faltan credenciales ALPACA_API_KEY / ALPACA_SECRET_KEY).');
+  async orders(status) {
+    exigirAlpaca();
+    try {
+      const { data } = await axios.get(`${config.ALPACA_BASE_URL}/v2/orders?status=${status}&limit=20`, { headers: getAlpacaHeaders(), timeout: 5000 });
+      if (!Array.isArray(data)) throw boom.badGateway('Alpaca devolvió órdenes ilegibles.');
+      return data.map(o => ({
+        broker: 'ALPACA',
+        id: o.id,
+        clientOrderId: o.client_order_id ?? null,
+        symbol: o.symbol,
+        qty: numeroReportado(o.qty),
+        side: o.side ?? null,
+        type: o.type ?? null,
+        timeInForce: o.time_in_force ?? null,
+        limitPrice: numeroReportado(o.limit_price),
+        filledQty: numeroReportado(o.filled_qty),
+        status: o.status ?? null,
+        assetClass: o.asset_class ?? null,
+        createdAt: o.created_at ?? null,
+        filledAt: o.filled_at ?? null,
+      }));
+    } catch (error) {
+      throw errorDeBroker('Alpaca Markets', error);
+    }
+  },
+
+  async placeOrder(orden) {
+    exigirAlpaca();
+    const body = {
+      symbol: orden.instrumentType === 'OPTION' ? orden.option.contractSymbol : orden.symbol,
+      qty: orden.qty,
+      side: orden.side,
+      type: orden.type,
+      time_in_force: orden.timeInForce,
+    };
+    if (orden.type === 'limit') body.limit_price = String(orden.limitPrice);
+    let data;
+    try {
+      ({ data } = await axios.post(`${config.ALPACA_BASE_URL}/v2/orders`, body, { headers: getAlpacaHeaders(), timeout: 7000 }));
+    } catch (error) {
+      throw errorDeBroker('Alpaca Markets', error);
+    }
+    if (!data?.id) throw boom.badGateway('Alpaca respondió sin identificador de orden.');
+    return {
+      id: String(data.id),
+      clientOrderId: data.client_order_id ?? null,
+      status: data.status ?? null,
+      filledQty: numeroReportado(data.filled_qty),
+      createdAt: data.created_at ?? null,
+      source: 'Alpaca Live Trading Engine',
+      details: data,
+    };
+  },
+
+  async cancel(orderId) {
+    exigirAlpaca();
+    try {
+      await axios.delete(`${config.ALPACA_BASE_URL}/v2/orders/${orderId}`, { headers: getAlpacaHeaders(), timeout: 5000 });
+    } catch (error) {
+      throw errorDeBroker('Alpaca Markets', error);
+    }
+    return { message: `Alpaca confirmó la cancelación de la orden ${orderId}.` };
+  },
 };
 
-/**
- * Consulta de cadena de opciones desde el broker seleccionado
- */
-export const getBrokerOptionsChain = async (symbol, expirationDate = '2026-12-18', broker = 'WEBULL') => {
-  const targetBroker = (broker || config.DEFAULT_BROKER || 'WEBULL').toUpperCase();
+const ADAPTADORES = {
+  ALPACA: Alpaca,
+  WEBULL: {
+    account: WebullService.getWebullAccount,
+    quote: WebullService.getWebullQuote,
+    positions: WebullService.getWebullPositions,
+    orders: WebullService.getWebullOrders,
+    placeOrder: WebullService.createWebullOrder,
+    cancel: WebullService.cancelWebullOrder,
+  },
+  IBKR: {
+    account: IBKRService.getIBKRAccount,
+    quote: IBKRService.getIBKRQuote,
+    positions: IBKRService.getIBKRPositions,
+    orders: IBKRService.getIBKROrders,
+    placeOrder: IBKRService.createIBKROrder,
+    cancel: IBKRService.cancelIBKROrder,
+  },
+};
 
-  if (targetBroker === 'WEBULL') {
-    return await WebullService.getWebullOptionsChain(symbol, expirationDate);
+function adaptador(broker) {
+  const elegido = ADAPTADORES[elegirBroker(broker)];
+  if (!elegido) throw boom.badRequest('Selecciona WEBULL, ALPACA o IBKR.');
+  return elegido;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Lecturas
+// ---------------------------------------------------------------------------------------------
+export const getBrokerAccount = async (broker = 'WEBULL') => {
+  const cuenta = await adaptador(broker).account();
+  const faltan = ['cash', 'portfolioValue', 'buyingPower'].filter(campo => !Number.isFinite(cuenta[campo]));
+  if (faltan.length) {
+    throw boom.badGateway(`${elegirBroker(broker)} no informó ${faltan.join(', ')} en la cuenta; no se usan saldos supuestos.`);
   }
+  return cuenta;
+};
 
-  if (targetBroker === 'IBKR') {
-    return await IBKRService.getIBKROptionsChain(symbol, expirationDate);
+export const getBrokerQuote = async (symbol, broker = 'WEBULL') => adaptador(broker).quote(String(symbol).toUpperCase());
+
+export const getBrokerPositions = async (broker = 'WEBULL') => adaptador(broker).positions();
+
+export const getBrokerOrders = async (status = 'all', broker = 'WEBULL') => adaptador(broker).orders(status);
+
+// ---------------------------------------------------------------------------------------------
+// Validación de órdenes (un solo punto para los tres brokers)
+// ---------------------------------------------------------------------------------------------
+function leerContratoOcc(simbolo) {
+  const partes = OCC.exec(String(simbolo ?? '').toUpperCase());
+  if (!partes) return null;
+  const [, subyacente, aa, mm, dd, tipo, strike] = partes;
+  return { subyacente, expiration: `20${aa}-${mm}-${dd}`, optionType: tipo === 'C' ? 'CALL' : 'PUT', strike: Number(strike) / 1000 };
+}
+
+function contratoOcc(subyacente, expiration, optionType, strike) {
+  const [aa, mm, dd] = [expiration.slice(2, 4), expiration.slice(5, 7), expiration.slice(8, 10)];
+  return `${subyacente}${aa}${mm}${dd}${optionType[0]}${String(Math.round(strike * 1000)).padStart(8, '0')}`;
+}
+
+export function validarOrden(payload = {}) {
+  const faltan = [];
+  const texto = valor => (valor === undefined || valor === null ? '' : String(valor).trim());
+  const instrumentType = texto(payload.instrumentType).toUpperCase();
+  const side = texto(payload.side).toLowerCase();
+  const type = texto(payload.type).toLowerCase();
+  const qty = Number(payload.qty);
+  const limitPrice = Number(payload.limitPrice ?? payload.limit_price ?? payload.price);
+  const timeInForce = (texto(payload.timeInForce ?? payload.time_in_force) || 'day').toLowerCase();
+
+  if (!['EQUITY', 'OPTION'].includes(instrumentType)) faltan.push('instrumentType (EQUITY u OPTION)');
+  if (!['buy', 'sell'].includes(side)) faltan.push('side (buy o sell)');
+  if (!['market', 'limit'].includes(type)) faltan.push('type (market o limit)');
+  if (payload.qty === undefined || payload.qty === null || !Number.isInteger(qty) || qty <= 0) faltan.push('qty (entero positivo)');
+  if (type === 'limit' && !(limitPrice > 0)) faltan.push('limitPrice (precio límite positivo en órdenes limit)');
+  if (!['day', 'gtc'].includes(timeInForce)) faltan.push('timeInForce (day o gtc)');
+
+  let symbol = texto(payload.symbol).toUpperCase();
+  let option = null;
+  const strategy = (texto(payload.strategy) || 'SINGLE').toUpperCase();
+  let stockPrice = null;
+  if (instrumentType === 'OPTION') {
+    const occ = leerContratoOcc(payload.contractSymbol);
+    if (payload.contractSymbol && !occ) faltan.push('contractSymbol (símbolo OCC válido, por ejemplo AAPL261218P00300000)');
+    const optionType = texto(payload.optionType ?? payload.option_type).toUpperCase() || occ?.optionType || '';
+    const strike = Number(payload.strikePrice ?? payload.strike_price ?? occ?.strike);
+    const expiration = texto(payload.expirationDate ?? payload.expire_date) || occ?.expiration || '';
+    symbol = symbol || occ?.subyacente || '';
+    if (!['CALL', 'PUT'].includes(optionType)) faltan.push('optionType (CALL o PUT)');
+    if (!(strike > 0)) faltan.push('strikePrice (strike del contrato)');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(expiration)) faltan.push('expirationDate (vencimiento AAAA-MM-DD)');
+    if (occ && (occ.optionType !== optionType || occ.strike !== strike || occ.expiration !== expiration || (symbol && occ.subyacente !== symbol))) {
+      faltan.push('contractSymbol coherente con optionType, strikePrice, expirationDate y symbol');
+    }
+    if (!['SINGLE', 'COVERED_STOCK'].includes(strategy)) faltan.push('strategy (SINGLE o COVERED_STOCK)');
+    if (strategy === 'COVERED_STOCK') {
+      stockPrice = Number(payload.stockPrice ?? payload.spotPrice);
+      if (!(stockPrice > 0)) faltan.push('stockPrice (precio de las acciones del COVERED_STOCK)');
+    }
+    if (['CALL', 'PUT'].includes(optionType) && strike > 0 && /^\d{4}-\d{2}-\d{2}$/.test(expiration) && symbol) {
+      option = { optionType, strike, expiration, contractSymbol: occ ? String(payload.contractSymbol).toUpperCase() : contratoOcc(symbol, expiration, optionType, strike) };
+    }
   }
+  if (!symbol) faltan.push('symbol');
 
-  // Flujo Alpaca
-  const quote = await getBrokerQuote(symbol, 'ALPACA');
-  const spot = quote.lastPrice;
-
-  const strikes = [
-    Math.round((spot * 0.9) / 5) * 5,
-    Math.round((spot * 0.95) / 5) * 5,
-    Math.round(spot / 5) * 5,
-    Math.round((spot * 1.05) / 5) * 5,
-    Math.round((spot * 1.1) / 5) * 5,
-  ];
-
-  const calls = strikes.map((strike) => {
-    const isITM = spot > strike;
-    const premium = Number((Math.max(spot - strike, 0) + (isITM ? 3.5 : 2.0) + Math.random()).toFixed(2));
-    return {
-      contractSymbol: `${quote.symbol}${expirationDate.replace(/-/g, '').slice(2)}C${String(strike * 1000).padStart(8, '0')}`,
-      type: 'CALL',
-      strike,
-      expirationDate,
-      bid: Number((premium - 0.1).toFixed(2)),
-      ask: Number((premium + 0.1).toFixed(2)),
-      lastPrice: premium,
-    };
-  });
-
-  const puts = strikes.map((strike) => {
-    const isITM = strike > spot;
-    const premium = Number((Math.max(strike - spot, 0) + (isITM ? 3.5 : 2.0) + Math.random()).toFixed(2));
-    return {
-      contractSymbol: `${quote.symbol}${expirationDate.replace(/-/g, '').slice(2)}P${String(strike * 1000).padStart(8, '0')}`,
-      type: 'PUT',
-      strike,
-      expirationDate,
-      bid: Number((premium - 0.1).toFixed(2)),
-      ask: Number((premium + 0.1).toFixed(2)),
-      lastPrice: premium,
-    };
-  });
-
+  if (faltan.length) {
+    throw boom.badRequest(`Orden incompleta o inválida; no se envió al broker. Revisa: ${faltan.join('; ')}.`);
+  }
   return {
-    broker: 'ALPACA',
-    symbol: quote.symbol,
-    spotPrice: spot,
-    expirationDate,
-    source: quote.source,
-    contractsCount: calls.length + puts.length,
-    calls,
-    puts,
+    symbol, instrumentType, side, type, qty, timeInForce,
+    limitPrice: type === 'limit' ? limitPrice : null,
+    option, strategy: instrumentType === 'OPTION' ? strategy : null, stockPrice,
+  };
+}
+
+// Las lecturas que fallan durante una salvaguarda se informan como 503: sin ellas no se puede validar la orden.
+async function leerParaValidar(lectura, descripcion) {
+  try {
+    return await lectura();
+  } catch (error) {
+    throw boom.serverUnavailable(`No se emitió la orden: no se pudo leer ${descripcion} (${error.message}).`);
+  }
+}
+
+async function validarTenencia(orden, broker) {
+  const posiciones = await leerParaValidar(() => getBrokerPositions(broker), `las posiciones de ${broker}`);
+  const delSimbolo = posiciones.filter(posicion => String(posicion.symbol ?? '').toUpperCase() === orden.symbol);
+  if (delSimbolo.some(posicion => posicion.equityQty === null || posicion.equityQty === undefined)) {
+    throw boom.badGateway(`${broker} no informó cuántas acciones de ${orden.symbol} hay en sus posiciones; no se emitió la venta.`);
+  }
+  const acciones = delSimbolo.reduce((suma, posicion) => suma + posicion.equityQty, 0);
+  if (orden.qty > acciones) {
+    throw boom.badRequest(`Venta rechazada: solicitas ${orden.qty} acciones de ${orden.symbol}, pero ${broker} reporta ${acciones} acciones (los contratos de opciones no cuentan).`);
+  }
+}
+
+async function validarBuyingPower(orden, broker) {
+  const cuenta = await leerParaValidar(() => getBrokerAccount(broker), `el Buying Power de ${broker}`);
+  let precio = orden.limitPrice;
+  if (orden.type === 'market') {
+    if (orden.instrumentType === 'OPTION') {
+      throw boom.serverUnavailable('No se emitió la orden: no hay una cotización observada del contrato para estimar una compra de opción a mercado. Usa una orden limit.');
+    }
+    const cotizacion = await leerParaValidar(() => getBrokerQuote(orden.symbol, broker), `la cotización de ${orden.symbol}`);
+    if (!(cotizacion.ask > 0)) {
+      throw boom.serverUnavailable(`No se emitió la orden: ${broker} no informó el ask de ${orden.symbol} para estimar la compra a mercado.`);
+    }
+    precio = cotizacion.ask;
+  }
+  const costo = orden.qty * precio * (orden.instrumentType === 'OPTION' ? MULTIPLICADOR_ESTANDAR : 1);
+  if (costo > cuenta.buyingPower) {
+    throw boom.badRequest(`Poder de compra insuficiente en ${broker}: la orden requiere ${dinero(costo)} y el Buying Power disponible es ${dinero(cuenta.buyingPower)}.`);
+  }
+}
+
+export const createBrokerOrder = async (orderPayload, broker = 'WEBULL') => {
+  const orden = validarOrden(orderPayload);
+  const destino = elegirBroker(orderPayload?.broker || broker);
+  const corredor = adaptador(destino);
+
+  if (orden.instrumentType === 'EQUITY' && orden.side === 'sell') await validarTenencia(orden, destino);
+  if (orden.side === 'buy' || orden.strategy === 'COVERED_STOCK') await validarBuyingPower(orden, destino);
+
+  const aceptada = await corredor.placeOrder({ ...orden, dbTarget: orderPayload.dbTarget, database: orderPayload.database });
+  return {
+    message: `Orden enviada a ${destino}: el broker la aceptó con el identificador ${aceptada.id}. `
+      + (aceptada.filledQty > 0 ? `Cantidad ejecutada reportada: ${aceptada.filledQty}.` : 'El llenado se consulta en las órdenes del broker.'),
+    order: {
+      broker: destino,
+      id: aceptada.id,
+      clientOrderId: aceptada.clientOrderId ?? null,
+      symbol: orden.symbol,
+      instrumentType: orden.instrumentType,
+      optionType: orden.option?.optionType ?? null,
+      strikePrice: orden.option?.strike ?? null,
+      expirationDate: orden.option?.expiration ?? null,
+      contractSymbol: orden.option?.contractSymbol ?? null,
+      strategy: orden.strategy,
+      qty: orden.qty,
+      side: orden.side,
+      type: orden.type,
+      timeInForce: orden.timeInForce,
+      limitPrice: orden.limitPrice,
+      status: aceptada.status ?? null,
+      filledQty: aceptada.filledQty ?? null,
+      createdAt: aceptada.createdAt ?? null,
+      source: aceptada.source ?? null,
+      details: aceptada.details ?? null,
+    },
   };
 };
 
-/**
- * Consulta de posiciones abiertas en el broker seleccionado
- */
-export const getBrokerPositions = async (broker = 'WEBULL') => {
-  const targetBroker = (broker || config.DEFAULT_BROKER || 'WEBULL').toUpperCase();
-
-  if (targetBroker === 'WEBULL') {
-    return await WebullService.getWebullPositions();
-  }
-
-  if (targetBroker === 'IBKR') {
-    return await IBKRService.getIBKRPositions();
-  }
-
-  // Flujo Alpaca
-  if (isAlpacaConfigured()) {
-    try {
-      const resp = await axios.get(`${config.ALPACA_BASE_URL}/v2/positions`, {
-        headers: getAlpacaHeaders(),
-        timeout: 5000,
-      });
-      return resp.data.map((pos) => ({
-        broker: 'ALPACA',
-        assetId: pos.asset_id,
-        symbol: pos.symbol,
-        qty: Number(pos.qty),
-        side: pos.side,
-        avgEntryPrice: Number(pos.avg_entry_price),
-        currentPrice: Number(pos.current_price),
-        marketValue: Number(pos.market_value),
-        costBasis: Number(pos.cost_basis),
-        unrealizedPL: Number(pos.unrealized_pl),
-        unrealizedPLPercent: Number((Number(pos.unrealized_plpc) * 100).toFixed(2)),
-        changeToday: Number((Number(pos.change_today) * 100).toFixed(2)),
-        assetClass: pos.asset_class,
-      }));
-    } catch (error) {
-      console.warn(`[Broker Alpaca Positions] Error: ${error.message}`);
-    }
-  }
-  return [];
-};
-
-/**
- * Consulta de órdenes del broker seleccionado
- */
-export const getBrokerOrders = async (status = 'all', broker = 'WEBULL') => {
-  const targetBroker = (broker || config.DEFAULT_BROKER || 'WEBULL').toUpperCase();
-
-  if (targetBroker === 'WEBULL') {
-    return await WebullService.getWebullOrders(status);
-  }
-
-  if (targetBroker === 'IBKR') {
-    return await IBKRService.getIBKROrders(status);
-  }
-
-  // Flujo Alpaca
-  if (isAlpacaConfigured()) {
-    try {
-      const resp = await axios.get(`${config.ALPACA_BASE_URL}/v2/orders?status=${status}&limit=20`, {
-        headers: getAlpacaHeaders(),
-        timeout: 5000,
-      });
-      return resp.data.map((o) => ({
-        broker: 'ALPACA',
-        id: o.id,
-        clientOrderId: o.client_order_id,
-        symbol: o.symbol,
-        qty: Number(o.qty),
-        side: o.side,
-        type: o.type,
-        timeInForce: o.time_in_force,
-        limitPrice: o.limit_price ? Number(o.limit_price) : null,
-        filledQty: Number(o.filled_qty || 0),
-        status: o.status,
-        assetClass: o.asset_class,
-        createdAt: o.created_at,
-        filledAt: o.filled_at,
-      }));
-    } catch (error) {
-      console.warn(`[Broker Alpaca Orders] Error: ${error.message}`);
-    }
-  }
-  return [];
-};
-
-/**
- * Emisión y ejecución de orden bursátil al broker seleccionado
- */
-export const createBrokerOrder = async (orderPayload, broker = 'WEBULL') => {
-  const targetBroker = (orderPayload.broker || broker || config.DEFAULT_BROKER || 'WEBULL').toUpperCase();
-  const targetSymbol = (orderPayload.contractSymbol || orderPayload.symbol || '').toUpperCase();
-  const { qty = 1, side = 'buy', type = 'limit', limit_price, limitPrice, price, time_in_force = 'day', timeInForce = 'day' } = orderPayload;
-  const effectiveLimitPrice = limit_price !== undefined ? limit_price : (limitPrice !== undefined ? limitPrice : price);
-
-  if (!targetSymbol) {
-    throw boom.badRequest('El campo symbol o contractSymbol es obligatorio para emitir la orden al broker.');
-  }
-
-  // 1. Salvaguarda institucional de venta: validar que el usuario tenga acciones en cartera (anti short-selling)
-  if (orderPayload.instrumentType === 'EQUITY' && String(side).toLowerCase() === 'sell') {
-    try {
-      const positions = await getBrokerPositions(targetBroker);
-      const posList = Array.isArray(positions) ? positions : (positions?.positions || []);
-      const matchingPositions = posList.filter((p) => (p.symbol || p.assetId || '').toUpperCase() === targetSymbol.toUpperCase());
-      const owned = matchingPositions.reduce((acc, p) => acc + Number(p.qty || 0), 0);
-      if (owned <= 0) {
-        throw boom.badRequest(`Venta rechazada: No posees acciones de ${targetSymbol} en tu portafolio de ${targetBroker} (Posición: 0 acciones). Venta corta no permitida.`);
-      }
-      if (Number(qty) > owned) {
-        throw boom.badRequest(`Venta rechazada: Intentas vender ${qty} acciones de ${targetSymbol}, pero solo tienes ${owned} acciones disponibles en ${targetBroker}.`);
-      }
-    } catch (e) {
-      if (e.isBoom) throw e;
-    }
-  }
-
-  // 2. Salvaguarda institucional de compra: validar Buying Power disponible en el broker
-  if (String(side).toLowerCase() === 'buy') {
-    try {
-      const acc = await getBrokerAccount(targetBroker);
-      const buyingPower = Number(acc?.buyingPower ?? -1);
-      if (buyingPower >= 0) {
-        let estimatedCost = 0;
-        if (orderPayload.instrumentType === 'OPTION') {
-          estimatedCost = Number(qty) * Number(effectiveLimitPrice || 0) * 100;
-        } else {
-          estimatedCost = Number(qty) * Number(effectiveLimitPrice || 0);
-        }
-        if (estimatedCost > 0 && estimatedCost > buyingPower) {
-          throw boom.badRequest(
-            `Poder de compra insuficiente en ${targetBroker}: La orden de compra de ${qty}x ${targetSymbol} requiere un capital estimado de $${estimatedCost.toFixed(2)} USD, pero tu cuenta solo dispone de $${buyingPower.toFixed(2)} USD de Buying Power disponible.`
-          );
-        }
-      }
-    } catch (e) {
-      if (e.isBoom) throw e;
-    }
-  }
-
-  if (targetBroker === 'WEBULL') {
-    return await WebullService.createWebullOrder(orderPayload);
-  }
-
-  if (targetBroker === 'IBKR') {
-    return await IBKRService.createIBKROrder(orderPayload);
-  }
-
-  // Flujo Alpaca
-
-  if (isAlpacaConfigured()) {
-    try {
-      const body = {
-        symbol: targetSymbol,
-        qty: Number(qty),
-        side: side.toLowerCase(),
-        type: type.toLowerCase(),
-        time_in_force: (time_in_force || timeInForce).toLowerCase(),
-      };
-
-      if (body.type === 'limit' && effectiveLimitPrice) {
-        body.limit_price = String(effectiveLimitPrice);
-      }
-
-      const resp = await axios.post(`${config.ALPACA_BASE_URL}/v2/orders`, body, {
-        headers: getAlpacaHeaders(),
-        timeout: 7000,
-      });
-
-      return {
-        message: `Orden bursátil emitida y validada exitosamente en Alpaca Markets.`,
-        order: {
-          broker: 'ALPACA',
-          id: resp.data.id,
-          clientOrderId: resp.data.client_order_id,
-          symbol: resp.data.symbol,
-          qty: Number(resp.data.qty),
-          side: resp.data.side,
-          type: resp.data.type,
-          limitPrice: resp.data.limit_price ? Number(resp.data.limit_price) : null,
-          status: resp.data.status,
-          assetClass: resp.data.asset_class,
-          createdAt: resp.data.created_at,
-          source: 'Alpaca Live Trading Engine',
-        },
-      };
-    } catch (error) {
-      const alpacaError = error.response?.data?.message || error.message;
-      console.warn(`[Broker Alpaca Error al emitir orden (${targetSymbol})]: ${alpacaError}`);
-      throw boom.badRequest(`Error al emitir orden en Alpaca Markets: ${alpacaError}`);
-    }
-  }
-
-  throw boom.serverUnavailable('Alpaca Markets no está configurado para emitir órdenes en tiempo real.');
-};
-
-/**
- * Cancelación de orden bursátil en el broker seleccionado
- */
 export const cancelBrokerOrder = async (orderId, broker = 'WEBULL') => {
-  const targetBroker = (broker || config.DEFAULT_BROKER || 'WEBULL').toUpperCase();
-
-  if (targetBroker === 'WEBULL') {
-    return await WebullService.cancelWebullOrder(orderId);
-  }
-
-  if (targetBroker === 'IBKR') {
-    return await IBKRService.cancelIBKROrder(orderId);
-  }
-
-  // Flujo Alpaca
-  if (isAlpacaConfigured()) {
-    try {
-      await axios.delete(`${config.ALPACA_BASE_URL}/v2/orders/${orderId}`, {
-        headers: getAlpacaHeaders(),
-        timeout: 5000,
-      });
-      return { message: `Orden ${orderId} cancelada exitosamente en Alpaca.` };
-    } catch (error) {
-      const alpacaMsg = error.response?.data?.message || error.message;
-      throw boom.badRequest(`Error al cancelar orden en Alpaca: ${alpacaMsg}`);
-    }
-  }
-
-  throw boom.serverUnavailable('Alpaca Markets no está configurado para cancelar órdenes.');
+  if (!String(orderId ?? '').trim()) throw boom.badRequest('Indica el identificador de la orden a cancelar.');
+  return adaptador(broker).cancel(String(orderId).trim());
 };
 
 /**
- * Sincronización de precio spot del activo subyacente en la base de datos (MongoDB o Supabase)
- * utilizando la cotización en tiempo real del broker activo.
+ * Cadena de opciones real, la misma para los tres brokers: contratos listados de Alpaca con cotizaciones de Webull OpenAPI.
+ * Con `expirationDate` se devuelven solo los contratos de ese vencimiento. Sin contratos cotizados responde 503.
  */
+export const getBrokerOptionsChain = async (symbol, expirationDate, broker = 'WEBULL', { ahora } = {}) => {
+  const destino = elegirBroker(broker);
+  if (!ADAPTADORES[destino]) throw boom.badRequest('Selecciona WEBULL, ALPACA o IBKR.');
+  const { simbolo, spot, cadena } = await obtenerCadenaCobertura(symbol, { horizonteDias: horizonteHasta(expirationDate, ahora), ahora });
+  const contratos = expirationDate ? cadena.contracts.filter(c => c.expiration === String(expirationDate).slice(0, 10)) : cadena.contracts;
+  if (!contratos.length) {
+    throw boom.serverUnavailable(`No hay contratos cotizados de ${simbolo} con vencimiento ${expirationDate}; vencimientos cotizados: ${[...new Set(cadena.contracts.map(c => c.expiration))].join(', ')}.`);
+  }
+  const publicos = contratos.map(contratoPublico);
+  return {
+    broker: destino,
+    symbol: simbolo,
+    spotPrice: spot.price,
+    spotTime: Number.isFinite(spot.at) ? new Date(spot.at).toISOString() : null,
+    expirationDate: expirationDate ? String(expirationDate).slice(0, 10) : null,
+    expirations: [...new Set(publicos.map(c => c.expirationDate))],
+    source: FUENTE_CADENA,
+    contractsCount: publicos.length,
+    calls: publicos.filter(c => c.type === 'CALL'),
+    puts: publicos.filter(c => c.type === 'PUT'),
+  };
+};
+
 export const syncUnderlyingFromBroker = async (symbol, dbTarget = 'mongodb', broker = 'WEBULL') => {
   const targetBroker = (broker || config.DEFAULT_BROKER || 'WEBULL').toUpperCase();
   const quote = await getBrokerQuote(symbol, targetBroker);

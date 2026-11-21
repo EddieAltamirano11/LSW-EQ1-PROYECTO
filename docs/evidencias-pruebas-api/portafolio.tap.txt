@@ -1,26 +1,24 @@
 TAP version 13
 # ⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715
-# [Broker Alpaca Account] Error: Información interna del proveedor
-# [Broker Alpaca Positions] Error: Información interna del proveedor
 # Subtest: Alpaca distingue cero, cartera vacía, tiempo de espera y datos ilegibles
 ok 1 - Alpaca distingue cero, cartera vacía, tiempo de espera y datos ilegibles
   ---
-  duration_ms: 2.523103
+  duration_ms: 2.181819
   ...
 # Subtest: Webull utiliza los datos confirmados del puente y el poder de compra en la moneda de cuenta
 ok 2 - Webull utiliza los datos confirmados del puente y el poder de compra en la moneda de cuenta
   ---
-  duration_ms: 1.988361
+  duration_ms: 2.054716
   ...
 # Subtest: IBKR conserva los contratos individuales y rechaza arreglos de respaldo
 ok 3 - IBKR conserva los contratos individuales y rechaza arreglos de respaldo
   ---
-  duration_ms: 1.732155
+  duration_ms: 1.587287
   ...
 # Subtest: El servicio distingue errores de formato del puente y un proceso sin respuesta
 ok 4 - El servicio distingue errores de formato del puente y un proceso sin respuesta
   ---
-  duration_ms: 0.86315
+  duration_ms: 0.804813
   ...
 # [API Error Detail]: Error: Se requiere una sesión válida para consultar el portafolio.
 #     at resolverCorredorConfirmado (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/broker.controller.js:11:35)
@@ -46,7 +44,7 @@ ok 4 - El servicio distingue errores de formato del puente y un proceso sin resp
 #     headers: {}
 #   }
 # }
-# GET /api/v2/broker/account?strict=true 401 2.821 ms - 225
+# GET /api/v2/broker/account?strict=true 401 2.731 ms - 225
 # [API Error Detail]: Error: Token de autorización inválido o expirado.
 #     at authMiddleware (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/middlewares/auth.middleware.js:18:15)
 #     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
@@ -71,7 +69,7 @@ ok 4 - El servicio distingue errores de formato del puente y un proceso sin resp
 #     headers: {}
 #   }
 # }
-# GET /api/v1/broker/positions?strict=true 401 0.623 ms - 210
+# GET /api/v1/broker/positions?strict=true 401 0.537 ms - 210
 # [API Error Detail]: Error: Selecciona WEBULL, ALPACA o IBKR con x-broker-selection.
 #     at resolverCorredorConfirmado (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/broker.controller.js:14:16)
 #     at getAccount (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/broker.controller.js:23:24)
@@ -96,7 +94,7 @@ ok 4 - El servicio distingue errores de formato del puente y un proceso sin resp
 #     headers: {}
 #   }
 # }
-# GET /api/v2/broker/account?strict=true&broker=ALPACA 400 1.521 ms - 233
+# GET /api/v2/broker/account?strict=true&broker=ALPACA 400 1.278 ms - 233
 # [API Error Detail]: Error: Selecciona WEBULL, ALPACA o IBKR con x-broker-selection.
 #     at resolverCorredorConfirmado (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/broker.controller.js:14:16)
 #     at getPositions (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/broker.controller.js:64:24)
@@ -121,9 +119,9 @@ ok 4 - El servicio distingue errores de formato del puente y un proceso sin resp
 #     headers: {}
 #   }
 # }
-# GET /api/v1/broker/positions?strict=true 400 0.898 ms - 221
-# GET /api/v2/broker/account?strict=true&broker=IBKR 200 0.877 ms - 132
-# GET /api/v1/broker/positions?strict=true 200 0.683 ms - 34
+# GET /api/v1/broker/positions?strict=true 400 0.916 ms - 221
+# GET /api/v2/broker/account?strict=true&broker=IBKR 200 0.764 ms - 132
+# GET /api/v1/broker/positions?strict=true 200 0.627 ms - 34
 # [API Error Detail]: Error: El broker devolvió datos que no se pueden interpretar.
 #     at consultarPosicionesConfirmadas (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/services/portafolio.service.js:69:41)
 #     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
@@ -141,6 +139,7 @@ ok 4 - El servicio distingue errores de formato del puente y un proceso sin resp
 #     headers: {}
 #   }
 # }
+# GET /api/v1/broker/positions?strict=true 502 0.703 ms - 220
 # [API Error Detail]: Error: No se pudo consultar el broker seleccionado.
 #     at consultarBrokerConfirmado (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/services/portafolio.service.js:28:18)
 #     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
@@ -159,12 +158,12 @@ ok 4 - El servicio distingue errores de formato del puente y un proceso sin resp
 #     headers: {}
 #   }
 # }
-# [Broker Alpaca Account] Error: detalle privado del proveedor
-# GET /api/v1/broker/positions?strict=true 502 0.984 ms - 220
-# GET /api/v2/broker/account?strict=true 503 0.877 ms - 215
-# [API Error Detail]: Error: Error al consultar cuenta de Alpaca Markets: detalle privado del proveedor
-#     at Module.getBrokerAccount (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/services/broker.service.js:47:18)
+# GET /api/v2/broker/account?strict=true 503 0.746 ms - 215
+# [API Error Detail]: Error: Alpaca Markets no respondió correctamente: detalle privado del proveedor
+#     at errorDeBroker (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/services/brokerRespuestas.js:18:15)
+#     at Object.account (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/services/broker.service.js:48:13)
 #     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+#     at async Module.getBrokerAccount (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/services/broker.service.js:204:18)
 #     at async getAccount (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/broker.controller.js:28:17) {
 #   data: null,
 #   isBoom: true,
@@ -174,16 +173,16 @@ ok 4 - El servicio distingue errores de formato del puente y un proceso sin resp
 #     payload: {
 #       statusCode: 503,
 #       error: 'Service Unavailable',
-#       message: 'Error al consultar cuenta de Alpaca Markets: detalle privado del proveedor'
+#       message: 'Alpaca Markets no respondió correctamente: detalle privado del proveedor'
 #     },
 #     headers: {}
 #   }
 # }
-# GET /api/v2/broker/account?broker=ALPACA 503 1.034 ms - 247
+# GET /api/v2/broker/account?broker=ALPACA 503 0.975 ms - 246
 # Subtest: Las rutas de cuenta y posiciones exponen el modo estricto en v1 y v2
 ok 5 - Las rutas de cuenta y posiciones exponen el modo estricto en v1 y v2
   ---
-  duration_ms: 99.305005
+  duration_ms: 82.864424
   ...
 1..5
 # tests 5
@@ -193,4 +192,4 @@ ok 5 - Las rutas de cuenta y posiciones exponen el modo estricto en v1 y v2
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 374.654168
+# duration_ms 369.581159

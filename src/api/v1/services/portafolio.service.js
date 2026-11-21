@@ -2,7 +2,7 @@ import boom from '@hapi/boom';
 import config from '../../../config/config.js';
 import { isAlpacaConfigured } from '../../../config/broker.config.js';
 import { getAlpacaAccount, getAlpacaPositions } from './alpaca.service.js';
-import { runBridge as ejecutarPuenteWebull } from './webull.service.js';
+import { contratoDePosicionWebull, runBridge as ejecutarPuenteWebull } from './webull.service.js';
 import { runBridge as ejecutarPuenteIbkr } from './ibkr.service.js';
 
 const mensajeNoDisponible = 'No se pudo consultar el broker seleccionado.';
@@ -80,6 +80,8 @@ export async function consultarPosicionesConfirmadas(corredor) {
     const lado = ['long', 'short'].includes(ladoProveedor) ? ladoProveedor : (
       cantidad < 0 ? 'short' : corredor === 'IBKR' ? 'long' : null
     );
-    return { assetId: idInstrumento, symbol: simbolo, qty: cantidad, side: lado };
+    const posicionConfirmada = { assetId: idInstrumento, symbol: simbolo, qty: cantidad, side: lado };
+    // Webull agrupa por estrategia: se agregan el tipo de contrato y las patas que informa, para no leer contratos como acciones.
+    return corredor === 'WEBULL' ? { ...posicionConfirmada, ...contratoDePosicionWebull(posicion) } : posicionConfirmada;
   }).filter((posicion) => posicion.qty !== 0);
 }

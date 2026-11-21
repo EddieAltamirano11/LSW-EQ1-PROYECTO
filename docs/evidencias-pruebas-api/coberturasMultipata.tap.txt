@@ -1,0 +1,71 @@
+TAP version 13
+# ⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715
+# Subtest: Protective Put: si el broker rechaza el Put no se envían acciones ni se guarda (400)
+ok 1 - Protective Put: si el broker rechaza el Put no se envían acciones ni se guarda (400)
+  ---
+  duration_ms: 1.862458
+  ...
+# Subtest: Protective Put: Put aceptado y acciones rechazadas cancela el Put; si se confirma, 400 sin guardar
+ok 2 - Protective Put: Put aceptado y acciones rechazadas cancela el Put; si se confirma, 400 sin guardar
+  ---
+  duration_ms: 0.290757
+  ...
+# Subtest: Protective Put: con la cancelación rechazada se guarda PARTIALLY_EXECUTED y responde 409
+ok 3 - Protective Put: con la cancelación rechazada se guarda PARTIALLY_EXECUTED y responde 409
+  ---
+  duration_ms: 0.321165
+  ...
+# Subtest: Auto-Collar: una pata ya ejecutada no se cierra y la estrategia queda PARTIALLY_EXECUTED (409)
+ok 4 - Auto-Collar: una pata ya ejecutada no se cierra y la estrategia queda PARTIALLY_EXECUTED (409)
+  ---
+  duration_ms: 0.502052
+  ...
+# Subtest: una orden ausente del libro se informa como no verificada, sin estado inventado
+ok 5 - una orden ausente del libro se informa como no verificada, sin estado inventado
+  ---
+  duration_ms: 0.218862
+  ...
+# Subtest: Auto-Collar: sharesCount que no es múltiplo de 100 responde 400 antes de cotizar
+ok 6 - Auto-Collar: sharesCount que no es múltiplo de 100 responde 400 antes de cotizar
+  ---
+  duration_ms: 0.110797
+  ...
+# Subtest: Protective Put: usa el strike listado más cercano menor o igual y el ask observado, no la prima del cliente
+ok 7 - Protective Put: usa el strike listado más cercano menor o igual y el ask observado, no la prima del cliente
+  ---
+  duration_ms: 0.280759
+  ...
+# Subtest: Auto-Collar: usa tal cual el collar del ranking con cotizaciones nuevas y responde 400 si dejó de ser apto
+ok 8 - Auto-Collar: usa tal cual el collar del ranking con cotizaciones nuevas y responde 400 si dejó de ser apto
+  ---
+  duration_ms: 0.37203
+  ...
+# Subtest: Auto-Collar sin resultado del Core 004 calcula la selección sobre la cadena real
+ok 9 - Auto-Collar sin resultado del Core 004 calcula la selección sobre la cadena real
+  ---
+  duration_ms: 0.53341
+  ...
+# Subtest: Auto-Collar en Webull: primero el Put y después el COVERED_STOCK con límite neto (acciones − prima del Call)
+ok 10 - Auto-Collar en Webull: primero el Put y después el COVERED_STOCK con límite neto (acciones − prima del Call)
+  ---
+  duration_ms: 0.326334
+  ...
+# Subtest: el collar manual exige las primas de ambas patas
+ok 11 - el collar manual exige las primas de ambas patas
+  ---
+  duration_ms: 0.224293
+  ...
+# Subtest: un portfolioId que Supabase no puede guardar se rechaza antes de emitir órdenes
+ok 12 - un portfolioId que Supabase no puede guardar se rechaza antes de emitir órdenes
+  ---
+  duration_ms: 0.486494
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 231.739036

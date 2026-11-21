@@ -102,7 +102,8 @@ export const cancelOrder = async (req, res, next) => {
     const { id } = req.params;
     const broker = resolveBroker(req);
     const result = await BrokerService.cancelBrokerOrder(id, broker);
-    res.status(200).json(result);
+    // 202: el broker recibió la cancelación pero todavía no la confirma.
+    res.status(result?.pending ? 202 : 200).json(result);
   } catch (error) {
     next(error);
   }

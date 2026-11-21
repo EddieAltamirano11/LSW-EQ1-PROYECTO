@@ -1,0 +1,61 @@
+TAP version 13
+# ⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715
+# Subtest: una orden incompleta se rechaza con 400 antes de contactar al broker
+ok 1 - una orden incompleta se rechaza con 400 antes de contactar al broker
+  ---
+  duration_ms: 2.039283
+  ...
+# Subtest: una compra de mercado se envía sin precio límite y valida el Buying Power con el ask observado
+ok 2 - una compra de mercado se envía sin precio límite y valida el Buying Power con el ask observado
+  ---
+  duration_ms: 2.577371
+  ...
+# Subtest: sin cuenta legible no se emite la compra
+ok 3 - sin cuenta legible no se emite la compra
+  ---
+  duration_ms: 0.446996
+  ...
+# Subtest: la venta de acciones cuenta solo acciones y responde 503 si no puede leer posiciones
+ok 4 - la venta de acciones cuenta solo acciones y responde 503 si no puede leer posiciones
+  ---
+  duration_ms: 2.28371
+  ...
+# Subtest: la emisión responde con el identificador y los datos del broker, sin inventar llenados
+ok 5 - la emisión responde con el identificador y los datos del broker, sin inventar llenados
+  ---
+  duration_ms: 3.3676
+  ...
+# Subtest: Alpaca: estado y llenado del broker, rechazo 400, respuesta sin id 502 y sin conexión 503
+ok 6 - Alpaca: estado y llenado del broker, rechazo 400, respuesta sin id 502 y sin conexión 503
+  ---
+  duration_ms: 0.600801
+  ...
+# Subtest: la cancelación solo es exitosa si el broker la confirma
+ok 7 - la cancelación solo es exitosa si el broker la confirma
+  ---
+  duration_ms: 1.32152
+  ...
+# Subtest: IBKR distingue la cancelación confirmada de la que TWS aún procesa (PendingCancel)
+ok 8 - IBKR distingue la cancelación confirmada de la que TWS aún procesa (PendingCancel)
+  ---
+  duration_ms: 1.0381
+  ...
+# Subtest: las lecturas no inventan saldos, precios ni listas vacías
+ok 9 - las lecturas no inventan saldos, precios ni listas vacías
+  ---
+  duration_ms: 1.628731
+  ...
+# Subtest: IBKR informa el tipo de instrumento y no usa el costo promedio como precio actual
+ok 10 - IBKR informa el tipo de instrumento y no usa el costo promedio como precio actual
+  ---
+  duration_ms: 0.599802
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 256.43545

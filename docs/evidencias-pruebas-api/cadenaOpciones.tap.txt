@@ -1,0 +1,41 @@
+TAP version 13
+# ⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715
+# Subtest: la cadena compartida entrega contratos listados con cotización, instante y retraso, y descarta retrasos mayores a 15 minutos
+ok 1 - la cadena compartida entrega contratos listados con cotización, instante y retraso, y descarta retrasos mayores a 15 minutos
+  ---
+  duration_ms: 3.528949
+  ...
+# Subtest: la cobertura responde 503 cuando no hay contratos cotizados o el proveedor no responde
+ok 2 - la cobertura responde 503 cuando no hay contratos cotizados o el proveedor no responde
+  ---
+  duration_ms: 1.717362
+  ...
+# Subtest: GET options-chain entrega la misma cadena real en los tres brokers, sin contratos ajenos a la lista
+ok 3 - GET options-chain entrega la misma cadena real en los tres brokers, sin contratos ajenos a la lista
+  ---
+  duration_ms: 1.797724
+  ...
+# Subtest: la vista previa del Auto-Collar es el collar del Core 004 y no emite órdenes ni guarda
+ok 4 - la vista previa del Auto-Collar es el collar del Core 004 y no emite órdenes ni guarda
+  ---
+  duration_ms: 1.785577
+  ...
+# Subtest: la recomendación de Put devuelve un contrato listado con su ask, instante y fuente
+ok 5 - la recomendación de Put devuelve un contrato listado con su ask, instante y fuente
+  ---
+  duration_ms: 0.87099
+  ...
+# Subtest: la cadena excluye los contratos que Webull no cotiza en lugar de perder todo el lote
+ok 6 - la cadena excluye los contratos que Webull no cotiza en lugar de perder todo el lote
+  ---
+  duration_ms: 0.880298
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 238.032632

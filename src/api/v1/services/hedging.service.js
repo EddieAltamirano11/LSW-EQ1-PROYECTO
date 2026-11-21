@@ -6,6 +6,9 @@ import { getBrokerQuote, getBrokerOptionsChain, createBrokerOrder, getBrokerOrde
 import { randomUUID } from 'crypto';
 import config from '../../../config/config.js';
 import { assertBrokerAndDatabasesReadiness } from './preflight.service.js';
+import { coberturas } from './coberturas.service.js';
+import { time } from './observaciones.js';
+import { contratoLiquido, contratoPublico, elegirCollar, horizonteHasta, obtenerCadenaCobertura, spreadRelativo } from './cadenaOpciones.service.js';
 
 export const formatOccSymbol = (symbol, expirationDate, type, strike) => {
   const sym = String(symbol || '').toUpperCase().trim();
@@ -114,990 +117,205 @@ export const getStrategyById = async (id, dbTarget = 'mongodb') => {
 };
 
 // ESTRUCTURACIÓN Y CREACIÓN DE PROTECTIVE PUT (F2 PARTE B)
+const debeEjecutar = payload => payload.executeOrders === true || payload.executeOrders === 'true' || payload.executeOnBroker === true;
+
+// Precio del subyacente para un registro manual: el del payload o la cotización del broker; nunca el guardado en la base.
+async function precioParaRegistro(payload, broker) {
+  const indicado = Number(payload.spotPrice);
+  if (indicado > 0) return indicado;
+  const cotizacion = await getBrokerQuote(payload.symbol, broker);
+  if (!(cotizacion?.lastPrice > 0)) throw boom.serverUnavailable(`${broker} no informó el precio de ${payload.symbol}; indica spotPrice.`);
+  return cotizacion.lastPrice;
+}
+
+function primaObligatoria(valor, nombre) {
+  const prima = Number(valor);
+  if (valor === undefined || valor === null || valor === '' || !(prima >= 0)) {
+    throw boom.badRequest(`${nombre} es obligatorio y debe ser un número mayor o igual a 0; no se asignan primas predeterminadas.`);
+  }
+  return prima;
+}
+
+function cantidadDeAcciones(payload) {
+  const cantidad = Number(payload.sharesCount ?? payload.sharesQuantity ?? 100);
+  if (!Number.isInteger(cantidad) || cantidad <= 0) throw boom.badRequest('La cantidad de acciones (sharesCount) debe ser un entero mayor a 0.');
+  return cantidad;
+}
+
+// PROTECTIVE PUT: con executeOrders emite las patas con precios observados (coberturas.service); sin él registra lo indicado.
 export const createProtectivePut = async (payload, dbTarget = 'mongodb') => {
   const targetBroker = (payload.broker || config.DEFAULT_BROKER || 'WEBULL').toUpperCase();
-  if (targetBroker === 'IBKR') {
-    await assertBrokerAndDatabasesReadiness({ dbTarget, broker: 'IBKR' });
+  if (!payload.symbol) throw boom.badRequest('symbol es obligatorio.');
+  if (debeEjecutar(payload)) {
+    await assertBrokerAndDatabasesReadiness({ dbTarget, broker: targetBroker });
+    return coberturas.protectivePut({ ...payload, broker: targetBroker }, dbTarget);
   }
-  const {
-    portfolioId = 'PORT-01',
-    symbol,
-    companyName = `${symbol} Corporation`,
-    spotPrice,
-    sharesCount = 100,
-    putStrike,
-    putPremium,
-    expirationDate = '2026-12-18T00:00:00.000Z',
-    volatility = 0.22,
-  } = payload;
+  if (targetBroker === 'IBKR') await assertBrokerAndDatabasesReadiness({ dbTarget, broker: 'IBKR' });
 
-  validateFutureExpirationDate(expirationDate);
-
-  const count = Number(payload.sharesCount || payload.sharesQuantity || 100);
-  if (count <= 0) {
-    throw boom.badRequest('La cantidad de acciones (sharesCount) debe ser un número entero mayor a 0.');
-  }
-
-  let S = Number(payload.spotPrice);
-  if (!S || isNaN(S)) {
-    try {
-      const brokerQuote = await getBrokerQuote(symbol, payload.broker || 'WEBULL');
-      if (brokerQuote && brokerQuote.lastPrice) {
-        S = Number(brokerQuote.lastPrice);
-      }
-    } catch (_) {}
-  }
-  if (!S || isNaN(S)) {
-    const uRepo = getUnderlyingRepo(dbTarget);
-    const existingU = await uRepo.getBySymbol(symbol);
-    if (existingU) {
-      S = Number(existingU.spotPrice);
-    } else {
-      throw boom.badRequest(`No se encontró precio Spot para el activo ${symbol}. Proporcione spotPrice en el payload.`);
-    }
-  }
-
-  const contracts = Math.max(1, Math.ceil(count / 100));
-  const K = Number(putStrike);
-  const premium = Number(putPremium);
-
-  const timeToExpiration = calculateTimeToExpirationYears(expirationDate);
-
-  // Valuación cuantitativa F0 de la pata Put
-  const quant = calculateBlackScholes({
-    spotPrice: S,
-    strikePrice: K,
-    timeToExpirationYears: timeToExpiration,
-    volatility,
-    optionType: 'PUT',
-  });
-
-  // Métricas financieras
-  const netDebit = premium * count; // Costo del seguro
-  const breakeven = S + premium;
-  const maxLossUSD = (S - K) * count + netDebit;
-  const netDelta = Number((1.0 + quant.greeks.delta).toFixed(4));
+  const ticker = String(payload.symbol).toUpperCase();
+  const vencimiento = validateFutureExpirationDate(payload.expirationDate);
+  const count = cantidadDeAcciones(payload);
+  const K = Number(payload.putStrike);
+  if (!(K > 0)) throw boom.badRequest('putStrike es obligatorio.');
+  const premium = primaObligatoria(payload.putPremium, 'putPremium');
+  const S = await precioParaRegistro({ ...payload, symbol: ticker }, targetBroker);
+  const contracts = Math.ceil(count / 100);
 
   const strategyDoc = {
-    id: `STRAT-PP-${symbol.toUpperCase()}-${randomUUID().slice(0, 4)}`,
-    portfolioId,
-    broker: (payload.broker || config.DEFAULT_BROKER || 'WEBULL').toUpperCase(),
+    id: `STRAT-PP-${ticker}-${randomUUID().slice(0, 4)}`,
+    portfolioId: payload.portfolioId || 'PORT-01',
+    broker: targetBroker,
     strategyType: 'PROTECTIVE_PUT',
     status: 'ACTIVE',
-    underlying: {
-      symbol: symbol.toUpperCase(),
-      companyName,
-      spotPriceAtEntry: S,
-      sharesCount: count,
-    },
+    underlying: { symbol: ticker, companyName: payload.companyName || ticker, spotPriceAtEntry: S, sharesCount: count },
     legs: [
+      { legId: `LEG-${ticker}-UNDERLYING`, legRole: 'UNDERLYING', assetType: 'EQUITY', contractSymbol: null, quantity: count, entryPrice: S },
       {
-        legId: `LEG-${symbol.toUpperCase()}-STOCK`,
-        legRole: 'UNDERLYING',
-        assetType: 'EQUITY',
-        contractSymbol: null,
-        optionType: null,
-        strike: null,
-        expirationDate: null,
-        quantity: count,
-        entryPrice: S,
-        delta: 1.0,
-        gamma: 0.0,
-        theta: 0.0,
-        vega: 0.0,
-      },
-      {
-        legId: `LEG-${symbol.toUpperCase()}-PUT`,
-        legRole: 'HEDGE_FLOOR',
-        assetType: 'OPTION',
-        contractSymbol: `${symbol.toUpperCase()}261016P${String(K * 1000).padStart(8, '0')}`,
-        optionType: 'PUT',
-        strike: K,
-        expirationDate: new Date(expirationDate),
-        quantity: contracts,
-        entryPrice: premium,
-        delta: quant.greeks.delta,
-        gamma: quant.greeks.gamma,
-        theta: quant.greeks.theta,
-        vega: quant.greeks.vega,
+        legId: `LEG-${ticker}-HEDGE_FLOOR`, legRole: 'HEDGE_FLOOR', assetType: 'OPTION',
+        contractSymbol: formatOccSymbol(ticker, `${vencimiento}T00:00:00.000Z`, 'P', K),
+        optionType: 'PUT', strike: K, expirationDate: new Date(`${vencimiento}T00:00:00.000Z`), quantity: contracts, entryPrice: premium,
       },
     ],
     financialMetrics: {
-      netDebitCredit: -netDebit,
-      breakevenPrice: Number(breakeven.toFixed(2)),
+      netDebitCredit: Number((-premium * count).toFixed(2)),
+      breakevenPrice: Number((S + premium).toFixed(2)),
       floorProtectionPrice: K,
-      maxLossTotalUSD: Number(maxLossUSD.toFixed(2)),
-      netDelta,
+      maxLossTotalUSD: Number(((S - K + premium) * count).toFixed(2)),
     },
   };
-
-  // Ejecución bursátil en vivo si executeOrders es true
-  const executedOrders = [];
-  const executionErrors = [];
-  const shouldExecute = payload.executeOrders === true || payload.executeOrders === 'true' || payload.executeOnBroker === true;
-
-  if (shouldExecute) {
-    // Verificación preventiva de Buying Power en la cuenta del broker
-    try {
-      const brokerAcc = await getBrokerAccount(targetBroker);
-      const buyingPower = Number(brokerAcc?.buyingPower ?? -1);
-      if (buyingPower >= 0) {
-        let estimatedCost = 0;
-        if (payload.buyUnderlying !== false) {
-          estimatedCost += count * S;
-        }
-        estimatedCost += contracts * premium * 100;
-        if (estimatedCost > buyingPower) {
-          throw boom.badRequest(
-            `Poder de compra insuficiente en ${targetBroker}: La cobertura Protective Put requiere aprox. $${estimatedCost.toFixed(2)} USD ` +
-            `(${payload.buyUnderlying !== false ? `${count} acciones ($${(count * S).toFixed(2)}) + ` : ''}${contracts} contrato(s) Put ($${(contracts * premium * 100).toFixed(2)})), ` +
-            `pero tu cuenta solo dispone de $${buyingPower.toFixed(2)} USD de Buying Power disponible.`
-          );
-        }
-      }
-    } catch (err) {
-      if (err.isBoom) throw err;
-      console.warn(`[Protective Put] No se pudo verificar Buying Power previo: ${err.message}`);
-    }
-
-    // 1. Pata de Acciones Subyacentes (si buyUnderlying !== false)
-    if (payload.buyUnderlying !== false) {
-      try {
-        const stockOrder = await createBrokerOrder({
-          broker: targetBroker,
-          symbol: symbol.toUpperCase(),
-          instrumentType: 'EQUITY',
-          qty: count,
-          side: 'buy',
-          type: 'limit',
-          limitPrice: S,
-          timeInForce: 'day',
-        }, targetBroker);
-
-        executedOrders.push({
-          legRole: 'UNDERLYING',
-          legType: 'EQUITY',
-          action: 'BUY',
-          symbol: symbol.toUpperCase(),
-          quantity: count,
-          limitPrice: S,
-          orderId: stockOrder.order?.id || stockOrder.id,
-          status: stockOrder.order?.status || 'submitted',
-          details: stockOrder,
-        });
-      } catch (err) {
-        executionErrors.push({
-          legRole: 'UNDERLYING',
-          legType: 'EQUITY',
-          error: err.message,
-        });
-      }
-    }
-
-    // 2. Pata Put Protector
-    try {
-      const cleanExpDate = expirationDate ? new Date(expirationDate).toISOString().slice(0, 10) : '2026-12-18';
-      const occExpiration = cleanExpDate.slice(2).replace(/-/g, '');
-      const occPutSymbol = `${symbol.toUpperCase()}${occExpiration}P${String(Math.round(K * 1000)).padStart(8, '0')}`;
-      const putOrder = await createBrokerOrder({
-        broker: targetBroker,
-        symbol: symbol.toUpperCase(),
-        contractSymbol: occPutSymbol,
-        instrumentType: 'OPTION',
-        optionType: 'PUT',
-        strikePrice: K,
-        expirationDate: cleanExpDate,
-        qty: contracts,
-        side: 'buy',
-        type: 'limit',
-        limitPrice: premium,
-        timeInForce: 'day',
-      }, targetBroker);
-
-      executedOrders.push({
-        legRole: 'HEDGE_FLOOR',
-        legType: 'PUT',
-        action: 'BUY',
-        strike: K,
-        quantity: contracts,
-        limitPrice: premium,
-        orderId: putOrder.order?.id || putOrder.id,
-        status: putOrder.order?.status || 'submitted',
-        details: putOrder,
-      });
-    } catch (err) {
-      executionErrors.push({
-        legRole: 'HEDGE_FLOOR',
-        legType: 'PUT',
-        error: err.message,
-      });
-    }
-
-    // Si el broker rechazó alguna pata o falló la ejecución, abortar sin persistir en la base de datos
-    if (executionErrors.length > 0 || executedOrders.length === 0) {
-      const errMsg = executionErrors.map((e) => `[${e.legRole}]: ${e.error}`).join(' | ');
-      throw boom.badRequest(
-        `Falla de ejecución bursátil en ${targetBroker}: ${errMsg || 'El broker rechazó las órdenes de la cobertura'}. Por integridad transaccional, la estrategia no fue registrada ni persistida.`
-      );
-    }
-  }
-
-  strategyDoc.brokerExecution = {
-    broker: targetBroker,
-    executed: executedOrders.length > 0,
-    orders: executedOrders,
-    errors: executionErrors.length > 0 ? executionErrors : undefined,
-  };
-
-  const repo = getHedgingRepo(dbTarget);
-  const saved = await repo.create(strategyDoc);
-  return {
-    ...saved,
-    brokerExecution: strategyDoc.brokerExecution,
-  };
+  return getHedgingRepo(dbTarget).create(strategyDoc);
 };
 
-// ESTRUCTURACIÓN Y CREACIÓN DE ZERO-COST COLLAR SPREAD (F2 PARTE B)
+// COLLAR MANUAL (registro): exige primas explícitas de ambas patas y usa el vencimiento real en el símbolo OCC.
 export const createCollarSpread = async (payload, dbTarget = 'mongodb') => {
   const targetBroker = (payload.broker || config.DEFAULT_BROKER || 'WEBULL').toUpperCase();
-  if (targetBroker === 'IBKR') {
-    await assertBrokerAndDatabasesReadiness({ dbTarget, broker: 'IBKR' });
-  }
-  const {
-    portfolioId = 'PORT-01',
-    symbol,
-    companyName = `${symbol} Corporation`,
-    spotPrice,
-    sharesCount = 100,
-    putStrike,
-    callStrike,
-    putPremium = 6.5,
-    callPremium = 6.6,
-    expirationDate = '2026-12-18T00:00:00.000Z',
-    volatility = 0.15,
-  } = payload;
-
-  validateFutureExpirationDate(expirationDate);
-
-  const count = Number(payload.sharesCount || payload.sharesQuantity || 100);
-  if (count <= 0) {
-    throw boom.badRequest('La cantidad de acciones (sharesCount) debe ser un número entero mayor a 0.');
-  }
-
-  let S = Number(payload.spotPrice);
-  if (!S || isNaN(S)) {
-    try {
-      const brokerQuote = await getBrokerQuote(symbol, payload.broker || 'WEBULL');
-      if (brokerQuote && brokerQuote.lastPrice) {
-        S = Number(brokerQuote.lastPrice);
-      }
-    } catch (_) {}
-  }
-  if (!S || isNaN(S)) {
-    const uRepo = getUnderlyingRepo(dbTarget);
-    const existingU = await uRepo.getBySymbol(symbol);
-    if (existingU) {
-      S = Number(existingU.spotPrice);
-    } else {
-      throw boom.badRequest(`No se encontró precio Spot para el activo ${symbol}. Proporcione spotPrice en el payload.`);
-    }
-  }
-
-  const K_put = Number(putStrike);
-  const K_call = Number(callStrike);
-  const p_put = Number(putPremium);
-  const p_call = Number(callPremium);
-  const contracts = Math.max(1, Math.ceil(count / 100));
-
+  if (!payload.symbol) throw boom.badRequest('symbol es obligatorio.');
+  const ticker = String(payload.symbol).toUpperCase();
+  const p_put = primaObligatoria(payload.putPremium, 'putPremium');
+  const p_call = primaObligatoria(payload.callPremium, 'callPremium');
+  const vencimiento = validateFutureExpirationDate(payload.expirationDate);
+  const count = cantidadDeAcciones(payload);
+  const K_put = Number(payload.putStrike);
+  const K_call = Number(payload.callStrike);
+  if (!(K_put > 0) || !(K_call > 0)) throw boom.badRequest('putStrike y callStrike son obligatorios.');
+  if (targetBroker === 'IBKR') await assertBrokerAndDatabasesReadiness({ dbTarget, broker: 'IBKR' });
+  const S = await precioParaRegistro({ ...payload, symbol: ticker }, targetBroker);
   if (K_put >= S) throw boom.badRequest('El Strike del Put protector debe ser inferior al precio Spot (Out-of-the-Money).');
   if (K_call <= S) throw boom.badRequest('El Strike del Call financiador debe ser superior al precio Spot (Out-of-the-Money).');
-
-  const timeToExpiration = calculateTimeToExpirationYears(expirationDate);
-
-  // Griegas F0
-  const putQuant = calculateBlackScholes({ spotPrice: S, strikePrice: K_put, timeToExpirationYears: timeToExpiration, volatility, optionType: 'PUT' });
-  const callQuant = calculateBlackScholes({ spotPrice: S, strikePrice: K_call, timeToExpirationYears: timeToExpiration, volatility, optionType: 'CALL' });
-
-  // Flujo neto de primas por acción
+  const contracts = Math.ceil(count / 100);
   const netCreditPerShare = p_call - p_put;
-  const netDebitCreditTotal = Number((netCreditPerShare * count).toFixed(2));
-  const breakeven = Number((S - netCreditPerShare).toFixed(2));
-  const maxLossUSD = Number(((S - K_put - netCreditPerShare) * count).toFixed(2));
-  const maxProfitUSD = Number(((K_call - S + netCreditPerShare) * count).toFixed(2));
-  const netDelta = Number((1.0 + putQuant.greeks.delta - callQuant.greeks.delta).toFixed(4));
+  const fechaVencimiento = new Date(`${vencimiento}T00:00:00.000Z`);
 
   const strategyDoc = {
-    id: `STRAT-COLLAR-${symbol.toUpperCase()}-${randomUUID().slice(0, 4)}`,
-    portfolioId,
-    broker: (payload.broker || config.DEFAULT_BROKER || 'WEBULL').toUpperCase(),
+    id: `STRAT-COLLAR-${ticker}-${randomUUID().slice(0, 4)}`,
+    portfolioId: payload.portfolioId || 'PORT-01',
+    broker: targetBroker,
     strategyType: 'COLLAR',
     status: 'ACTIVE',
-    underlying: {
-      symbol: symbol.toUpperCase(),
-      companyName,
-      spotPriceAtEntry: S,
-      sharesCount: count,
-    },
+    underlying: { symbol: ticker, companyName: payload.companyName || ticker, spotPriceAtEntry: S, sharesCount: count },
     legs: [
+      { legId: `LEG-${ticker}-UNDERLYING`, legRole: 'UNDERLYING', assetType: 'EQUITY', contractSymbol: null, brokerOrderId: payload.stockOrderId || null, quantity: count, entryPrice: S },
       {
-        legId: `LEG-${symbol.toUpperCase()}-STOCK`,
-        legRole: 'UNDERLYING',
-        assetType: 'EQUITY',
-        contractSymbol: null,
-        brokerOrderId: payload.stockOrderId || null,
-        quantity: count,
-        entryPrice: S,
-        delta: 1.0,
-        gamma: 0.0,
-        theta: 0.0,
-        vega: 0.0,
+        legId: `LEG-${ticker}-HEDGE_FLOOR`, legRole: 'HEDGE_FLOOR', assetType: 'OPTION', contractSymbol: formatOccSymbol(ticker, fechaVencimiento.toISOString(), 'P', K_put),
+        brokerOrderId: payload.putOrderId || null, optionType: 'PUT', strike: K_put, expirationDate: fechaVencimiento, quantity: contracts, entryPrice: p_put,
       },
       {
-        legId: `LEG-${symbol.toUpperCase()}-PUT`,
-        legRole: 'HEDGE_FLOOR',
-        assetType: 'OPTION',
-        contractSymbol: `${symbol.toUpperCase()}261016P${String(K_put * 1000).padStart(8, '0')}`,
-        brokerOrderId: payload.putOrderId || null,
-        optionType: 'PUT',
-        strike: K_put,
-        expirationDate: new Date(expirationDate),
-        quantity: contracts,
-        entryPrice: p_put,
-        delta: putQuant.greeks.delta,
-        gamma: putQuant.greeks.gamma,
-        theta: putQuant.greeks.theta,
-        vega: putQuant.greeks.vega,
-      },
-      {
-        legId: `LEG-${symbol.toUpperCase()}-CALL`,
-        legRole: 'FINANCE_CEILING',
-        assetType: 'OPTION',
-        contractSymbol: `${symbol.toUpperCase()}261016C${String(K_call * 1000).padStart(8, '0')}`,
-        brokerOrderId: payload.callOrderId || null,
-        optionType: 'CALL',
-        strike: K_call,
-        expirationDate: new Date(expirationDate),
-        quantity: contracts,
-        entryPrice: p_call,
-        delta: callQuant.greeks.delta,
-        gamma: callQuant.greeks.gamma,
-        theta: callQuant.greeks.theta,
-        vega: callQuant.greeks.vega,
+        legId: `LEG-${ticker}-FINANCE_CEILING`, legRole: 'FINANCE_CEILING', assetType: 'OPTION', contractSymbol: formatOccSymbol(ticker, fechaVencimiento.toISOString(), 'C', K_call),
+        brokerOrderId: payload.callOrderId || null, optionType: 'CALL', strike: K_call, expirationDate: fechaVencimiento, quantity: contracts, entryPrice: p_call,
       },
     ],
     financialMetrics: {
-      netDebitCredit: netDebitCreditTotal,
-      breakevenPrice: breakeven,
+      netDebitCredit: Number((netCreditPerShare * count).toFixed(2)),
+      breakevenPrice: Number((S - netCreditPerShare).toFixed(2)),
       floorProtectionPrice: K_put,
-      maxLossTotalUSD: maxLossUSD,
-      maxProfitTotalUSD: maxProfitUSD,
-      netDelta,
+      maxLossTotalUSD: Number(((S - K_put - netCreditPerShare) * count).toFixed(2)),
+      maxProfitTotalUSD: Number(((K_call - S + netCreditPerShare) * count).toFixed(2)),
     },
   };
-
-  const repo = getHedgingRepo(dbTarget);
-  return await repo.create(strategyDoc);
+  return getHedgingRepo(dbTarget).create(strategyDoc);
 };
 
 // ============================================================================
 // CALIBRACIÓN Y RECOMENDACIÓN AUTOMÁTICA DE ZERO-COST COLLAR CON MOTOR F0
 // ============================================================================
+// Vista previa del collar con la misma regla del Core 004 sobre la cadena real: contratos, cotizaciones y métricas.
+export function vistaPreviaCollar(ticker, spot, put, call) {
+  const acciones = put.multiplier;
+  const costoNeto = put.ask - call.bid;
+  const base = spot.price + costoNeto;
+  const redondear = valor => Number(valor.toFixed(2));
+  const pata = opcion => ({ ...contratoPublico(opcion), spreadPct: redondear(spreadRelativo(opcion) * 100) });
+  return {
+    symbol: ticker,
+    underlying: { price: spot.price, quoteTime: Number.isFinite(spot.at) ? new Date(spot.at).toISOString() : null, source: 'Alpaca Market Data IEX (cierre de 1 minuto)' },
+    put: pata(put),
+    call: pata(call),
+    metrics: {
+      shares: acciones,
+      netPremiumPerShare: redondear(costoNeto),
+      netCost: costoNeto > 0 ? 'DEBIT' : costoNeto < 0 ? 'CREDIT' : 'ZERO',
+      maxLoss: redondear((base - put.strike) * acciones),
+      maxProfit: redondear((call.strike - base) * acciones),
+      breakEven: redondear(base),
+    },
+    rule: 'Selección del Core 004: Put y Call OTM líquidos del mismo vencimiento, cercanos al 95 % y 105 % del precio, con el Put al ask y el Call al bid.',
+  };
+}
+
 export const autoCalibrateAndCreateCollar = async (params, dbTarget = 'mongodb') => {
   const {
     symbol,
     sharesCount = 10,
     portfolioId = 'PORT-01',
-    expirationDate = '2026-12-18',
+    expirationDate,
     autoPersist = true,
     broker = config.DEFAULT_BROKER || 'WEBULL',
     executeOrders = true,
     buyUnderlying = true,
+    ahora,
   } = params;
 
   if (!symbol) {
     throw boom.badRequest('El símbolo del activo (symbol) es requerido para la calibración automática.');
   }
 
-  const cleanExpDate = validateFutureExpirationDate(expirationDate);
   const ticker = symbol.toUpperCase();
   const targetBroker = (broker || config.DEFAULT_BROKER || 'WEBULL').toUpperCase();
+  const shouldExecute = autoPersist && (executeOrders === true || executeOrders === 'true' || params.executeOnBroker === true);
 
-  // 0. Pre-vuelo estricto de consistencia transaccional:
-  // Valida BDs y, si el broker es IBKR, verifica que el túnel TCP esté activo antes de calcular o persistir nada
-  if (targetBroker === 'IBKR' || autoPersist) {
+  // Ejecución: Put primero, precios observados al ejecutar y compensación de patas (coberturas.service).
+  if (shouldExecute) {
     await assertBrokerAndDatabasesReadiness({ dbTarget, broker: targetBroker });
+    return coberturas.autoCollar({ ...params, symbol: ticker, broker: targetBroker }, dbTarget);
   }
 
-  // 1. Obtener precio spot del broker
-  const quote = await getBrokerQuote(ticker, broker);
-  const spotPrice = quote.lastPrice;
-
-  // 2. Obtener la cadena de opciones disponible
-  const chain = await getBrokerOptionsChain(ticker, expirationDate, broker);
-
-  // 3. Algoritmo Cuantitativo de Selección:
-  // Filtramos Puts OTM (Strike < Spot) y Calls OTM (Strike > Spot)
-  const candidatePuts = (chain.puts || []).filter((p) => p.strike < spotPrice);
-  const candidateCalls = (chain.calls || []).filter((c) => c.strike > spotPrice);
-
-  if (candidatePuts.length === 0 || candidateCalls.length === 0) {
-    throw boom.badRequest(`No se encontraron contratos OTM adecuados para ${ticker} en la fecha ${expirationDate}.`);
+  // 1. Cadena real (contratos listados + cotizaciones observadas) y selección del Core 004, la misma del ranking.
+  const { spot, cadena } = await obtenerCadenaCobertura(ticker, { horizonteDias: horizonteHasta(expirationDate, ahora), ahora });
+  const par = elegirCollar(spot, cadena);
+  if (!par) {
+    throw boom.badRequest(`No hay un Put y un Call de ${ticker} con liquidez y costo base verificables en la cadena real; no se arma el collar.`);
   }
-
-  // Buscamos el par que minimice el flujo neto (Costo Cero) y balancee la simetría del deducible
-  let bestPair = null;
-  let bestScore = Infinity;
-  const evaluatedPairs = [];
-
-  for (const put of candidatePuts) {
-    const putPrem = Number(put.premium || put.lastPrice || put.ask || 0);
-    for (const call of candidateCalls) {
-      const callPrem = Number(call.premium || call.lastPrice || call.bid || 0);
-      const netPremiumDiff = Math.abs(callPrem - putPrem);
-      const putDistancePct = (spotPrice - put.strike) / spotPrice;
-      const callDistancePct = (call.strike - spotPrice) / spotPrice;
-      
-      const symmetryPenalty = Math.abs(putDistancePct - callDistancePct);
-      const score = netPremiumDiff * 10 + symmetryPenalty * 2;
-
-      evaluatedPairs.push({
-        putStrike: put.strike,
-        putPremium: putPrem,
-        callStrike: call.strike,
-        callPremium: callPrem,
-        netDiff: Number(netPremiumDiff.toFixed(2)),
-        score: Number(score.toFixed(3)),
-      });
-
-      if (score < bestScore) {
-        bestScore = score;
-        bestPair = {
-          put: { ...put, premium: putPrem },
-          call: { ...call, premium: callPrem },
-          netPremiumDiff,
-          putDistancePct,
-          callDistancePct,
-        };
-      }
-    }
-  }
-
-  if (!bestPair) {
-    throw boom.badRequest('No fue posible calibrar una combinación óptima de Collar a Costo Cero.');
-  }
-
-  const optimalPut = bestPair.put;
-  const optimalCall = bestPair.call;
-
-  // 4. Valuación Analítica con Black-Scholes F0
-  const effectiveVol = Number(params.volatility) || (ticker === 'NVDA' ? 0.48 : (quote.volatility && quote.volatility > 0.25 ? quote.volatility : 0.35));
-
-  const putBS = calculateBlackScholes({
-    spotPrice,
-    strikePrice: optimalPut.strike,
-    timeToExpirationYears: 0.1,
-    volatility: effectiveVol,
-    optionType: 'PUT',
-  });
-
-  const callBS = calculateBlackScholes({
-    spotPrice,
-    strikePrice: optimalCall.strike,
-    timeToExpirationYears: 0.1,
-    volatility: effectiveVol,
-    optionType: 'CALL',
-  });
-
-  // 5. Validación de Precio Justo según Black-Scholes (F0 Fair Pricing Guardrail)
-  // Evalúa que el mercado no presente un sobreprecio abusivo o desequilibrio en las primas
-  const putFairRatio = optimalPut.premium / Math.max(0.01, putBS.theoreticalPrice);
-  const callFairRatio = optimalCall.premium / Math.max(0.01, callBS.theoreticalPrice);
-  const isFairPrice = putFairRatio <= 8.0 && putFairRatio >= 0.05 && callFairRatio <= 8.0 && callFairRatio >= 0.05;
-
-  if (!isFairPrice) {
-    throw boom.badRequest(
-      `Rechazado por Filtro Cuantitativo F0 (Black-Scholes): Las primas de mercado de las opciones ($${optimalPut.premium} Put / $${optimalCall.premium} Call) no cumplen con los criterios de precio justo teórico ($${putBS.theoreticalPrice.toFixed(2)} Put / $${callBS.theoreticalPrice.toFixed(2)} Call). No se autoriza la compra de activos ni opciones.`
-    );
-  }
-
+  const spotPrice = spot.price;
+  const cleanExpDate = par.put.expiration;
+  const optimalPut = { contractSymbol: par.put.symbol, strike: par.put.strike, premium: par.put.ask };
+  const optimalCall = { contractSymbol: par.call.symbol, strike: par.call.strike, premium: par.call.bid };
+  const preview = vistaPreviaCollar(ticker, spot, par.put, par.call);
   const analysisReport = {
     symbol: ticker,
-    companyName: quote.companyName || `${ticker} Corporation`,
     spotPrice,
-    evaluatedPairsCount: evaluatedPairs.length,
-    selectionCriteria: {
-      putMoneyness: `${(bestPair.putDistancePct * 100).toFixed(1)}% OTM (Deducible de riesgo)`,
-      callMoneyness: `${(bestPair.callDistancePct * 100).toFixed(1)}% OTM (Techo de financiamiento)`,
-      zeroCostAchieved: bestPair.netPremiumDiff < 0.5 ? 'EXACTO ($0.00 neto)' : `Aproximado ($${bestPair.netPremiumDiff.toFixed(2)}/acción)`,
-      fairPricingBS: 'VALIDADO_JUSTO (Dentro de tolerancia analítica F0)',
-      mathematicalRationale: 'Minimización de débito neto de primas (|Prima Call - Prima Put| -> 0) y simetría de colas OTM al 5%.',
-    },
+    selectionCriteria: { rule: preview.rule, netCost: preview.metrics.netCost, netPremiumPerShare: preview.metrics.netPremiumPerShare },
     optimalContracts: {
-      put: {
-        contractSymbol: optimalPut.contractSymbol,
-        strike: optimalPut.strike,
-        marketPremium: optimalPut.premium,
-        theoreticalPriceBS: putBS.theoreticalPrice,
-        greeks: putBS.greeks,
-        role: 'HEDGE_FLOOR (Póliza de Seguro Protector)',
-      },
-      call: {
-        contractSymbol: optimalCall.contractSymbol,
-        strike: optimalCall.strike,
-        marketPremium: optimalCall.premium,
-        theoreticalPriceBS: callBS.theoreticalPrice,
-        greeks: callBS.greeks,
-        role: 'FINANCE_CEILING (Financiamiento a Costo Cero)',
-      },
+      put: { contractSymbol: optimalPut.contractSymbol, strike: optimalPut.strike, marketPremium: optimalPut.premium, role: 'HEDGE_FLOOR (Póliza de Seguro Protector)' },
+      call: { contractSymbol: optimalCall.contractSymbol, strike: optimalCall.strike, marketPremium: optimalCall.premium, role: 'FINANCE_CEILING (Financiamiento del collar)' },
     },
   };
 
-  if (!autoPersist) {
-    return {
-      message: `Recomendación cuantitativa para ${ticker} calculada exitosamente.`,
-      analysis: analysisReport,
-    };
-  }
-
-  // 5. Flujo transaccional seguro: Ejecución en broker ANTES de persistir en BD
-  let createdStrategy = null;
-  let brokerExecution = null;
-  const executedOrders = [];
-  const executionErrors = [];
-  const shouldExecute = executeOrders === true || executeOrders === 'true' || params.executeOnBroker === true;
-
-  if (shouldExecute) {
-    const contracts = Number(params.contracts) || Math.max(1, Math.ceil(sharesCount / 100));
-
-    // Verificación preventiva de Buying Power en la cuenta del broker
-    try {
-      const brokerAcc = await getBrokerAccount(targetBroker);
-      const buyingPower = Number(brokerAcc?.buyingPower ?? -1);
-      if (buyingPower >= 0) {
-        let estimatedCost = 0;
-        if (buyUnderlying !== false) {
-          estimatedCost += contracts * 100 * spotPrice;
-        }
-        estimatedCost += contracts * optimalPut.premium * 100;
-        if (estimatedCost > buyingPower) {
-          throw boom.badRequest(
-            `Poder de compra insuficiente en ${targetBroker}: La estrategia Collar Spread requiere aprox. $${estimatedCost.toFixed(2)} USD ` +
-            `(${buyUnderlying !== false ? `${contracts * 100} acciones ($${(contracts * 100 * spotPrice).toFixed(2)}) + ` : ''}${contracts} Put ($${(contracts * optimalPut.premium * 100).toFixed(2)})), ` +
-            `pero tu cuenta solo dispone de $${buyingPower.toFixed(2)} USD de Buying Power disponible.`
-          );
-        }
-      }
-    } catch (err) {
-      if (err.isBoom) throw err;
-      console.warn(`[Collar Spread] No se pudo verificar Buying Power previo: ${err.message}`);
-    }
-
-    if (targetBroker === 'WEBULL') {
-      // 1. Pata Call Financiador + Acciones (Webull OpenAPI exige combo COVERED_STOCK)
-      // Agrupa atómicamente la compra de acciones y la venta de la Call bajo una única orden
-      // ("Cover Option" en Webull), permitiendo emitir sin rechazo de acciones insuficientes.
-      if (buyUnderlying !== false) {
-        try {
-          const comboOrder = await createBrokerOrder({
-            broker: 'WEBULL',
-            symbol: ticker,
-            contractSymbol: optimalCall.contractSymbol,
-            instrumentType: 'OPTION',
-            optionType: 'CALL',
-            strategy: 'COVERED_STOCK',
-            strikePrice: optimalCall.strike,
-            spotPrice,
-            stockPrice: spotPrice,
-            expirationDate: cleanExpDate,
-            qty: contracts,
-            side: 'sell',
-            type: 'limit',
-            limitPrice: optimalCall.premium,
-            timeInForce: 'day',
-          }, 'WEBULL');
-
-          const comboOrderId = comboOrder.order?.id || comboOrder.id;
-
-          // Pata 1: Acciones vinculadas en el combo
-          executedOrders.push({
-            legRole: 'UNDERLYING',
-            legType: 'EQUITY',
-            action: 'BUY',
-            symbol: ticker,
-            quantity: contracts * 100,
-            limitPrice: spotPrice,
-            orderId: comboOrderId,
-            status: comboOrder.order?.status || 'submitted',
-            details: comboOrder,
-          });
-
-          // Pata 2: Opción Call Financiador vinculada en el combo
-          executedOrders.push({
-            legRole: 'FINANCE_CEILING',
-            legType: 'CALL',
-            action: 'SELL',
-            strike: optimalCall.strike,
-            contractSymbol: optimalCall.contractSymbol,
-            quantity: contracts,
-            limitPrice: optimalCall.premium,
-            orderId: comboOrderId,
-            status: comboOrder.order?.status || 'submitted',
-            details: comboOrder,
-          });
-        } catch (err) {
-          executionErrors.push({
-            legRole: 'COVERED_STOCK_COMBO',
-            legType: 'COMBO',
-            error: err.message,
-          });
-        }
-      } else {
-        // buyUnderlying === false: El usuario ya posee las 100 acciones en su cuenta
-        try {
-          const callOrder = await createBrokerOrder({
-            broker: 'WEBULL',
-            symbol: ticker,
-            contractSymbol: optimalCall.contractSymbol,
-            instrumentType: 'OPTION',
-            optionType: 'CALL',
-            strategy: 'SINGLE',
-            strikePrice: optimalCall.strike,
-            expirationDate: cleanExpDate,
-            qty: contracts,
-            side: 'sell',
-            type: 'limit',
-            limitPrice: optimalCall.premium,
-            timeInForce: 'day',
-          }, 'WEBULL');
-
-          const callOrderId = callOrder.order?.id || callOrder.id;
-
-          executedOrders.push({
-            legRole: 'FINANCE_CEILING',
-            legType: 'CALL',
-            action: 'SELL',
-            strike: optimalCall.strike,
-            contractSymbol: optimalCall.contractSymbol,
-            quantity: contracts,
-            limitPrice: optimalCall.premium,
-            orderId: callOrderId,
-            status: callOrder.order?.status || 'submitted',
-            details: callOrder,
-          });
-        } catch (err) {
-          executionErrors.push({
-            legRole: 'FINANCE_CEILING',
-            legType: 'CALL',
-            error: err.message,
-          });
-        }
-      }
-
-      // 3. Pata Put Protector (SINGLE PUT en Webull)
-      try {
-        const putOrder = await createBrokerOrder({
-          broker: 'WEBULL',
-          symbol: ticker,
-          contractSymbol: optimalPut.contractSymbol,
-          instrumentType: 'OPTION',
-          optionType: 'PUT',
-          strategy: 'SINGLE',
-          strikePrice: optimalPut.strike,
-          expirationDate: cleanExpDate,
-          qty: contracts,
-          side: 'buy',
-          type: 'limit',
-          limitPrice: optimalPut.premium,
-          timeInForce: 'day',
-        }, 'WEBULL');
-
-        executedOrders.push({
-          legRole: 'HEDGE_FLOOR',
-          legType: 'PUT',
-          action: 'BUY',
-          strike: optimalPut.strike,
-          contractSymbol: optimalPut.contractSymbol,
-          quantity: contracts,
-          limitPrice: optimalPut.premium,
-          orderId: putOrder.order?.id || putOrder.id,
-          status: putOrder.order?.status || 'submitted',
-          details: putOrder,
-        });
-      } catch (err) {
-        executionErrors.push({
-          legRole: 'HEDGE_FLOOR',
-          legType: 'PUT',
-          error: err.message,
-        });
-      }
-    } else {
-      // Flujo Alpaca / Otros: Emisión individual por pata
-      // Pata 1: Acciones subyacentes
-      if (buyUnderlying !== false) {
-        try {
-          const stockOrder = await createBrokerOrder({
-            broker: targetBroker,
-            symbol: ticker,
-            instrumentType: 'EQUITY',
-            qty: sharesCount,
-            side: 'buy',
-            type: 'limit',
-            limitPrice: spotPrice,
-            timeInForce: 'day',
-          }, targetBroker);
-
-          executedOrders.push({
-            legRole: 'UNDERLYING',
-            legType: 'EQUITY',
-            action: 'BUY',
-            symbol: ticker,
-            quantity: sharesCount,
-            limitPrice: spotPrice,
-            orderId: stockOrder.order?.id || stockOrder.id,
-            status: stockOrder.order?.status || 'submitted',
-            details: stockOrder,
-          });
-        } catch (err) {
-          executionErrors.push({
-            legRole: 'UNDERLYING',
-            legType: 'EQUITY',
-            error: err.message,
-          });
-        }
-      }
-
-      // Pata 2: Put Protector
-      try {
-        const putOrder = await createBrokerOrder({
-          broker: targetBroker,
-          symbol: ticker,
-          contractSymbol: optimalPut.contractSymbol,
-          instrumentType: 'OPTION',
-          optionType: 'PUT',
-          strikePrice: optimalPut.strike,
-          expirationDate,
-          qty: contracts,
-          side: 'buy',
-          type: 'limit',
-          limitPrice: optimalPut.premium,
-          timeInForce: 'day',
-        }, targetBroker);
-
-        executedOrders.push({
-          legRole: 'HEDGE_FLOOR',
-          legType: 'PUT',
-          action: 'BUY',
-          strike: optimalPut.strike,
-          contractSymbol: optimalPut.contractSymbol,
-          quantity: contracts,
-          limitPrice: optimalPut.premium,
-          orderId: putOrder.order?.id || putOrder.id,
-          status: putOrder.order?.status || 'submitted',
-          details: putOrder,
-        });
-      } catch (err) {
-        executionErrors.push({
-          legRole: 'HEDGE_FLOOR',
-          legType: 'PUT',
-          error: err.message,
-        });
-      }
-
-      // Pata 3: Call Financiador
-      try {
-        const callOrder = await createBrokerOrder({
-          broker: targetBroker,
-          symbol: ticker,
-          contractSymbol: optimalCall.contractSymbol,
-          instrumentType: 'OPTION',
-          optionType: 'CALL',
-          strikePrice: optimalCall.strike,
-          expirationDate,
-          qty: contracts,
-          side: 'sell',
-          type: 'limit',
-          limitPrice: optimalCall.premium,
-          timeInForce: 'day',
-        }, targetBroker);
-
-        executedOrders.push({
-          legRole: 'FINANCE_CEILING',
-          legType: 'CALL',
-          action: 'SELL',
-          strike: optimalCall.strike,
-          contractSymbol: optimalCall.contractSymbol,
-          quantity: contracts,
-          limitPrice: optimalCall.premium,
-          orderId: callOrder.order?.id || callOrder.id,
-          status: callOrder.order?.status || 'submitted',
-          details: callOrder,
-        });
-      } catch (err) {
-        executionErrors.push({
-          legRole: 'FINANCE_CEILING',
-          legType: 'CALL',
-          error: err.message,
-        });
-      }
-    }
-
-    brokerExecution = {
-      broker: targetBroker,
-      executed: executedOrders.length > 0,
-      contractsCount: contracts,
-      orders: executedOrders,
-      errors: executionErrors.length > 0 ? executionErrors : undefined,
-    };
-
-    // 6. Verificación Directa en el Broker (Consulta GET al Broker, NO a la Base de Datos)
-    // Garantiza que la BD refleje única y exclusivamente órdenes admitidas y activas en el broker
-    const liveBrokerOrders = await getBrokerOrders('all', targetBroker);
-    const validLiveStatuses = [
-      'submitted', 'presubmitted', 'pending_submit', 'pendingsubmit',
-      'pending_new', 'pending', 'new', 'accepted', 
-      'filled', 'partially_filled', 'open', 'working'
-    ];
-    const unverifiedOrFailedLegs = [];
-
-    for (const leg of executedOrders) {
-      const ordId = String(leg.orderId || '');
-      const clientOrdId = String(leg.details?.order?.clientOrderId || '');
-
-      // Buscar en las órdenes en vivo devueltas por el broker
-      const foundInBroker = liveBrokerOrders.find((bo) => {
-        const boId = String(bo.id || '');
-        const boClient = String(bo.clientOrderId || '');
-        return (ordId && (boId === ordId || boClient === ordId)) ||
-               (clientOrdId && (boId === clientOrdId || boClient === clientOrdId));
-      });
-
-      const liveStatus = foundInBroker 
-        ? String(foundInBroker.status || '').toLowerCase() 
-        : String(leg.status || '').toLowerCase();
-
-      const rawErrMsg = String(leg.details?.error || leg.details?.rawError || foundInBroker?.rejectReason || '');
-      const cleanErrMsg = rawErrMsg.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-      let diagExplanation = '';
-      if (cleanErrMsg.toLowerCase().includes('nbbo')) {
-        diagExplanation = `Precio límite ($${leg.limitPrice}) rechazado por violar límites NBBO (National Best Bid/Offer). Para vencimientos cercanos (${cleanExpDate}), la bolsa exige precios límites más cercanos al Bid/Ask real.`;
-      } else if (cleanErrMsg.toLowerCase().includes('no security definition')) {
-        diagExplanation = `Contrato inexistente en bolsa para ${leg.contractSymbol || leg.symbol} (strike $${leg.strike}, vencimiento ${cleanExpDate}).`;
-      } else if (cleanErrMsg.toLowerCase().includes('buying power is insufficient') || cleanErrMsg.toLowerCase().includes('insufficient options buying power')) {
-        diagExplanation = `Poder de compra insuficiente en la cuenta de ${targetBroker} para emitir la orden. Reduzca la cantidad o libere capital cancelando órdenes abiertas.`;
-      } else if (rawErrMsg) {
-        diagExplanation = cleanErrMsg;
-      }
-
-      // Regla Fundamental Institucional: CERO SIMULACIÓN. Si no está en vivo en el broker ni fue confirmada con orderId real, se rechaza
-      const isConfirmedByBrokerResponse = Boolean(
-        ordId &&
-        !ordId.startsWith('WB-SIM-') &&
-        !ordId.startsWith('SIM-') &&
-        (leg.details?.order?.id || leg.details?.success === true || (leg.status && validLiveStatuses.includes(leg.status)))
-      );
-
-      if (!ordId || ordId.startsWith('WB-SIM-') || ordId.startsWith('SIM-') || (!foundInBroker && !isConfirmedByBrokerResponse && process.env.NODE_ENV !== 'test')) {
-        unverifiedOrFailedLegs.push({
-          legRole: leg.legRole,
-          symbol: leg.contractSymbol || leg.symbol,
-          orderId: leg.orderId || 'SIN_ID',
-          status: liveStatus || 'unverified',
-          reason: `Pata ${leg.legRole} (${leg.contractSymbol || leg.symbol}, Orden #${leg.orderId || 'N/A'}): ${diagExplanation || 'Orden no confirmada en vivo en el libro de órdenes del broker.'}`,
-        });
-        continue;
-      }
-
-      if (['cancelled', 'canceled', 'rejected', 'inactive', 'failed', 'expired'].includes(liveStatus)) {
-        unverifiedOrFailedLegs.push({
-          legRole: leg.legRole,
-          symbol: leg.contractSymbol || leg.symbol,
-          orderId: leg.orderId,
-          status: liveStatus,
-          reason: `Pata ${leg.legRole} (${leg.contractSymbol || leg.symbol}, Orden #${leg.orderId || 'N/A'}, Estado: '${liveStatus}'): ${diagExplanation || 'Cancelada/rechazada por el broker o matching engine.'}`,
-        });
-      } else if (!validLiveStatuses.includes(liveStatus) && !isConfirmedByBrokerResponse) {
-        unverifiedOrFailedLegs.push({
-          legRole: leg.legRole,
-          symbol: leg.contractSymbol || leg.symbol,
-          orderId: leg.orderId,
-          status: liveStatus,
-          reason: `Pata ${leg.legRole} (${leg.contractSymbol || leg.symbol}, Orden #${leg.orderId || 'N/A'}, Estado no operable: '${liveStatus}'): ${diagExplanation || 'El broker no confirmó la orden en un estado activo estándar.'}`,
-        });
-      } else if (foundInBroker || isConfirmedByBrokerResponse) {
-        leg.status = liveStatus || 'submitted';
-        leg.verifiedInBroker = true;
-      }
-    }
-
-    // SI EL BROKER RECHAZÓ O CANCELÓ ALGUNA PATA: ABORTAR SIN PERSISTIR NADA EN LA BASE DE DATOS
-    if (unverifiedOrFailedLegs.length > 0 || executionErrors.length > 0) {
-      const cleanBrokerMsg = (str) => String(str || '')
-        .replace(/<[^>]+>/g, ' ')
-        .replace(/Orden (?:bursátil )?no admitida o cancelada por Interactive Brokers TWS \([^)]+\):\s*/gi, '')
-        .replace(/\s+/g, ' ')
-        .trim();
-
-      const issues = [
-        ...executionErrors.map((e) => `[${e.legRole}]: Mensaje textual de ${targetBroker} (TWS): "${cleanBrokerMsg(e.error)}"`),
-        ...unverifiedOrFailedLegs.map((f) => `[${f.legRole}]: Mensaje textual de ${targetBroker} (TWS): "${cleanBrokerMsg(f.reason)}"`),
-      ].join(' | ');
-
-      throw boom.serverUnavailable(
-        `Falla de validación en vivo con ${targetBroker}. ` +
-        `${issues}. ` +
-        `Por política estricta de fidelidad e integridad transaccional, NINGÚN dato fue insertado en la base de datos (${dbTarget.toUpperCase()}).`
-      );
-    }
-
-    if (autoPersist) {
-      const stockOrder = executedOrders.find((o) => o.legRole === 'UNDERLYING');
-      const putOrder = executedOrders.find((o) => o.legRole === 'HEDGE_FLOOR');
-      const callOrder = executedOrders.find((o) => o.legRole === 'FINANCE_CEILING');
-
-      const collarPayload = {
-        portfolioId,
-        broker: targetBroker,
-        symbol: ticker,
-        companyName: quote.companyName || `${ticker} Corporation`,
-        spotPrice,
-        sharesCount,
-        putStrike: optimalPut.strike,
-        callStrike: optimalCall.strike,
-        putPremium: optimalPut.premium,
-        callPremium: optimalCall.premium,
-        expirationDate: `${cleanExpDate}T00:00:00.000Z`,
-        volatility: quote.volatility || 0.2,
-        stockOrderId: stockOrder?.orderId || null,
-        putOrderId: putOrder?.orderId || null,
-        callOrderId: callOrder?.orderId || null,
-      };
-
-      createdStrategy = await createCollarSpread(collarPayload, dbTarget);
-    }
-  } else {
-    // Modo Simulación / Cálculo Cuantitativo: executeOrders === false
-    // Por estricta fidelidad con el broker, NO se simulan órdenes falsas en la base de datos
-    return {
-      message: `Recomendación cuantitativa para ${ticker} calibrada con Black-Scholes F0 exitosamente. Para emitir órdenes reales al broker y persistir la estrategia verificada en ${dbTarget.toUpperCase()}, envíe 'executeOrders': true.`,
-      analysis: analysisReport,
-      strategy: null,
-      brokerExecution: {
-        broker: targetBroker,
-        executed: false,
-        note: `Modo cálculo/simulación. No se insertó ningún registro en ${dbTarget.toUpperCase()} para mantener sincronía 100% fiel con ${targetBroker}.`,
-      },
-    };
-  }
-
   return {
-    message: `Estrategia Zero-Cost Collar verificada en vivo en ${targetBroker}, confirmada con ${executedOrders.length} órdenes bursátiles activas y persistida en ${dbTarget.toUpperCase()}.`,
+    message: `Vista previa del collar de ${ticker} con la selección del Core 004 sobre cotizaciones observadas. No se emitieron órdenes ni se guardó la estrategia.`,
+    preview,
     analysis: analysisReport,
-    strategy: createdStrategy,
-    brokerExecution: brokerExecution || {
-      broker: (broker || config.DEFAULT_BROKER || 'WEBULL').toUpperCase(),
-      executed: false,
-      note: 'Las órdenes bursátiles no fueron emitidas automáticamente al broker porque executeOrders no fue proporcionado o fue falso. Envíe executeOrders: true en el body o query para auto-ejecución.',
-    },
+    strategy: null,
+    brokerExecution: { broker: targetBroker, executed: false, note: 'Vista previa: envía executeOrders: true para emitir las órdenes.' },
   };
 };
 
@@ -1164,7 +382,15 @@ export const addSingleLeg = async (strategyId, legData, dbTarget = 'mongodb') =>
   return leg;
 };
 
+// Los lotes de patas exigen un arreglo no vacío; un cuerpo con otra forma es una petición inválida (400), no un error interno.
+function exigirArreglo(valor, descripcion) {
+  if (!Array.isArray(valor) || !valor.length) throw boom.badRequest(`Se espera ${descripcion}.`);
+  return valor;
+}
+
 export const addLegsBatch = async (strategyId, legsArray, dbTarget = 'mongodb') => {
+  exigirArreglo(legsArray, 'un arreglo no vacío de patas');
+  if (legsArray.some(pata => !pata || typeof pata !== 'object')) throw boom.badRequest('Cada pata del lote debe ser un objeto.');
   const repo = getHedgingRepo(dbTarget);
   const result = await repo.addLegsBatch(strategyId, legsArray);
   if (!result) throw boom.notFound(`Estrategia '${strategyId}' no encontrada.`);
@@ -1179,6 +405,10 @@ export const updateSingleLeg = async (strategyId, legId, updates, dbTarget = 'mo
 };
 
 export const updateLegsBatch = async (strategyId, updatesArray, dbTarget = 'mongodb') => {
+  exigirArreglo(updatesArray, 'un arreglo no vacío de cambios de patas');
+  if (updatesArray.some(cambio => typeof cambio?.legId !== 'string' || !cambio.legId)) {
+    throw boom.badRequest('Cada cambio del lote debe indicar el legId de la pata.');
+  }
   const repo = getHedgingRepo(dbTarget);
   const result = await repo.updateLegsBatch(strategyId, updatesArray);
   if (!result) throw boom.notFound(`Estrategia '${strategyId}' no encontrada.`);
@@ -1224,6 +454,8 @@ export const deleteSingleLeg = async (strategyId, legId, dbTarget = 'mongodb') =
 };
 
 export const deleteLegsBatch = async (strategyId, legIdsArray, dbTarget = 'mongodb') => {
+  exigirArreglo(legIdsArray, 'legIds: un arreglo no vacío de identificadores de patas');
+  if (legIdsArray.some(legId => typeof legId !== 'string' || !legId)) throw boom.badRequest('Cada legId debe ser un texto no vacío.');
   const repo = getHedgingRepo(dbTarget);
   const result = await repo.deleteLegsBatch(strategyId, legIdsArray);
   if (!result) throw boom.notFound(`Estrategia '${strategyId}' no encontrada.`);
@@ -1238,142 +470,71 @@ export const recommendOption = async (params) => {
     symbol,
     type,
     optionType,
-    expirationDate = '2026-12-18',
+    expirationDate,
     broker = config.DEFAULT_BROKER || 'WEBULL',
     moneyness = 'OTM',
-    volatility,
+    ahora,
   } = params;
 
   if (!symbol) {
     throw boom.badRequest('El símbolo del activo (symbol) es requerido.');
   }
-
-  validateFutureExpirationDate(expirationDate);
-
-  const optType = (type || optionType || 'PUT').toUpperCase();
+  const optType = String(type || optionType || 'PUT').toUpperCase();
   if (!['PUT', 'CALL'].includes(optType)) {
     throw boom.badRequest("El parámetro type debe ser 'PUT' o 'CALL'.");
+  }
+  const preferencia = String(moneyness).toUpperCase();
+  if (!['OTM', 'ATM', 'ITM'].includes(preferencia)) {
+    throw boom.badRequest("El parámetro moneyness debe ser 'OTM', 'ATM' o 'ITM'.");
   }
 
   const ticker = symbol.toUpperCase();
   const targetBroker = (broker || config.DEFAULT_BROKER || 'WEBULL').toUpperCase();
 
-  // 1. Obtener precio spot del broker
-  const quote = await getBrokerQuote(ticker, targetBroker);
-  const spotPrice = quote.lastPrice;
-
-  // 2. Obtener la cadena de opciones disponible
-  const chain = await getBrokerOptionsChain(ticker, expirationDate, targetBroker);
-  const optionsList = optType === 'PUT' ? (chain.puts || []) : (chain.calls || []);
-
-  if (!optionsList || optionsList.length === 0) {
-    throw boom.notFound(`No se encontraron contratos de tipo ${optType} para ${ticker} en el broker ${targetBroker}.`);
+  // Contratos listados y líquidos (regla del Core 004) del tipo pedido, con sus cotizaciones observadas.
+  const { spot, cadena } = await obtenerCadenaCobertura(ticker, { horizonteDias: horizonteHasta(expirationDate, ahora), ahora });
+  const tipoCadena = optType === 'PUT' ? 'put' : 'call';
+  const precio = spot.price;
+  const delTipo = cadena.contracts.filter(c => c.type === tipoCadena && contratoLiquido(c)
+    && (!expirationDate || c.expiration === String(expirationDate).slice(0, 10)));
+  const esOtm = c => (optType === 'PUT' ? c.strike < precio : c.strike > precio);
+  const enRango = { OTM: esOtm, ITM: c => !esOtm(c) && c.strike !== precio, ATM: () => true }[preferencia];
+  // Objetivo: 95 % del precio para un Put OTM y 105 % para un Call OTM, como el Core 004; el precio mismo para ATM.
+  const factor = { OTM: optType === 'PUT' ? 0.95 : 1.05, ITM: optType === 'PUT' ? 1.05 : 0.95, ATM: 1 }[preferencia];
+  const objetivo = precio * factor;
+  const candidatos = delTipo.filter(enRango).sort((a, b) => Math.abs(time(a.expiration) - cadena.target) - Math.abs(time(b.expiration) - cadena.target)
+    || Math.abs(a.strike - objetivo) - Math.abs(b.strike - objetivo) || a.symbol.localeCompare(b.symbol));
+  if (!candidatos.length) {
+    throw boom.serverUnavailable(`No hay contratos ${optType} ${preferencia} líquidos y cotizados de ${ticker}${expirationDate ? ` con vencimiento ${expirationDate}` : ''}.`);
   }
 
-  const effectiveVol = Number(volatility) || (ticker === 'NVDA' ? 0.48 : (quote.volatility && quote.volatility > 0.25 ? quote.volatility : 0.35));
-
-  // 3. Filtrar y valuar contratos con Black-Scholes F0
-  const evaluatedOptions = optionsList.map((opt) => {
-    const strike = Number(opt.strike);
-    const premium = Number(opt.premium || opt.lastPrice || opt.ask || opt.bid || 1.0);
-    const bs = calculateBlackScholes({
-      spotPrice,
-      strikePrice: strike,
-      timeToExpirationYears: 0.1,
-      volatility: effectiveVol,
-      optionType: optType,
-    });
-
-    const distancePct = (strike - spotPrice) / spotPrice;
-    const absDistancePct = Math.abs(distancePct);
-    const isOTM = optType === 'PUT' ? strike < spotPrice : strike > spotPrice;
-    const isITM = optType === 'PUT' ? strike > spotPrice : strike < spotPrice;
-    const isATM = absDistancePct <= 0.03;
-
-    // Relación de precio justo Black-Scholes
-    const fairRatio = premium / Math.max(0.01, bs.theoreticalPrice);
-    const isFairPrice = fairRatio <= 8.0 && fairRatio >= 0.05;
-
-    // Puntuación: buscamos OTM al 5%-10% con precio justo y prima razonable
-    const targetDistance = 0.05;
-    const distancePenalty = Math.abs(absDistancePct - targetDistance) * 10;
-    const fairPenalty = Math.abs(fairRatio - 1.0) * 2;
-    const score = distancePenalty + fairPenalty;
-
+  const describir = opcion => {
+    const distancia = Math.abs(opcion.strike - precio) / precio;
     return {
-      contractSymbol: opt.contractSymbol || `${ticker}261016${optType[0]}${String(strike * 1000).padStart(8, '0')}`,
-      type: optType,
-      strike,
-      bid: opt.bid ? Number(opt.bid) : Number((premium - 0.1).toFixed(2)),
-      ask: opt.ask ? Number(opt.ask) : Number((premium + 0.1).toFixed(2)),
-      lastPrice: opt.lastPrice ? Number(opt.lastPrice) : premium,
-      marketPremium: premium,
-      theoreticalPriceBS: bs.theoreticalPrice,
-      greeks: bs.greeks,
-      moneyness: isATM ? 'ATM (At-The-Money)' : (isOTM ? `${(absDistancePct * 100).toFixed(1)}% OTM` : `${(absDistancePct * 100).toFixed(1)}% ITM`),
-      isOTM,
-      isITM,
-      isATM,
-      fairRatio: Number(fairRatio.toFixed(2)),
-      isFairPrice,
-      score,
+      ...contratoPublico(opcion),
+      spreadPct: Number((spreadRelativo(opcion) * 100).toFixed(2)),
+      moneyness: distancia <= 0.03 ? 'ATM' : `${(distancia * 100).toFixed(1)}% ${esOtm(opcion) ? 'OTM' : 'ITM'}`,
     };
-  });
-
-  // 4. Seleccionar el mejor contrato según el moneyness deseado
-  let candidates = evaluatedOptions;
-  if (moneyness.toUpperCase() === 'OTM') {
-    const otmOnly = evaluatedOptions.filter((o) => o.isOTM);
-    if (otmOnly.length > 0) candidates = otmOnly;
-  } else if (moneyness.toUpperCase() === 'ITM') {
-    const itmOnly = evaluatedOptions.filter((o) => o.isITM);
-    if (itmOnly.length > 0) candidates = itmOnly;
-  } else if (moneyness.toUpperCase() === 'ATM') {
-    const atmOnly = evaluatedOptions.filter((o) => o.isATM);
-    if (atmOnly.length > 0) candidates = atmOnly;
-  }
-
-  candidates.sort((a, b) => a.score - b.score);
-  const best = candidates[0] || evaluatedOptions[0];
-
+  };
+  const mejor = describir(candidatos[0]);
   return {
-    message: `Recomendación cuantitativa de opción ${optType} para ${ticker} calculada exitosamente.`,
+    message: `Contrato ${optType} recomendado para ${ticker} a partir de la cadena real; no se emitió ninguna orden.`,
     broker: targetBroker,
     symbol: ticker,
-    companyName: quote.companyName || `${ticker} Corporation`,
-    spotPrice,
+    spotPrice: precio,
+    spotTime: Number.isFinite(spot.at) ? new Date(spot.at).toISOString() : null,
     optionType: optType,
-    expirationDate,
-    moneynessPreference: moneyness.toUpperCase(),
+    expirationDate: mejor.expirationDate,
+    moneynessPreference: preferencia,
     recommendedContract: {
-      contractSymbol: best.contractSymbol,
-      type: best.type,
-      strike: best.strike,
-      bid: best.bid,
-      ask: best.ask,
-      lastPrice: best.lastPrice,
-      marketPremium: best.marketPremium,
-      theoreticalPriceBS: best.theoreticalPriceBS,
-      greeks: best.greeks,
-      moneyness: best.moneyness,
+      ...mejor,
       role: optType === 'PUT' ? 'HEDGE_FLOOR (Póliza de Seguro Protector contra caídas)' : 'FINANCE_CEILING (Techo de Ganancia y Financiamiento de Cobertura)',
-      fairPricingBS: best.isFairPrice ? 'VALIDADO_JUSTO (Dentro de tolerancia analítica F0)' : 'DESVIACIÓN_MODERADA',
       justification: optType === 'PUT'
-        ? `Strike $${best.strike} (${best.moneyness}) ofrece un piso de protección ideal con prima de $${best.marketPremium} USD alineada con el valor teórico Black-Scholes ($${best.theoreticalPriceBS} USD).`
-        : `Strike $${best.strike} (${best.moneyness}) permite capturar hasta ${(Math.abs(best.strike - spotPrice) / spotPrice * 100).toFixed(1)}% de ganancia en el subyacente y genera $${best.marketPremium} USD de prima para financiar coberturas.`,
+        ? `Put listado con strike $${mejor.strike} (${mejor.moneyness}); su ask observado es $${mejor.ask} por acción.`
+        : `Call listado con strike $${mejor.strike} (${mejor.moneyness}); su bid observado es $${mejor.bid} por acción.`,
     },
-    availableContractsCount: evaluatedOptions.length,
-    topCandidates: candidates.slice(0, 3).map((c) => ({
-      contractSymbol: c.contractSymbol,
-      strike: c.strike,
-      bid: c.bid,
-      ask: c.ask,
-      lastPrice: c.lastPrice,
-      marketPremium: c.marketPremium,
-      theoreticalPriceBS: c.theoreticalPriceBS,
-      moneyness: c.moneyness,
-      delta: c.greeks.delta,
-    })),
+    availableContractsCount: delTipo.length,
+    topCandidates: candidatos.slice(0, 3).map(describir),
   };
 };
 

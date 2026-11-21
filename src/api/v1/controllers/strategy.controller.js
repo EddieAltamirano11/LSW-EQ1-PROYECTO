@@ -140,13 +140,18 @@ export const syncStrategySpot = async (req, res, next) => {
       throw boom.notFound(`Estrategia '${id}' no encontrada.`);
     }
 
-    const symbol = strategy.underlying?.symbol || 'NVDA';
-    const quote = await BrokerService.getBrokerQuote(symbol);
+    const symbol = strategy.underlying?.symbol;
+    if (!symbol) throw boom.conflict(`La estrategia '${id}' no tiene un subyacente con símbolo; no hay qué cotizar.`);
+    // Se cotiza en el broker seleccionado por la petición y solo se guarda un precio que el broker informó.
+    const quote = await BrokerService.getBrokerQuote(symbol, req.broker);
+    if (!(Number(quote?.lastPrice) > 0)) {
+      throw boom.serverUnavailable(`El broker ${req.broker} no informó el último precio de ${symbol}; no se sincroniza la estrategia.`);
+    }
 
     const baseUnderlying = strategy.underlying.toObject ? strategy.underlying.toObject() : strategy.underlying;
     const updatedUnderlying = {
       ...baseUnderlying,
-      spotPriceAtEntry: quote.lastPrice,
+      spotPriceAtEntry: Number(quote.lastPrice),
       lastSyncQuote: quote,
       syncedAt: new Date().toISOString(),
     };

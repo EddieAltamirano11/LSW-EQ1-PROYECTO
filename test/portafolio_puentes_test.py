@@ -96,5 +96,63 @@ class PruebasPuentesPortafolio(unittest.TestCase):
             self.assertEqual(capturarRespuesta(puenteIbkr.cmd_positions)['status'], 503)
 
 
+class PruebasCotizacionIbkr(unittest.TestCase):
+    def _conexion(self, bid, ask):
+        conexion = Mock()
+        conexion.isConnected.return_value = True
+        conexion.reqHistoricalData.return_value = [SimpleNamespace(close=265.29, high=283.15, low=264.22, open=274.32)]
+        conexion.reqMktData.return_value = SimpleNamespace(bid=bid, ask=ask, bidSize=3.0, askSize=4.0, time=None, marketDataType=3)
+        return conexion
+
+    def _cotizar(self, conexion):
+        salida = io.StringIO()
+        with patch.object(puenteIbkr, 'get_ib_connection', return_value=conexion), patch.object(puenteIbkr, 'Stock', create=True), \
+                contextlib.redirect_stdout(salida):
+            puenteIbkr.cmd_quote(SimpleNamespace(symbol='GOOGL'))
+        return json.loads(salida.getvalue().strip().splitlines()[-1])
+
+    def testInformaElBidYAskObservadosDeTws(self):
+        cotizacion = self._cotizar(self._conexion(265.1, 265.4))
+        self.assertEqual([cotizacion['bid'], cotizacion['ask'], cotizacion['marketDataType']], [265.1, 265.4, 3])
+        self.assertEqual(cotizacion['price'], 265.29)
+
+    def testSinPuntasDeTwsNoLasDerivaDelCierre(self):
+        cotizacion = self._cotizar(self._conexion(float('nan'), float('nan')))
+        self.assertIsNone(cotizacion['bid'])
+        self.assertIsNone(cotizacion['ask'])
+        self.assertEqual(cotizacion['price'], 265.29)
+
+
+class PruebasCancelacionIbkr(unittest.TestCase):
+    def _cancelar(self, estados):
+        orden = SimpleNamespace(orderId=444, permId=630084668)
+        estado = SimpleNamespace(status=estados[0])
+        operacion = SimpleNamespace(order=orden, orderStatus=estado)
+        conexion = Mock()
+        conexion.isConnected.return_value = True
+        conexion.trades.return_value = [operacion]
+        secuencia = iter(estados[1:])
+        conexion.sleep.side_effect = lambda _s: setattr(estado, 'status', next(secuencia, estado.status))
+        salida = io.StringIO()
+        with patch.object(puenteIbkr, 'get_ib_connection', return_value=conexion), contextlib.redirect_stdout(salida):
+            puenteIbkr.cmd_cancel_order(SimpleNamespace(order_id='444'))
+        return json.loads(salida.getvalue().strip().splitlines()[-1]), conexion
+
+    def testEsperaLaConfirmacionDeTws(self):
+        resultado, conexion = self._cancelar(['Submitted', 'PendingCancel', 'PendingCancel', 'Cancelled'])
+        self.assertEqual([resultado['success'], resultado['status']], [True, 'Cancelled'])
+        self.assertNotIn('pending', resultado)
+        self.assertEqual(conexion.sleep.call_count, 3)
+
+    def testPendingCancelSeInformaComoSolicitudEnCurso(self):
+        resultado, _ = self._cancelar(['Submitted', 'PendingCancel'])
+        self.assertEqual([resultado['success'], resultado['status'], resultado['pending']], [True, 'PendingCancel', True])
+
+    def testOtroEstadoNoEsCancelacion(self):
+        resultado, _ = self._cancelar(['Filled'])
+        self.assertFalse(resultado['success'])
+        self.assertEqual(resultado['status'], 502)
+
+
 if __name__ == '__main__':
     unittest.main()

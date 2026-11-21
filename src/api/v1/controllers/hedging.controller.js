@@ -48,16 +48,20 @@ export const autoCalibrateCollar = async (req, res, next) => {
   try {
     const symbol = req.params.symbol || req.body.symbol;
     const broker = req.broker || req.headers['x-broker-selection']?.toUpperCase() || req.query?.broker?.toUpperCase() || 'WEBULL';
-    const executeOrdersRaw = req.body?.executeOrders ?? req.query?.executeOrders ?? req.body?.executeOnBroker ?? true;
+    // Por defecto es vista previa (como documenta el contrato): solo se emiten órdenes con executeOrders: true explícito.
+    const executeOrdersRaw = req.body?.executeOrders ?? req.query?.executeOrders ?? req.body?.executeOnBroker ?? false;
     const executeOrders = executeOrdersRaw === true || executeOrdersRaw === 'true' || executeOrdersRaw === 1;
 
+    // `ahora` solo lo usan las pruebas internas; no se acepta desde la solicitud.
+    const { ahora: _ahoraIgnorado, ...cuerpo } = req.body || {};
     const result = await HedgingService.autoCalibrateAndCreateCollar({
-      ...req.body,
+      ...cuerpo,
       symbol,
       broker,
       executeOrders,
     }, req.dbTarget);
-    res.status(201).json(result);
+    // La vista previa no crea nada: 200. La ejecución que guarda la estrategia: 201.
+    res.status(result.preview ? 200 : 201).json(result);
   } catch (error) {
     next(error);
   }
@@ -68,7 +72,8 @@ export const recommendOption = async (req, res, next) => {
     const symbol = req.params.symbol || req.query.symbol;
     const type = req.query.type || req.params.type || req.body?.type || 'PUT';
     const broker = req.broker || req.headers['x-broker-selection']?.toUpperCase() || req.query?.broker?.toUpperCase() || 'WEBULL';
-    const expirationDate = req.query.expiration || req.query.expirationDate || '2026-12-18';
+    // Sin vencimiento indicado se usa el horizonte por defecto de la cadena real (45 días); no hay fecha fija.
+    const expirationDate = req.query.expiration || req.query.expirationDate || undefined;
     const moneyness = req.query.moneyness || 'OTM';
     const volatility = req.query.volatility ? Number(req.query.volatility) : undefined;
 
@@ -241,8 +246,7 @@ export const deleteSingleLeg = async (req, res, next) => {
 export const deleteLegsBatch = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { legIds } = req.body;
-    const result = await HedgingService.deleteLegsBatch(id, legIds, req.dbTarget);
+    const result = await HedgingService.deleteLegsBatch(id, req.body?.legIds, req.dbTarget);
     res.status(200).json({
       message: 'Lote de patas eliminado.',
       ...result,

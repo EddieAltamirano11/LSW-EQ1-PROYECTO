@@ -69,7 +69,7 @@ test('Alpaca distingue cero, cartera vacía, tiempo de espera y datos ilegibles'
   await assert.rejects(consultarCuentaConfirmada('ALPACA'), tieneEstado(503));
   await assert.rejects(consultarPosicionesConfirmadas('ALPACA'), tieneEstado(503));
   await assert.rejects(getBrokerAccount('ALPACA'), tieneEstado(503));
-  assert.deepEqual(await getBrokerPositions('ALPACA'), []);
+  await assert.rejects(getBrokerPositions('ALPACA'), tieneEstado(503));
 });
 
 test('Webull utiliza los datos confirmados del puente y el poder de compra en la moneda de cuenta', async (prueba) => {
@@ -98,12 +98,21 @@ test('Webull utiliza los datos confirmados del puente y el poder de compra en la
     source: 'Webull OpenAPI (paper trading)',
   });
   assert.deepEqual(await consultarPosicionesConfirmadas('WEBULL'), [
-    { assetId: 'pos-1', symbol: 'AAPL', qty: 4, side: null },
+    { assetId: 'pos-1', symbol: 'AAPL', qty: 4, side: null, instrumentType: null, optionStrategy: null, equityQty: null, legs: [] },
   ]);
+  posiciones = [{
+    position_id: 'pos-2', symbol: 'SPY', quantity: '2', instrument_type: 'OPTION', option_strategy: 'COVERED_STOCK',
+    legs: [{ instrument_type: 'EQUITY', symbol: 'SPY' }, {
+      instrument_type: 'OPTION', symbol: 'SPY', option_type: 'CALL', option_exercise_price: '740', option_expire_date: '2026-12-31',
+      option_contract_deliverable: '100',
+    }],
+  }];
+  const [combo] = await consultarPosicionesConfirmadas('WEBULL');
+  assert.deepEqual([combo.qty, combo.equityQty, combo.optionStrategy, combo.legs[1].strikePrice], [2, 200, 'COVERED_STOCK', 740]);
   posiciones = {};
   await assert.rejects(consultarPosicionesConfirmadas('WEBULL'), tieneEstado(502));
   await assert.rejects(getBrokerAccount('WEBULL'), tieneEstado(503));
-  assert.deepEqual(await getBrokerPositions('WEBULL'), []);
+  await assert.rejects(getBrokerPositions('WEBULL'), tieneEstado(503));
 });
 
 test('IBKR conserva los contratos individuales y rechaza arreglos de respaldo', async (prueba) => {
