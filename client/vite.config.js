@@ -15,4 +15,9 @@ export default defineConfig({
       },
     },
   },
+  // Pruebas del cliente: archivos *.spec.js(x) para no mezclarse con `node --test` del backend.
+  test: {
+    environment: 'jsdom',
+    include: ['src/**/*.spec.{js,jsx}'],
+  },
 });
