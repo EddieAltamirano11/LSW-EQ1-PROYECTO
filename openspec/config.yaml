@@ -7,6 +7,10 @@ context: |
   Cero simulación: Queda estrictamente prohibido introducir brokers ficticios ('SIMULATED'),
   fallbacks con precios estáticos con ruido/jitter o cuentas con saldo simulado. Ante fallos de
   conectividad o indisponibilidad del broker, el sistema debe responder con error verificable (502/503).
+  Reglas de cero simulación (aplican a todos los artefactos):
+  - Prohibición estricta de brokers o datos simulados en memoria ('SIMULATED').
+  - Todas las cotizaciones, balances y órdenes deben procesarse contra APIs de brokers reales (Alpaca, Webull, IBKR) o fuentes oficiales (SEC EDGAR).
+  - Si un broker no responde o está desconectado, aplicar política fail-fast emitiendo errores 502/503 sin recurrir a fallbacks de datos estáticos con ruido/jitter.
   Arquitectura actual: rutas, controladores, servicios y repositorios en src/api/v1/.
   El contrato OpenAPI está en spec/openspec.yaml; el proceso SDD vive en openspec/.
   Las pruebas locales usan node:test e importan src/app.js sin iniciar conexiones.
@@ -19,17 +23,13 @@ context: |
   Registrar antes/después, responsables, herramientas y verificaciones reales;
   nunca presentar una modificación generada por IA como optimización manual.
   No realizar commits ni push sin instrucción explícita del usuario.
+  Reglas de diseño del frontend (aplican a todos los artefactos):
+  - Arquitectura Santo Grial (3 columnas): controles/cores a la izquierda, gráfico y ranking al centro, terminal de ejecución de órdenes a la derecha.
+  - Iconografía: uso exclusivo de iconos vectoriales SVG de Lucide React (lucide-react); terminantemente prohibidos caracteres emoji.
+  - Preservar paleta institucional: verde bosque corporativo (--ui-green), fondos limpios (--ui-bg, --ui-panel) y tipografía de alto contraste.
+  - Operaciones bursátiles en vivo: soporte para 3 modalidades reales (Auto-Collar, Protective Put y Compra/Venta de Acciones) enviando executeOrders: true.
 
 rules:
-  zero-simulation:
-    - Prohibición estricta de brokers o datos simulados en memoria ('SIMULATED').
-    - Todas las cotizaciones, balances y órdenes deben procesarse contra APIs de brokers reales (Alpaca, Webull, IBKR) o fuentes oficiales (SEC EDGAR).
-    - Si un broker no responde o está desconectado, aplicar política fail-fast emitiendo errores 502/503 sin recurrir a fallbacks de datos estáticos con ruido/jitter.
-  frontend-design:
-    - Arquitectura Santo Grial (3 columnas): controles/cores a la izquierda, gráfico y ranking al centro, terminal de ejecución de órdenes a la derecha.
-    - Iconografía: uso exclusivo de iconos vectoriales SVG de Lucide React (lucide-react); terminantemente prohibidos caracteres emoji.
-    - Preservar paleta institucional: verde bosque corporativo (--ui-green), fondos limpios (--ui-bg, --ui-panel) y tipografía de alto contraste.
-    - Operaciones bursátiles en vivo: soporte para 3 modalidades reales (Auto-Collar, Protective Put y Compra/Venta de Acciones) enviando executeOrders: true.
   proposal:
     - Identificar los endpoints afectados y el alcance de compatibilidad.
     - Indicar qué evidencia permitirá distinguir desarrollo con IA y trabajo manual.

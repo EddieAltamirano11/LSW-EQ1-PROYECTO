@@ -244,7 +244,10 @@ paths:
   /hedging/recommend-option/{symbol}:
     get:
       tags: [Coberturas]
-      summary: Recomendar algorítmicamente la opción óptima (PUT o CALL) según Black-Scholes y mercado real
+      summary: Recomendar un contrato PUT o CALL listado, con su cotización observada (sin emitir órdenes)
+      description: >
+        Elige entre contratos listados y líquidos (regla del Core 004) de la cadena real: contratos de Alpaca con
+        cotizaciones de Webull OpenAPI. No calcula primas; devuelve bid, ask, instante, retraso y fuente.
       parameters:
         - in: path
           name: symbol
@@ -274,12 +277,29 @@ paths:
           description: Grado de moneyness deseado (por defecto OTM)
       responses:
         '200':
-          description: Contrato de opción óptimo recomendado con griegas calculadas y justificación analítica
+          description: Contrato recomendado (recommendedContract) y hasta tres candidatos, cada uno con su cotización
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  spotPrice: { type: number }
+                  spotTime: { type: string, nullable: true }
+                  recommendedContract: { $ref: '#/components/schemas/ContratoOpcionCotizado' }
+                  topCandidates: { type: array, items: { $ref: '#/components/schemas/ContratoOpcionCotizado' } }
+        '400':
+          description: Tipo, moneyness o vencimiento inválidos
+        '503':
+          description: No hay contratos cotizados del tipo pedido, o el proveedor de cotizaciones no respondió
 
   /hedging/auto-collar:
     post:
       tags: [Coberturas]
-      summary: Calibrar y emitir automáticamente una cobertura Zero-Cost Collar
+      summary: Previsualizar (por defecto) o emitir el collar que selecciona el Core 004 sobre la cadena real
+      description: >
+        Con executeOrders ausente o false devuelve una vista previa (campo preview) con el Put y el Call que elige el
+        Core 004, sus cotizaciones y métricas, sin emitir órdenes ni guardar registros (200). Con executeOrders true
+        emite las órdenes y guarda la estrategia (201).
       parameters:
         - in: header
           name: x-database-selection
@@ -305,13 +325,33 @@ paths:
               properties:
                 broker: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL, example: WEBULL }
                 symbol: { type: string, example: AAPL }
-                sharesCount: { type: integer, example: 100 }
+                sharesCount: { type: integer, example: 100, default: 100, description: 'Múltiplo de 100: se compran contratos × 100 acciones para cubrir cada Call' }
+                putContractSymbol: { type: string, example: AAPL261231P00330000, description: Put del collar del ranking (Core 004); se vuelve a cotizar }
+                callContractSymbol: { type: string, example: AAPL261231C00360000, description: Call del collar del ranking (Core 004); se vuelve a cotizar }
                 protectionPct: { type: number, example: 0.05 }
                 expirationDate: { type: string, example: '2026-10-16' }
                 executeOrders: { type: boolean, default: false, example: true, description: 'Si es true, emite las órdenes bursátiles de las opciones al broker (Webull o Alpaca) de inmediato para que se reflejen en la terminal' }
       responses:
+        '200':
+          description: Vista previa sin órdenes ni registros
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  preview: { $ref: '#/components/schemas/VistaPreviaCollar' }
+                  strategy: { type: object, nullable: true }
         '201':
-          description: Cobertura Collar calibrada, persistida y opcionalmente emitida al broker
+          description: Órdenes aceptadas (primero el Put; en Webull, después el COVERED_STOCK con límite neto acciones − bid del Call) y estrategia ACTIVE
+        '400':
+          description: sharesCount que no es múltiplo de 100, collar del ranking que ya no es apto, o rechazo del broker sin patas vivas (no se guarda)
+        '409':
+          description: >
+            Ejecución parcial: falló una pata después de que otra quedó viva o ejecutada (o con una cancelación no
+            confirmada). Se guarda la estrategia como PARTIALLY_EXECUTED; el cuerpo trae orders (identificador, estado,
+            cantidad ejecutada, mensaje del broker y cancelación de cada pata), failure y strategy.
+        '503':
+          description: Sin cadena real (no hay contratos cotizados o el proveedor no respondió)
 
   /hedging/auto-collar/{symbol}:
     post:
@@ -371,25 +411,38 @@ paths:
           application/json:
             schema:
               type: object
-              required: [symbol, spotPrice, sharesCount, putStrike, putPremium]
+              required: [symbol, sharesCount]
+              description: >
+                Con executeOrders true se usa el Put de contractSymbol o, si falta, el strike listado más cercano menor o
+                igual a putStrike para expirationDate. Los límites son el ask observado del Put y el ask de las acciones al
+                ejecutar; putPremium y spotPrice no se usan como límite. Sin executeOrders, registra la cobertura indicada
+                (exige putStrike, putPremium y expirationDate).
               properties:
                 portfolioId: { type: string, example: PORT-ALPHA-01 }
                 broker: { type: string, enum: [ALPACA, WEBULL, IBKR], default: WEBULL, example: WEBULL }
                 symbol: { type: string, example: AAPL }
-                spotPrice: { type: number, example: 228.50 }
-                sharesCount: { type: integer, example: 100 }
+                contractSymbol: { type: string, example: AAPL261218P00215000, description: Put listado a usar (el de la vista previa) }
+                spotPrice: { type: number, example: 228.50, description: Solo para el registro sin ejecución }
+                sharesCount: { type: integer, example: 100, description: 'Se compran ceil(sharesCount / 100) contratos' }
                 putStrike: { type: number, example: 220.00 }
-                putPremium: { type: number, example: 4.20 }
+                putPremium: { type: number, example: 4.20, description: Solo para el registro sin ejecución; no es el precio límite }
                 expirationDate: { type: string, format: date-time, example: '2026-10-16T00:00:00Z' }
                 executeOrders: { type: boolean, default: true, description: Indica si se emiten las órdenes en tiempo real al broker }
                 buyUnderlying: { type: boolean, default: true, description: Indica si se compran las acciones o si ya se poseen en cartera }
       responses:
         '201':
-          description: Cobertura Protective Put emitida con suelo blindado y órdenes confirmadas
+          description: Órdenes aceptadas por el broker (primero el Put, después las acciones) y estrategia guardada como ACTIVE, con el estado de cada orden
         '400':
-          description: Error de validación o poder de compra (Buying Power) insuficiente en el broker
+          description: >
+            Validación, strike sin Put listado, Buying Power insuficiente o rechazo del broker. Si una pata aceptada se
+            canceló con confirmación, nada quedó vivo y no se guarda; el cuerpo trae orders.
+        '409':
+          description: >
+            Ejecución parcial: falló una pata después de que otra quedó viva o ejecutada (o con una cancelación no
+            confirmada). Se guarda la estrategia como PARTIALLY_EXECUTED; el cuerpo trae orders (identificador, estado,
+            cantidad ejecutada, mensaje del broker y cancelación de cada pata), failure y strategy.
         '503':
-          description: Falla de ejecución bursátil o broker no disponible
+          description: Sin cotización observada vigente del Put o de las acciones, o el broker no respondió; no se envían órdenes
 
   /hedging/collar-spread:
     post:
@@ -405,11 +458,13 @@ paths:
           application/json:
             schema:
               type: object
-              required: [symbol, spotPrice, sharesCount, putStrike, callStrike]
+              required: [symbol, sharesCount, putStrike, callStrike, putPremium, callPremium, expirationDate]
+              description: Registro manual de un collar; las primas son obligatorias (sin valores predeterminados) y el símbolo OCC usa el vencimiento indicado.
               properties:
                 portfolioId: { type: string, example: PORT-ALPHA-01 }
                 broker: { type: string, enum: [ALPACA, WEBULL, IBKR], default: WEBULL, example: WEBULL }
                 symbol: { type: string, example: SPY }
+                expirationDate: { type: string, format: date, example: '2026-12-18' }
                 spotPrice: { type: number, example: 565.00 }
                 sharesCount: { type: integer, example: 100 }
                 putStrike: { type: number, example: 550.00 }
@@ -418,7 +473,9 @@ paths:
                 callPremium: { type: number, example: 6.60 }
       responses:
         '201':
-          description: Cobertura Collar Spread creada con túnel de costo cero
+          description: Collar registrado
+        '400':
+          description: Faltan las primas, los strikes o el vencimiento, o los strikes no quedan fuera del dinero
 
   /hedging/batch:
     post:
@@ -906,9 +963,9 @@ paths:
         '401':
           description: Token inválido o sesión ausente en modo estricto.
         '502':
-          description: Respuesta del broker ilegible en modo estricto.
+          description: Respuesta del broker ilegible, o sin efectivo, valor del portafolio o Buying Power (también sin strict; no se usan saldos supuestos).
         '503':
-          description: Consulta de cuenta no disponible en modo estricto.
+          description: El broker no respondió.
 
   /broker/positions:
     get:
@@ -937,16 +994,16 @@ paths:
               schema:
                 oneOf:
                   - type: array
-                    items: { type: object }
+                    items: { $ref: '#/components/schemas/BrokerPosition' }
                   - $ref: '#/components/schemas/PosicionesBrokerConfirmadas'
         '400':
           description: Selección de broker ausente o inválida en modo estricto.
         '401':
           description: Token inválido o sesión ausente en modo estricto.
         '502':
-          description: Respuesta del broker ilegible en modo estricto.
+          description: Respuesta del broker ilegible.
         '503':
-          description: Consulta de posiciones no disponible en modo estricto.
+          description: El broker no respondió; no se devuelve una lista vacía (también sin strict).
 
   /broker/orders:
     get:
@@ -964,7 +1021,11 @@ paths:
           schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
       responses:
         '200':
-          description: Historial de órdenes bursátiles
+          description: Órdenes reportadas por el broker; un arreglo vacío significa que el broker confirmó que no hay órdenes
+        '502':
+          description: Respuesta del broker ilegible
+        '503':
+          description: El broker no respondió; no se devuelve una lista vacía
     post:
       tags: [Brokers Bursátiles]
       summary: Emitir una nueva orden bursátil (mercado/límite) en Webull, Alpaca o IBKR con verificación estricta de tenencia y Buying Power
@@ -983,11 +1044,18 @@ paths:
               $ref: '#/components/schemas/BrokerOrderInput'
       responses:
         '201':
-          description: Orden emitida y confirmada en la rueda bursátil del broker
+          description: El broker devolvió un identificador de orden; estado y cantidad ejecutada son los que reporta o null
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BrokerOrderOutput' }
         '400':
-          description: Rechazo por venta corta no permitida (0 acciones en cartera) o poder de compra insuficiente
+          description: >
+            Orden incompleta (no se envía al broker), venta mayor a las acciones reportadas (los contratos de opciones
+            no cuentan), costo estimado mayor al Buying Power (en market, con el ask observado) o rechazo del broker con su mensaje literal
+        '502':
+          description: El broker respondió sin identificador de orden, o no informó la tenencia o el saldo
         '503':
-          description: Broker no disponible o matching engine sin conexión
+          description: El broker no respondió, o no se pudo leer la cuenta, la cotización o las posiciones necesarias para validar la orden
 
   /broker/orders/{id}:
     delete:
@@ -1006,7 +1074,15 @@ paths:
           schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
       responses:
         '200':
-          description: Orden cancelada exitosamente
+          description: El broker confirmó la cancelación
+        '202':
+          description: IBKR recibió la cancelación y TWS aún la procesa (estado PendingCancel); incluye `pending: true` y el estado informado
+        '400':
+          description: El broker rechazó la cancelación (por ejemplo, una orden ya ejecutada); incluye su mensaje
+        '502':
+          description: El broker no confirmó el estado de la cancelación
+        '503':
+          description: El broker no respondió
 
   /broker/quote/{symbol}:
     get:
@@ -1025,7 +1101,11 @@ paths:
           schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
       responses:
         '200':
-          description: Cotización viva (bid, ask, lastPrice)
+          description: Cotización reportada; bid, ask, tamaños y nombre de empresa quedan en null si el broker no los informa (no se derivan del último precio)
+        '502':
+          description: El broker no informó un precio
+        '503':
+          description: El broker no respondió
 
   /broker/options-chain/{symbol}:
     get:
@@ -1045,9 +1125,29 @@ paths:
         - in: query
           name: broker
           schema: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL }
+      description: >
+        La misma cadena real para los tres brokers: contratos listados de Alpaca con cotizaciones de Webull OpenAPI.
+        Se descartan cotizaciones con más de 15 minutos de retraso o fuera de la sesión. No se generan strikes ni primas.
       responses:
         '200':
-          description: Cadena de contratos Call y Put
+          description: Contratos Call y Put cotizados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  broker: { type: string }
+                  symbol: { type: string }
+                  spotPrice: { type: number }
+                  spotTime: { type: string, nullable: true }
+                  expirations: { type: array, items: { type: string, format: date } }
+                  source: { type: string }
+                  calls: { type: array, items: { $ref: '#/components/schemas/ContratoOpcionCotizado' } }
+                  puts: { type: array, items: { $ref: '#/components/schemas/ContratoOpcionCotizado' } }
+        '400':
+          description: Vencimiento inválido o pasado
+        '503':
+          description: No hay contratos cotizados (o del vencimiento pedido) o el proveedor no respondió
 
   /broker/sync-underlying/{symbol}:
     post:
@@ -1108,6 +1208,45 @@ paths:
         '503':
           description: Las fuentes disponibles son insuficientes para evaluar los activos
 
+  /strategy-screener/technical/{symbol}:
+    servers:
+      - url: http://localhost:3050/api/v2
+        description: API v2 local
+      - url: https://lsw-eq1-proyecto.onrender.com/api/v2
+        description: API v2 de Render
+    get:
+      tags: [Screener & TradingView]
+      operationId: getTechnicalSeries
+      summary: Serie técnica del Core 001 para la gráfica
+      description: >
+        Velas diarias cerradas de dos años con las medias móviles, las bandas de soporte y resistencia,
+        los tramos de tendencia y la proyección del Core 001. Usa las mismas velas y cálculos que el ranking,
+        no requiere evaluar los cores y guarda el resultado 90 s. Es de solo lectura.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[A-Za-z]{1,5}([.-][A-Za-z]{1,2})?$'
+          example: AAPL
+          description: Símbolo de la acción; se normaliza a mayúsculas
+      responses:
+        '200':
+          description: Serie técnica con su fuente e instante de corte
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TechnicalSeries'
+        '400':
+          description: Símbolo inválido
+        '401':
+          description: La consulta requiere una sesión válida
+        '503':
+          description: La fuente no entregó velas suficientes; el mensaje indica la causa y no se entregan datos supuestos
+
   /market/scanner/top-collars:
     get:
       tags: [Screener & TradingView]
@@ -1146,9 +1285,31 @@ paths:
           description: Broker bursátil para cotizaciones vivas
       responses:
         '200':
-          description: Ranking de candidatos calculado exitosamente
+          description: >
+            Ranking teórico. BREAKING: marketPremium se llama ahora theoreticalPremium, se agrega pricing y se retiran
+            technicalOutlook, technicalSummary, rsi14 y aboveSma200. Los activos sin cotización del broker no reciben
+            un precio de referencia: van a unavailable con el motivo.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  timestamp: { type: string, format: date-time }
+                  criteria: { type: object }
+                  candidates:
+                    type: array
+                    items: { $ref: '#/components/schemas/CandidatoEscanerTeorico' }
+                  unavailable:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        symbol: { type: string }
+                        reason: { type: string }
         '400':
           description: Parámetro de consulta inválido
+        '503':
+          description: El broker no entregó la cotización de ningún activo; no se usan precios de referencia
 
   /market/scanner/company-criteria:
     get:
@@ -1242,9 +1403,16 @@ components:
             allOf:
               - $ref: '#/components/schemas/StrategyScreenerAsset'
               - type: object
-                required: [reason]
+                required: [reason, exclusionType]
                 properties:
                   reason: { type: string }
+                  exclusionType:
+                    type: string
+                    enum: [VIABILITY_VETO, NO_COLLAR, INSUFFICIENT_DATA]
+                    description: >
+                      VIABILITY_VETO: clasificada como MARGINAL o NO_VIABLE. NO_COLLAR: el Core 004 no encontró
+                      un par Put/Call líquido y compatible. INSUFFICIENT_DATA: faltaron datos de elegibilidad,
+                      de la cadena o de un core seleccionado.
     StrategyScreenerAsset:
       type: object
       required: [symbol, companyName, eligibility, cores]
@@ -1252,6 +1420,13 @@ components:
         symbol: { type: string }
         companyName: { type: string }
         eligibility: { type: string, enum: [VIABLE, MARGINAL, NO_VIABLE, UNKNOWN] }
+        partial:
+          type: boolean
+          description: >
+            Solo en candidates. true si algún core seleccionado quedó parcial o si el riesgo de eventos es UNVERIFIED
+            (el calendario de resultados no entregó una fecha; no se estima ninguna). En ese caso el Core 002 conserva su
+            puntaje con estado PARTIAL y result.risk UNVERIFIED (result.event.reason con la causa), y el Core 003 se
+            abstiene con signal HOLD y rule EVENT_UNVERIFIED.
         cores:
           type: object
           required: ['001', '002', '003', '004', '005', '006', '007']
@@ -1265,11 +1440,25 @@ components:
         active: { type: boolean }
         reason: { type: string }
         score: { type: number, minimum: 0, maximum: 100 }
+        role:
+          type: string
+          enum: [CONFLUENCE, GATE, DEPENDENCY, SYNTHESIS, NOT_COMPUTED]
+          description: >
+            Participación del core para la empresa. CONFLUENCE: seleccionado y ponderado en la confluencia.
+            GATE: filtro sin ponderar (Fundamental no seleccionado como veto de viabilidad y Estrategia 004).
+            DEPENDENCY: calculado solo porque otro core seleccionado lo requiere (Técnico para Señales directas).
+            SYNTHESIS: Confluencia 007. NOT_COMPUTED: no se calculó.
+        effectiveWeight:
+          type: number
+          minimum: 0
+          maximum: 1
+          example: 0.225
+          description: Peso normalizado que aplicó la confluencia; solo con role CONFLUENCE y cuando la confluencia tiene puntaje.
         result:
           type: object
           nullable: true
           additionalProperties: true
-          description: Indicadores, reglas y resultado específico del core.
+          description: Indicadores, reglas y resultado específico del core. El resultado del Core 001 sigue TechnicalCoreResult.
         evidence:
           type: array
           items:
@@ -1280,6 +1469,176 @@ components:
               observedAt: { type: string, nullable: true }
               reference: { type: string, nullable: true }
               delayMinutes: { type: number, minimum: 0 }
+    TechnicalCoreLevel:
+      type: object
+      required: [price, touches, lastTouch, score, distancePct]
+      properties:
+        price: { type: number, example: 339.45 }
+        touches: { type: integer, minimum: 1, example: 3 }
+        lastTouch: { type: string, format: date, example: '2026-11-06' }
+        score: { type: number, minimum: 0, maximum: 100, example: 68.94, description: 'Puntaje por toques (40 %), antigüedad (25 %), volumen cercano (20 %) y proximidad al precio (15 %)' }
+        distancePct: { type: number, example: -1.15, description: Distancia porcentual al último cierre; negativa en soportes }
+    TechnicalCoreScale:
+      type: object
+      required: [available]
+      properties:
+        available: { type: boolean }
+        direction: { type: string, enum: [UP, DOWN, SIDEWAYS] }
+        since: { type: string, format: date, description: Fecha de confirmación de la tendencia vigente (cruce que se mantuvo al menos 3 sesiones) }
+        sessions: { type: integer, minimum: 1 }
+        reason: { type: string, description: Causa cuando la escala no está disponible }
+    TechnicalCoreSegment:
+      type: object
+      required: [direction, start, end, sessions, changePct]
+      properties:
+        direction: { type: string, enum: [UP, DOWN, SIDEWAYS] }
+        start: { type: string, format: date }
+        end: { type: string, format: date }
+        sessions: { type: integer, minimum: 1 }
+        changePct: { type: number }
+    TechnicalCoreProjection:
+      type: object
+      required: [available]
+      description: Extrapolación informativa del cruce de medias; no entra al puntaje del Core 001 ni a la confluencia y nunca se expresa como un día exacto.
+      properties:
+        available: { type: boolean }
+        projected: { type: boolean }
+        direction: { type: string, enum: [UP, DOWN] }
+        window:
+          type: object
+          nullable: true
+          properties:
+            from: { type: string, format: date }
+            to: { type: string, format: date }
+        sessions:
+          type: object
+          properties:
+            from: { type: integer, minimum: 1 }
+            to: { type: integer, maximum: 60 }
+        openEnded: { type: boolean }
+        reason: { type: string }
+        windowReason: { type: string }
+        assumption: { type: string }
+        accuracy:
+          type: object
+          properties:
+            cases: { type: integer, minimum: 0 }
+            hitRate: { type: number, nullable: true, minimum: 0, maximum: 1 }
+            meanErrorSessions: { type: number, nullable: true }
+            insufficientSample: { type: boolean }
+    TechnicalCoreResult:
+      type: object
+      description: Resultado del Core 001 calculado con velas diarias de dos años y marcos de 1 hora y 15 minutos.
+      properties:
+        trend: { type: string, enum: [UP, DOWN, SIDEWAYS] }
+        bias: { type: number, minimum: -100, maximum: 100 }
+        support: { type: array, maxItems: 3, items: { $ref: '#/components/schemas/TechnicalCoreLevel' } }
+        resistance: { type: array, maxItems: 3, items: { $ref: '#/components/schemas/TechnicalCoreLevel' } }
+        scales:
+          type: object
+          properties:
+            primary: { $ref: '#/components/schemas/TechnicalCoreScale' }
+            intermediate: { $ref: '#/components/schemas/TechnicalCoreScale' }
+            short: { $ref: '#/components/schemas/TechnicalCoreScale' }
+        segments:
+          type: object
+          additionalProperties:
+            type: array
+            items: { $ref: '#/components/schemas/TechnicalCoreSegment' }
+        projections:
+          type: object
+          properties:
+            intermediate: { $ref: '#/components/schemas/TechnicalCoreProjection' }
+            short: { $ref: '#/components/schemas/TechnicalCoreProjection' }
+        indicators:
+          type: object
+          properties:
+            rsi:
+              type: object
+              properties:
+                value: { type: number }
+                zone: { type: string, enum: [OVERSOLD, NEUTRAL, OVERBOUGHT] }
+            macd:
+              type: object
+              properties:
+                line: { type: number }
+                signal: { type: number }
+                histogram: { type: number }
+                lastCross:
+                  type: object
+                  nullable: true
+                  properties:
+                    type: { type: string, enum: [BULLISH, BEARISH] }
+                    date: { type: string, format: date }
+            adx:
+              type: object
+              properties:
+                value: { type: number }
+                plusDI: { type: number }
+                minusDI: { type: number }
+                class: { type: string, enum: [NO_TREND, WEAK, STRONG, VERY_STRONG] }
+            bollinger:
+              type: object
+              properties:
+                lower: { type: number }
+                middle: { type: number }
+                upper: { type: number }
+                width: { type: number }
+    TechnicalSeriesPoint:
+      type: object
+      required: [time, value]
+      properties:
+        time: { type: string, format: date }
+        value: { type: number }
+    TechnicalSeriesLevel:
+      allOf:
+        - $ref: '#/components/schemas/TechnicalCoreLevel'
+        - type: object
+          required: [lower, upper]
+          properties:
+            lower: { type: number, description: Límite inferior de la banda (precio menos la tolerancia con que se agruparon los toques) }
+            upper: { type: number, description: Límite superior de la banda }
+    TechnicalSeries:
+      type: object
+      required: [symbol, asOf, cutoff, lastSession, source, candles, movingAverages, support, resistance, scales, segments, projections, upcoming, evidence]
+      properties:
+        symbol: { type: string, example: AAPL }
+        asOf: { type: string, format: date-time }
+        cutoff: { type: string, format: date-time, description: Instante de corte de los datos de mercado }
+        lastSession: { type: string, format: date, description: Última sesión cerrada incluida en las velas }
+        source: { type: string, example: Alpaca Market Data IEX }
+        candles:
+          type: array
+          description: Velas diarias cerradas de los dos años que usa el Core 001
+          items:
+            type: object
+            required: [time, open, high, low, close, volume]
+            properties:
+              time: { type: string, format: date }
+              open: { type: number }
+              high: { type: number }
+              low: { type: number }
+              close: { type: number }
+              volume: { type: number }
+        movingAverages:
+          type: object
+          description: Medias alineadas con las velas; empiezan cuando hay periodo completo
+          properties:
+            sma200: { type: array, items: { $ref: '#/components/schemas/TechnicalSeriesPoint' } }
+            ema50: { type: array, items: { $ref: '#/components/schemas/TechnicalSeriesPoint' } }
+            ema20: { type: array, items: { $ref: '#/components/schemas/TechnicalSeriesPoint' } }
+        support: { type: array, maxItems: 3, items: { $ref: '#/components/schemas/TechnicalSeriesLevel' } }
+        resistance: { type: array, maxItems: 3, items: { $ref: '#/components/schemas/TechnicalSeriesLevel' } }
+        scales: { $ref: '#/components/schemas/TechnicalCoreResult/properties/scales' }
+        segments: { $ref: '#/components/schemas/TechnicalCoreResult/properties/segments' }
+        projections: { $ref: '#/components/schemas/TechnicalCoreResult/properties/projections' }
+        upcoming:
+          type: array
+          maxItems: 60
+          description: Sesiones bursátiles futuras del calendario de Alpaca, usadas para fechar la ventana proyectada
+          items: { type: string, format: date }
+        limitation: { type: string }
+        evidence: { $ref: '#/components/schemas/StrategyCoreDiagnostic/properties/evidence' }
     CuentaBrokerConfirmada:
       type: object
       required: [broker, account]
@@ -1398,7 +1757,10 @@ components:
       properties:
         _id: { type: string, example: '67035ab218ef8c12e4f01234' }
         id: { type: string, example: '67035ab218ef8c12e4f01234' }
-        portfolioId: { type: string, example: 'PORT-TECH-COLLAR-01' }
+        portfolioId:
+          type: string
+          example: 'PORT-TECH-COLLAR-01'
+          description: "Texto libre en MongoDB. En Supabase debe ser un UUID o 'PORT-01' (portafolio por defecto); otro valor responde 400, y en coberturas ejecutadas se rechaza antes de emitir órdenes."
         broker:
           type: string
           enum: [ALPACA, IBKR, WEBULL]
@@ -1471,31 +1833,140 @@ components:
 
     BrokerOrderInput:
       type: object
-      required: [symbol, qty, side, type]
+      description: >
+        La orden se rechaza con 400 antes de contactar al broker si falta un dato. No hay precios, strikes,
+        vencimientos ni tipos por defecto; las órdenes market se envían sin precio límite.
+      required: [symbol, instrumentType, qty, side, type]
       properties:
-        broker: { type: string, enum: [WEBULL, ALPACA, IBKR], default: WEBULL, example: WEBULL }
-        symbol: { type: string, example: AAPL }
-        instrumentType: { type: string, enum: [EQUITY, OPTION], default: EQUITY, example: OPTION }
-        optionType: { type: string, enum: [CALL, PUT], description: Requerido si instrumentType es OPTION, example: CALL }
-        strikePrice: { type: number, description: Precio de ejercicio para opciones, example: 235.00 }
-        expirationDate: { type: string, description: Fecha de vencimiento para opciones (YYYY-MM-DD), example: '2026-10-16' }
-        qty: { type: integer, example: 10 }
+        broker: { type: string, enum: [WEBULL, ALPACA, IBKR], example: WEBULL }
+        symbol: { type: string, example: AAPL, description: Subyacente; en opciones puede deducirse de contractSymbol }
+        instrumentType: { type: string, enum: [EQUITY, OPTION], example: OPTION }
+        contractSymbol: { type: string, example: AAPL261218P00300000, description: Símbolo OCC; debe coincidir con optionType, strikePrice y expirationDate si se envían }
+        optionType: { type: string, enum: [CALL, PUT], description: 'Obligatorio en opciones (o en contractSymbol)', example: PUT }
+        strikePrice: { type: number, description: 'Obligatorio en opciones (o en contractSymbol)', example: 300 }
+        expirationDate: { type: string, format: date, description: 'Obligatorio en opciones (o en contractSymbol)', example: '2026-12-18' }
+        strategy: { type: string, enum: [SINGLE, COVERED_STOCK], default: SINGLE, description: Solo opciones en Webull }
+        stockPrice: { type: number, description: Obligatorio con strategy COVERED_STOCK }
+        qty: { type: integer, minimum: 1, example: 1 }
         side: { type: string, enum: [buy, sell], example: buy }
-        type: { type: string, enum: [market, limit], default: limit, example: limit }
-        timeInForce: { type: string, enum: [day, gtc], default: gtc, example: gtc }
-        limitPrice: { type: number, example: 228.00 }
+        type: { type: string, enum: [market, limit], example: limit }
+        timeInForce: { type: string, enum: [day, gtc], default: day }
+        limitPrice: { type: number, exclusiveMinimum: 0, description: Obligatorio en órdenes limit; se ignora en market, example: 2.15 }
 
     BrokerOrderOutput:
       type: object
+      required: [message, order]
       properties:
-        broker: { type: string, enum: [WEBULL, ALPACA, IBKR], example: WEBULL }
-        orderId: { type: string, example: '904837cc-ae9b-4b1a-8c02-5aed3245b3d7' }
-        clientOrderId: { type: string, example: 'ORD-982173' }
-        symbol: { type: string, example: AAPL }
-        qty: { type: integer, example: 10 }
-        side: { type: string, example: buy }
-        status: { type: string, example: accepted }
-        createdAt: { type: string, format: date-time }
+        message: { type: string, description: Describe la orden como enviada o aceptada; no como ejecutada mientras el broker no informe el llenado }
+        order:
+          type: object
+          required: [broker, id]
+          properties:
+            broker: { type: string, enum: [WEBULL, ALPACA, IBKR] }
+            id: { type: string, description: Identificador que devolvió el broker }
+            clientOrderId: { type: string, nullable: true }
+            symbol: { type: string }
+            instrumentType: { type: string, enum: [EQUITY, OPTION] }
+            contractSymbol: { type: string, nullable: true }
+            optionType: { type: string, nullable: true }
+            strikePrice: { type: number, nullable: true }
+            expirationDate: { type: string, nullable: true }
+            qty: { type: integer }
+            side: { type: string }
+            type: { type: string }
+            limitPrice: { type: number, nullable: true }
+            status: { type: string, nullable: true, description: Estado reportado por el broker; null si no lo reporta }
+            filledQty: { type: number, nullable: true, description: Cantidad ejecutada reportada por el broker; null si no la reporta }
+            createdAt: { type: string, nullable: true }
+
+    CandidatoEscanerTeorico:
+      type: object
+      description: Collar teórico (Black-Scholes) sobre el precio observado; sus primas no son cotizaciones ni precios de órdenes.
+      properties:
+        rank: { type: integer }
+        symbol: { type: string }
+        companyName: { type: string, nullable: true }
+        spotPrice: { type: number, description: Precio observado en el broker }
+        spotObservedAt: { type: string, nullable: true }
+        spotSource: { type: string, nullable: true }
+        optimalExpiration: { type: string, format: date }
+        dteDays: { type: integer }
+        pricing:
+          type: object
+          properties:
+            model: { type: string, enum: [BLACK_SCHOLES] }
+            theoretical: { type: boolean, enum: [true] }
+            volatility: { type: number }
+            volatilitySource: { type: string, description: Origen de la volatilidad supuesta (referencia de la canasta o valor declarado) }
+            riskFreeRate: { type: number, example: 0.045 }
+        putFloor:
+          type: object
+          properties:
+            strike: { type: number }
+            theoreticalPremium: { type: number }
+            delta: { type: number }
+            moneyness: { type: string }
+        callCeiling:
+          type: object
+          properties:
+            strike: { type: number }
+            theoreticalPremium: { type: number }
+            delta: { type: number }
+            moneyness: { type: string }
+        financialMetrics: { type: object }
+        probabilities: { type: object }
+        tradingViewSymbol: { type: string }
+    ContratoOpcionCotizado:
+      type: object
+      properties:
+        contractSymbol: { type: string, example: AAPL270108P00325000 }
+        type: { type: string, enum: [PUT, CALL] }
+        strike: { type: number }
+        expirationDate: { type: string, format: date }
+        multiplier: { type: number, example: 100 }
+        bid: { type: number, nullable: true }
+        ask: { type: number, nullable: true }
+        volume: { type: number, nullable: true }
+        openInterest: { type: number, nullable: true }
+        quoteTime: { type: string, format: date-time, nullable: true }
+        delayMinutes: { type: number }
+        source: { type: string }
+        spreadPct: { type: number }
+    VistaPreviaCollar:
+      type: object
+      properties:
+        symbol: { type: string }
+        underlying:
+          type: object
+          properties:
+            price: { type: number }
+            quoteTime: { type: string, nullable: true }
+            source: { type: string }
+        put: { $ref: '#/components/schemas/ContratoOpcionCotizado' }
+        call: { $ref: '#/components/schemas/ContratoOpcionCotizado' }
+        metrics:
+          type: object
+          properties:
+            shares: { type: number }
+            netPremiumPerShare: { type: number, description: 'ask del Put − bid del Call; positivo es débito' }
+            netCost: { type: string, enum: [DEBIT, CREDIT, ZERO] }
+            maxLoss: { type: number }
+            maxProfit: { type: number }
+            breakEven: { type: number }
+        rule: { type: string }
+    BrokerPosition:
+      type: object
+      description: Posición tal como la reporta el broker; los campos no reportados quedan en null.
+      properties:
+        broker: { type: string }
+        symbol: { type: string }
+        instrumentType: { type: string, nullable: true, description: 'Tipo reportado (EQUITY u OPTION); en Webull las estrategias como COVERED_STOCK se reportan como OPTION' }
+        optionStrategy: { type: string, nullable: true }
+        qty: { type: number, nullable: true, description: Cantidad reportada (acciones, contratos o combinaciones según el instrumento) }
+        equityQty: { type: number, nullable: true, description: Acciones de la posición; es lo único que cuenta para validar una venta de acciones }
+        avgEntryPrice: { type: number, nullable: true }
+        currentPrice: { type: number, nullable: true, description: Precio de mercado reportado; nunca el costo promedio }
+        marketValue: { type: number, nullable: true }
 
     PayoffMatrixOutput:
       type: object

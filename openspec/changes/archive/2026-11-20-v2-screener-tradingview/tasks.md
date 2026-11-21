@@ -30,4 +30,4 @@
 - [x] 5.1 Actualizar el contrato formal `spec/openspec.yaml` con las definiciones y esquemas de `/api/v2`.
 - [x] 5.2 Actualizar `NOTA_MAESTRA_EVERNOTE.md` y su versión HTML agregando el protocolo exhaustivo de selección de empresas y las justificaciones del análisis técnico.
 - [x] 5.3 Regenerar y sincronizar las colecciones Postman mediante `python scripts/build_full_postman_collection.py`.
-- [ ] 5.4 Realizar commit y push en la rama `dev` con la autoría de `LuisonTwentyThree`.
+- [x] 5.4 Realizar commit y push en la rama `dev` con la autoría de `LuisonTwentyThree`. (Hecho en `b592a17`, de Luis Duran, presente en `origin/dev` y `origin/main`; marcado al archivar el 2026-11-20.)
