@@ -1,18 +1,18 @@
 TAP version 13
 # ⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715
-# GET /api/v1/spec.json 200 18.222 ms - 48221
+# GET /api/v1/spec.json 200 21.306 ms - 69953
 # Subtest: [contrato] las referencias internas del OpenAPI publicado se resuelven
 ok 1 - [contrato] las referencias internas del OpenAPI publicado se resuelven
   ---
-  duration_ms: 252.533821
+  duration_ms: 240.482575
   ...
-# POST /api/v1/quant/black-scholes 200 4.561 ms - 302
+# POST /api/v1/quant/black-scholes 200 3.478 ms - 302
 # Subtest: [contrato] respuesta Black Scholes cumple los campos y tipos del consumidor
 ok 2 - [contrato] respuesta Black Scholes cumple los campos y tipos del consumidor
   ---
-  duration_ms: 10.059439
+  duration_ms: 8.351083
   ...
-# GET /api/v1/spec.json 200 10.707 ms - 48221
+# GET /api/v1/spec.json 200 12.225 ms - 69953
 # [API Error Detail]: Error: spotPrice debe ser mayor que cero.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -37,22 +37,22 @@ ok 2 - [contrato] respuesta Black Scholes cumple los campos y tipos del consumid
 #     headers: {}
 #   }
 # }
-# POST /api/v1/quant/black-scholes 400 2.057 ms - 190
+# POST /api/v1/quant/black-scholes 400 1.738 ms - 190
 # Subtest: [contrato] error de entrada cumple el contrato de error y el estado documentado
 ok 3 - [contrato] error de entrada cumple el contrato de error y el estado documentado
   ---
-  duration_ms: 16.9857
+  duration_ms: 18.997452
   ...
-# POST /api/v1/auth/login 200 2.560 ms - 499
-# GET /api/v1/auth/session 200 1.158 ms - 227
-# POST /api/v1/quant/black-scholes 200 1.229 ms - 302
-# POST /api/v1/auth/login 200 0.879 ms - 501
-# GET /api/v1/auth/session 200 0.739 ms - 229
-# POST /api/v1/quant/black-scholes 200 0.832 ms - 302
+# POST /api/v1/auth/login 200 1.712 ms - 499
+# GET /api/v1/auth/session 200 0.967 ms - 227
+# POST /api/v1/quant/black-scholes 200 0.670 ms - 302
+# POST /api/v1/auth/login 200 0.647 ms - 501
+# GET /api/v1/auth/session 200 0.519 ms - 229
+# POST /api/v1/quant/black-scholes 200 0.721 ms - 302
 # Subtest: [funcional] cliente inicia sesión confirma contexto y calcula precio
 ok 4 - [funcional] cliente inicia sesión confirma contexto y calcula precio
   ---
-  duration_ms: 16.969703
+  duration_ms: 12.16779
   ...
 # [API Error Detail]: Error: Token de autorización inválido o expirado.
 #     at authMiddleware (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/middlewares/auth.middleware.js:18:15)
@@ -78,11 +78,11 @@ ok 4 - [funcional] cliente inicia sesión confirma contexto y calcula precio
 #     headers: {}
 #   }
 # }
-# GET /api/v1/auth/session 401 1.150 ms - 194
+# GET /api/v1/auth/session 401 0.845 ms - 194
 # Subtest: [seguridad] rechaza JWT con expirado
 ok 5 - [seguridad] rechaza JWT con expirado
   ---
-  duration_ms: 4.541102
+  duration_ms: 2.702083
   ...
 # [API Error Detail]: Error: Token de autorización inválido o expirado.
 #     at authMiddleware (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/middlewares/auth.middleware.js:18:15)
@@ -108,11 +108,11 @@ ok 5 - [seguridad] rechaza JWT con expirado
 #     headers: {}
 #   }
 # }
-# GET /api/v1/auth/session 401 0.762 ms - 194
+# GET /api/v1/auth/session 401 0.683 ms - 194
 # Subtest: [seguridad] rechaza JWT con firma incorrecta
 ok 6 - [seguridad] rechaza JWT con firma incorrecta
   ---
-  duration_ms: 3.361479
+  duration_ms: 2.399852
   ...
 # [API Error Detail]: Error: Token de autorización inválido o expirado.
 #     at authMiddleware (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/middlewares/auth.middleware.js:18:15)
@@ -138,11 +138,11 @@ ok 6 - [seguridad] rechaza JWT con firma incorrecta
 #     headers: {}
 #   }
 # }
-# GET /api/v1/auth/session 401 0.335 ms - 194
+# GET /api/v1/auth/session 401 0.331 ms - 194
 # Subtest: [seguridad] rechaza JWT con algoritmo none
 ok 7 - [seguridad] rechaza JWT con algoritmo none
   ---
-  duration_ms: 2.177606
+  duration_ms: 2.173184
   ...
 # [API Error Detail]: Error: spotPrice debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
@@ -168,11 +168,11 @@ ok 7 - [seguridad] rechaza JWT con algoritmo none
 #     headers: {}
 #   }
 # }
-# POST /api/v1/quant/black-scholes 400 0.541 ms - 193
+# POST /api/v1/quant/black-scholes 400 0.521 ms - 193
 # Subtest: [seguridad] rechaza objeto de inyección en parámetro numérico
 ok 8 - [seguridad] rechaza objeto de inyección en parámetro numérico
   ---
-  duration_ms: 1.957514
+  duration_ms: 1.992405
   ...
 # [API Error Detail]: SyntaxError: Unexpected end of JSON input
 #     at JSON.parse (<anonymous>)
@@ -191,19 +191,19 @@ ok 8 - [seguridad] rechaza objeto de inyección en parámetro numérico
 #   body: '{"spotPrice":',
 #   type: 'entity.parse.failed'
 # }
-# POST /api/v1/quant/black-scholes 400 0.738 ms - 184
+# POST /api/v1/quant/black-scholes 400 0.780 ms - 184
 # Subtest: [seguridad] JSON truncado produce 400 sin exponer stack
 ok 9 - [seguridad] JSON truncado produce 400 sin exponer stack
   ---
-  duration_ms: 2.24397
+  duration_ms: 2.329077
   ...
-# GET /api/v1/health 200 0.230 ms - 75
-# GET /api/v1/docs 200 1.276 ms - 1039
+# GET /api/v1/health 200 0.172 ms - 75
+# GET /api/v1/docs 200 1.183 ms - 1039
 # POST /api/v1/quant/black-scholes 200 0.399 ms - 302
 # Subtest: [smoke] health documentación y cálculo responden con contenido esperado
 ok 10 - [smoke] health documentación y cálculo responden con contenido esperado
   ---
-  duration_ms: 6.023717
+  duration_ms: 4.926081
   ...
 1..10
 # tests 10
@@ -213,4 +213,4 @@ ok 10 - [smoke] health documentación y cálculo responden con contenido esperad
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 433.858452
+# duration_ms 380.982566

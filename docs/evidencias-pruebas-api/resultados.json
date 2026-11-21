@@ -1,6 +1,6 @@
 {
-  "startedAt": "2026-11-17T07:32:49.506Z",
-  "finishedAt": "2026-11-17T07:33:00.478Z",
+  "startedAt": "2026-11-21T16:27:42.981Z",
+  "finishedAt": "2026-11-21T16:27:50.430Z",
   "environment": {
     "node": "v20.20.2",
     "platform": "linux",
@@ -8,8 +8,8 @@
     "architecture": "x64",
     "cpuModel": "Intel(R) Core(TM) Ultra 7 258V",
     "logicalCpus": 8,
-    "systemMemoryGiB": 30.88512420654297,
-    "target": "http://127.0.0.1:43667",
+    "systemMemoryGiB": 30.885112762451172,
+    "target": "http://127.0.0.1:43365",
     "apiBase": "/api/v1",
     "mode": "local sin conexiones a bases ni operaciones bursátiles"
   },
@@ -160,6 +160,148 @@
         }
       ],
       "logFile": "black-scholes.validation.tap.txt",
+      "error": null
+    },
+    {
+      "file": "test/broker.ordenes.test.js",
+      "exitCode": 0,
+      "passed": 10,
+      "failed": 0,
+      "cases": [
+        {
+          "name": "una orden incompleta se rechaza con 400 antes de contactar al broker",
+          "passed": true
+        },
+        {
+          "name": "una compra de mercado se envía sin precio límite y valida el Buying Power con el ask observado",
+          "passed": true
+        },
+        {
+          "name": "sin cuenta legible no se emite la compra",
+          "passed": true
+        },
+        {
+          "name": "la venta de acciones cuenta solo acciones y responde 503 si no puede leer posiciones",
+          "passed": true
+        },
+        {
+          "name": "la emisión responde con el identificador y los datos del broker, sin inventar llenados",
+          "passed": true
+        },
+        {
+          "name": "Alpaca: estado y llenado del broker, rechazo 400, respuesta sin id 502 y sin conexión 503",
+          "passed": true
+        },
+        {
+          "name": "la cancelación solo es exitosa si el broker la confirma",
+          "passed": true
+        },
+        {
+          "name": "IBKR distingue la cancelación confirmada de la que TWS aún procesa (PendingCancel)",
+          "passed": true
+        },
+        {
+          "name": "las lecturas no inventan saldos, precios ni listas vacías",
+          "passed": true
+        },
+        {
+          "name": "IBKR informa el tipo de instrumento y no usa el costo promedio como precio actual",
+          "passed": true
+        }
+      ],
+      "logFile": "broker.ordenes.tap.txt",
+      "error": null
+    },
+    {
+      "file": "test/cadenaOpciones.test.js",
+      "exitCode": 0,
+      "passed": 6,
+      "failed": 0,
+      "cases": [
+        {
+          "name": "la cadena compartida entrega contratos listados con cotización, instante y retraso, y descarta retrasos mayores a 15 minutos",
+          "passed": true
+        },
+        {
+          "name": "la cobertura responde 503 cuando no hay contratos cotizados o el proveedor no responde",
+          "passed": true
+        },
+        {
+          "name": "GET options-chain entrega la misma cadena real en los tres brokers, sin contratos ajenos a la lista",
+          "passed": true
+        },
+        {
+          "name": "la vista previa del Auto-Collar es el collar del Core 004 y no emite órdenes ni guarda",
+          "passed": true
+        },
+        {
+          "name": "la recomendación de Put devuelve un contrato listado con su ask, instante y fuente",
+          "passed": true
+        },
+        {
+          "name": "la cadena excluye los contratos que Webull no cotiza en lugar de perder todo el lote",
+          "passed": true
+        }
+      ],
+      "logFile": "cadenaOpciones.tap.txt",
+      "error": null
+    },
+    {
+      "file": "test/coberturasMultipata.test.js",
+      "exitCode": 0,
+      "passed": 12,
+      "failed": 0,
+      "cases": [
+        {
+          "name": "Protective Put: si el broker rechaza el Put no se envían acciones ni se guarda (400)",
+          "passed": true
+        },
+        {
+          "name": "Protective Put: Put aceptado y acciones rechazadas cancela el Put; si se confirma, 400 sin guardar",
+          "passed": true
+        },
+        {
+          "name": "Protective Put: con la cancelación rechazada se guarda PARTIALLY_EXECUTED y responde 409",
+          "passed": true
+        },
+        {
+          "name": "Auto-Collar: una pata ya ejecutada no se cierra y la estrategia queda PARTIALLY_EXECUTED (409)",
+          "passed": true
+        },
+        {
+          "name": "una orden ausente del libro se informa como no verificada, sin estado inventado",
+          "passed": true
+        },
+        {
+          "name": "Auto-Collar: sharesCount que no es múltiplo de 100 responde 400 antes de cotizar",
+          "passed": true
+        },
+        {
+          "name": "Protective Put: usa el strike listado más cercano menor o igual y el ask observado, no la prima del cliente",
+          "passed": true
+        },
+        {
+          "name": "Auto-Collar: usa tal cual el collar del ranking con cotizaciones nuevas y responde 400 si dejó de ser apto",
+          "passed": true
+        },
+        {
+          "name": "Auto-Collar sin resultado del Core 004 calcula la selección sobre la cadena real",
+          "passed": true
+        },
+        {
+          "name": "Auto-Collar en Webull: primero el Put y después el COVERED_STOCK con límite neto (acciones − prima del Call)",
+          "passed": true
+        },
+        {
+          "name": "el collar manual exige las primas de ambas patas",
+          "passed": true
+        },
+        {
+          "name": "un portfolioId que Supabase no puede guardar se rechaza antes de emitir órdenes",
+          "passed": true
+        }
+      ],
+      "logFile": "coberturasMultipata.tap.txt",
       "error": null
     },
     {
@@ -331,7 +473,7 @@
     {
       "file": "test/scanner.v2.test.js",
       "exitCode": 0,
-      "passed": 10,
+      "passed": 15,
       "failed": 0,
       "cases": [
         {
@@ -373,9 +515,55 @@
         {
           "name": "[v2-core] ruta alias /api/v2/scanner/top-collars es equivalente",
           "passed": true
+        },
+        {
+          "name": "[v2-scanner] un activo sin cotización va a unavailable con su motivo y sin precio de referencia",
+          "passed": true
+        },
+        {
+          "name": "[v2-scanner] responde 503 cuando el broker no cotiza ningún activo",
+          "passed": true
+        },
+        {
+          "name": "[v2-scanner] un ticker añadido sin cotización va a unavailable y no recibe precio 100",
+          "passed": true
+        },
+        {
+          "name": "[v2-scanner] las primas son teóricas, con el modelo y la volatilidad supuesta, y sin technicalOutlook",
+          "passed": true
+        },
+        {
+          "name": "[v2-scanner] la caché de 60 s guarda solo cotizaciones válidas",
+          "passed": true
         }
       ],
       "logFile": "scanner.v2.tap.txt",
+      "error": null
+    },
+    {
+      "file": "test/serieTecnica.test.js",
+      "exitCode": 0,
+      "passed": 4,
+      "failed": 0,
+      "cases": [
+        {
+          "name": "la serie técnica entrega velas, medias, niveles con banda, tramos y proyección del Core 001",
+          "passed": true
+        },
+        {
+          "name": "la serie técnica exige sesión y rechaza símbolos inválidos sin consultar la fuente",
+          "passed": true
+        },
+        {
+          "name": "la serie técnica responde 503 con la causa cuando la fuente no entrega velas y no guarda el fallo",
+          "passed": true
+        },
+        {
+          "name": "la serie técnica responde 503 cuando el Core 001 no tiene velas suficientes",
+          "passed": true
+        }
+      ],
+      "logFile": "serieTecnica.tap.txt",
       "error": null
     },
     {
@@ -399,7 +587,7 @@
     {
       "file": "test/strategyScreener.v2.test.js",
       "exitCode": 0,
-      "passed": 7,
+      "passed": 11,
       "failed": 0,
       "cases": [
         {
@@ -429,9 +617,71 @@
         {
           "name": "la ruta pública del escáner valida el cuerpo original antes de inyectar contextos heredados",
           "passed": true
+        },
+        {
+          "name": "cada core informa su participación: confluencia con peso efectivo, filtro, dependencia, síntesis o no calculado",
+          "passed": true
+        },
+        {
+          "name": "cada empresa excluida informa su tipo de exclusión: veto, sin collar o datos insuficientes",
+          "passed": true
+        },
+        {
+          "name": "sin fecha de earnings la empresa conserva su posición con riesgo UNVERIFIED y el 003 se abstiene",
+          "passed": true
+        },
+        {
+          "name": "el calendario de resultados no inventa fechas cuando Webull no entrega una",
+          "passed": true
         }
       ],
       "logFile": "strategyScreener.v2.tap.txt",
+      "error": null
+    },
+    {
+      "file": "test/technicalCore.historico.test.js",
+      "exitCode": 0,
+      "passed": 9,
+      "failed": 0,
+      "cases": [
+        {
+          "name": "001 confirma la tendencia intermedia en la fecha del cruce y arma tramos con fechas",
+          "passed": true
+        },
+        {
+          "name": "001 elige los soportes por puntaje y no solo por cercanía",
+          "passed": true
+        },
+        {
+          "name": "001 informa como no disponibles las escalas sin velas suficientes para la SMA200",
+          "passed": true
+        },
+        {
+          "name": "001 proyecta una ventana de fechas, no un día exacto, cuando las medias convergen",
+          "passed": true
+        },
+        {
+          "name": "001 indica que no hay cambio proyectado cuando las medias se separan",
+          "passed": true
+        },
+        {
+          "name": "la proyección respeta el horizonte de 60 sesiones",
+          "passed": true
+        },
+        {
+          "name": "la precisión medida cuenta los cruces precedidos de una proyección y advierte muestras pequeñas",
+          "passed": true
+        },
+        {
+          "name": "001 lee los indicadores con los parámetros de la guía",
+          "passed": true
+        },
+        {
+          "name": "el puntaje, la dirección y la confianza del 001 no dependen de la proyección",
+          "passed": true
+        }
+      ],
+      "logFile": "technicalCore.historico.tap.txt",
       "error": null
     },
     {
@@ -462,32 +712,32 @@
     }
   ],
   "totals": {
-    "passed": 84,
+    "passed": 134,
     "failed": 0
   },
   "smoke": [
     {
       "endpoint": "/api/v1/health",
       "status": 200,
-      "elapsedMs": 35.79889600000024,
+      "elapsedMs": 19.96375799999987,
       "passed": true
     },
     {
       "endpoint": "/api/v1/spec.json",
       "status": 200,
-      "elapsedMs": 22.388794999998936,
+      "elapsedMs": 22.747997999999825,
       "passed": true
     },
     {
       "endpoint": "/api/v1/docs",
       "status": 200,
-      "elapsedMs": 3.6625220000005356,
+      "elapsedMs": 2.3823040000006586,
       "passed": true
     },
     {
       "endpoint": "/api/v1/quant/black-scholes",
       "status": 200,
-      "elapsedMs": 9.059644999999364,
+      "elapsedMs": 5.509078000000045,
       "passed": true,
       "response": {
         "message": "Valuación analítica Black-Scholes y Griegas calculadas.",
@@ -514,14 +764,14 @@
       "requests": 40,
       "completed": 40,
       "errors": 0,
-      "elapsedMs": 36.18783499999881,
-      "requestsPerSecond": 1105.3438261780875,
-      "p50Ms": 0.7687779999996565,
-      "p95Ms": 1.5648499999988417,
-      "p99Ms": 2.3812120000002324,
-      "maxMs": 2.3812120000002324,
-      "serverRssMiB": 119.2890625,
-      "serverCpuMs": 22.332,
+      "elapsedMs": 43.630231000000094,
+      "requestsPerSecond": 916.7955127260251,
+      "p50Ms": 1.0237489999999525,
+      "p95Ms": 1.7425359999997454,
+      "p99Ms": 1.908846000000267,
+      "maxMs": 1.908846000000267,
+      "serverRssMiB": 118.09375,
+      "serverCpuMs": 16.346,
       "passed": true
     },
     {
@@ -529,14 +779,14 @@
       "requests": 100,
       "completed": 100,
       "errors": 0,
-      "elapsedMs": 74.81213399999979,
-      "requestsPerSecond": 1336.681560239951,
-      "p50Ms": 2.1683109999994485,
-      "p95Ms": 10.978580999999394,
-      "p99Ms": 14.769235999998273,
-      "maxMs": 18.58859400000074,
-      "serverRssMiB": 121.4140625,
-      "serverCpuMs": 44.778,
+      "elapsedMs": 59.35283700000036,
+      "requestsPerSecond": 1684.8394289897108,
+      "p50Ms": 2.756970000000365,
+      "p95Ms": 5.505587999999989,
+      "p99Ms": 6.622212000000218,
+      "maxMs": 7.146781999999803,
+      "serverRssMiB": 123.84375,
+      "serverCpuMs": 47.342,
       "passed": true
     },
     {
@@ -544,14 +794,14 @@
       "requests": 400,
       "completed": 400,
       "errors": 0,
-      "elapsedMs": 173.13478700000087,
-      "requestsPerSecond": 2310.3387073794593,
-      "p50Ms": 7.498826999999437,
-      "p95Ms": 15.600194999999076,
-      "p99Ms": 25.05041700000038,
-      "maxMs": 26.314705000000686,
-      "serverRssMiB": 134.0390625,
-      "serverCpuMs": 188.287,
+      "elapsedMs": 170.8285679999999,
+      "requestsPerSecond": 2341.5287307214344,
+      "p50Ms": 8.254812999999558,
+      "p95Ms": 12.351381000000401,
+      "p99Ms": 15.940722999999707,
+      "maxMs": 17.250401999999667,
+      "serverRssMiB": 131.59375,
+      "serverCpuMs": 170.197,
       "passed": true
     },
     {
@@ -559,14 +809,14 @@
       "requests": 500,
       "completed": 500,
       "errors": 0,
-      "elapsedMs": 192.46136400000069,
-      "requestsPerSecond": 2597.924017622561,
-      "p50Ms": 16.89899499999956,
-      "p95Ms": 54.7009450000005,
-      "p99Ms": 63.297955,
-      "maxMs": 66.41637300000002,
-      "serverRssMiB": 134.83984375,
-      "serverCpuMs": 210.435,
+      "elapsedMs": 183.28672600000027,
+      "requestsPerSecond": 2727.9662358091296,
+      "p50Ms": 15.50761599999987,
+      "p95Ms": 33.38207700000021,
+      "p99Ms": 78.99492199999986,
+      "maxMs": 79.51167900000019,
+      "serverRssMiB": 131.7265625,
+      "serverCpuMs": 203.909,
       "passed": true
     },
     {
@@ -574,76 +824,76 @@
       "requests": 1000,
       "completed": 1000,
       "errors": 0,
-      "elapsedMs": 311.6950280000001,
-      "requestsPerSecond": 3208.2642011216158,
-      "p50Ms": 29.6623469999995,
-      "p95Ms": 60.12851700000101,
-      "p99Ms": 70.00980400000117,
-      "maxMs": 74.82829800000036,
-      "serverRssMiB": 152.08984375,
-      "serverCpuMs": 386.445,
+      "elapsedMs": 263.73370499999965,
+      "requestsPerSecond": 3791.7034532996126,
+      "p50Ms": 16.652970999999525,
+      "p95Ms": 59.79708000000028,
+      "p99Ms": 181.10461899999973,
+      "maxMs": 211.00457300000016,
+      "serverRssMiB": 149.8515625,
+      "serverCpuMs": 333.804,
       "passed": true
     }
   ],
   "synthetic": [
     {
       "cycle": 1,
-      "timestamp": "2026-11-17T07:32:59.200Z",
+      "timestamp": "2026-11-21T16:27:49.155Z",
       "healthStatus": 200,
       "sessionStatus": 200,
       "calculationStatus": 200,
       "activeDatabase": "supabase",
-      "elapsedMs": 7.579794999999649,
-      "uptimeSeconds": 1.173526218,
-      "rssMiB": 152.08984375,
+      "elapsedMs": 6.123418999999558,
+      "uptimeSeconds": 1.061224325,
+      "rssMiB": 149.9765625,
       "passed": true
     },
     {
       "cycle": 2,
-      "timestamp": "2026-11-17T07:32:59.458Z",
+      "timestamp": "2026-11-21T16:27:49.411Z",
       "healthStatus": 200,
       "sessionStatus": 200,
       "calculationStatus": 200,
       "activeDatabase": "supabase",
-      "elapsedMs": 7.510369999999966,
-      "uptimeSeconds": 1.431622216,
-      "rssMiB": 155.58984375,
+      "elapsedMs": 5.069166999999652,
+      "uptimeSeconds": 1.318414586,
+      "rssMiB": 149.9765625,
       "passed": true
     },
     {
       "cycle": 3,
-      "timestamp": "2026-11-17T07:32:59.713Z",
+      "timestamp": "2026-11-21T16:27:49.666Z",
       "healthStatus": 200,
       "sessionStatus": 200,
       "calculationStatus": 200,
       "activeDatabase": "supabase",
-      "elapsedMs": 4.538077999999587,
-      "uptimeSeconds": 1.689850212,
-      "rssMiB": 155.58984375,
+      "elapsedMs": 3.568680999999742,
+      "uptimeSeconds": 1.574299756,
+      "rssMiB": 149.9765625,
       "passed": true
     },
     {
       "cycle": 4,
-      "timestamp": "2026-11-17T07:32:59.968Z",
+      "timestamp": "2026-11-21T16:27:49.920Z",
       "healthStatus": 200,
       "sessionStatus": 200,
       "calculationStatus": 200,
       "activeDatabase": "supabase",
-      "elapsedMs": 4.923655999999028,
-      "uptimeSeconds": 1.944416819,
-      "rssMiB": 155.58984375,
+      "elapsedMs": 4.810390999999981,
+      "uptimeSeconds": 1.8279703,
+      "rssMiB": 149.9765625,
       "passed": true
     },
     {
       "cycle": 5,
-      "timestamp": "2026-11-17T07:33:00.224Z",
+      "timestamp": "2026-11-21T16:27:50.177Z",
       "healthStatus": 200,
       "sessionStatus": 200,
       "calculationStatus": 200,
       "activeDatabase": "supabase",
-      "elapsedMs": 5.021630999999616,
-      "uptimeSeconds": 2.199710413,
-      "rssMiB": 155.58984375,
+      "elapsedMs": 5.9131270000007135,
+      "uptimeSeconds": 2.083771072,
+      "rssMiB": 150.1015625,
       "passed": true
     }
   ],
@@ -725,14 +975,19 @@
     "src/api/v1/services/quant.service.js": "71034fa48e90134cd080355bd9ed953aaeb562a59b01a9636ac50a3b5949b06c",
     "test/api.contract-functional.test.js": "7438c84ec66775cbe4af36aa00a9f199e5472ae33a3bacdd45e0352f9fa5af92",
     "test/black-scholes.validation.test.js": "d3e3cb02f8d5a9c996a45f4bab0967b4935e9c59adb3818ba984b683e449b10b",
+    "test/broker.ordenes.test.js": "bd492b9fe177f957edfda721ce28151d087714b6e8c18c6c9005e62e5814c9e4",
+    "test/cadenaOpciones.test.js": "4fd9533449e243ce4c9d37ace718e2d55f7738a6e7e307fcbecd0b44956b2d80",
+    "test/coberturasMultipata.test.js": "5f3fdabad2c61bb2601137cd5f933095dfe86926df249cfee1be51b330a1193b",
     "test/context.unit.test.js": "304f1e7bb1fe4aecb46d16355913d80ee370e64fab4f22bd9bfae37bb534adbd",
     "test/login.routes.test.js": "d9d6f6f217c74f0603633e4bcd6c73658ab80256bc45eca8528bbd8e460eb2fb",
     "test/login.session.test.js": "5f48e4bf8d3be214c4727062bee7ceda0179deb46b75df92d7b20a9815f3de6f",
-    "test/portafolio.test.js": "43eefb0776d36369cb2c872a527d7c98982328dbaf9c4db4077824abd0f51d7e",
+    "test/portafolio.test.js": "e2a448efe48ea43c008a6c4469ba49e502bc51d14e005948d31ef15fda2d2978",
     "test/quant.unit.test.js": "740eb801d6b9cdff9aa3a4d0d0a083f4f19cf9565bc12883601c9f6785894632",
-    "test/scanner.v2.test.js": "7ef69436f1ddbaa21241af70b8f710135e1f37a0f97d4107393c54ec82ce2086",
+    "test/scanner.v2.test.js": "95f08adbad1969eff2c1e42b9fdf260c20f8f610420ce85c8b7fe3c18544b5e1",
+    "test/serieTecnica.test.js": "6761023d5b4d2f5250e9b56607a37f6992e65c8e7e3cda90ba2727195b9b83ca",
     "test/strategyScreener.observations.test.js": "1863b5918c39aee01d5a1cabda6c4baf2f482fbd13ce1b861d7e24b162f722b1",
-    "test/strategyScreener.v2.test.js": "ad87d59d65b46a9fd6949c82f7b9fe8c61ffb594668619757cafd29cecff21fe",
+    "test/strategyScreener.v2.test.js": "8c8a860b49aeb60ffe0bcadf45474d58b825ac34638b3a882ea40c146195d2c5",
+    "test/technicalCore.historico.test.js": "20d443746d9cdee289e15699bed35b380afe5463b06c256efc371c34c95f2090",
     "test/underlying.integration.test.js": "30318647c03258c2e089b268219fdced9fdff87e2f717c7235d202225708bf3e"
   }
 }

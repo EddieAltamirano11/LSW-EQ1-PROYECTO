@@ -93,8 +93,8 @@ En `src/api/v1/services/broker.service.js`:
   ```http
   GET /v2/stocks/AAPL/snapshot?feed=iex HTTP/1.1
   Host: data.alpaca.markets
-  APCA-API-KEY-ID: PK4V5IGAOIZNH2XKBQYF6DW2XJ
-  APCA-API-SECRET-KEY: 5tTmeXfiEFdMWRZkbkXCi53VsCKFvitrrgAmajxteUcB
+  APCA-API-KEY-ID: <ALPACA_API_KEY_ID>
+  APCA-API-SECRET-KEY: <ALPACA_API_SECRET_KEY>
   ```
 * Extrae el precio de la última operación (`latestTrade.p`) o calcula el punto medio entre el bid y el ask (`(bp + ap) / 2`).
 

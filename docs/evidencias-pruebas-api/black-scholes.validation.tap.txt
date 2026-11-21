@@ -1,30 +1,30 @@
 TAP version 13
 # ⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715
-# POST /pruebas/v2/quant/black-scholes 200 4.839 ms - 302
+# POST /pruebas/v2/quant/black-scholes 200 4.674 ms - 302
 # Subtest: conserva exactamente el PUT y sus valores predeterminados en otro prefijo
 ok 1 - conserva exactamente el PUT y sus valores predeterminados en otro prefijo
   ---
-  duration_ms: 260.614679
+  duration_ms: 241.411986
   ...
-# POST /pruebas/v2/quant/black-scholes 200 0.708 ms - 301
+# POST /pruebas/v2/quant/black-scholes 200 0.647 ms - 301
 # Subtest: conserva exactamente el CALL explícito y sus cinco griegas
 ok 2 - conserva exactamente el CALL explícito y sus cinco griegas
   ---
-  duration_ms: 3.781909
+  duration_ms: 3.497155
   ...
-# POST /pruebas/v2/quant/black-scholes 200 0.415 ms - 302
-# POST /pruebas/v2/quant/black-scholes 200 0.437 ms - 301
+# POST /pruebas/v2/quant/black-scholes 200 0.468 ms - 302
+# POST /pruebas/v2/quant/black-scholes 200 0.317 ms - 301
 # Subtest: conserva cadenas numéricas, minúsculas y tolerancia de metadatos adicionales
 ok 3 - conserva cadenas numéricas, minúsculas y tolerancia de metadatos adicionales
   ---
-  duration_ms: 4.816322
+  duration_ms: 3.916991
   ...
-# POST /pruebas/v2/quant/black-scholes 200 0.317 ms - 297
-# POST /pruebas/v2/quant/black-scholes 200 0.290 ms - 302
+# POST /pruebas/v2/quant/black-scholes 200 0.301 ms - 297
+# POST /pruebas/v2/quant/black-scholes 200 0.285 ms - 302
 # Subtest: admite tasas cero y negativas finitas con resultados representables
 ok 4 - admite tasas cero y negativas finitas con resultados representables
   ---
-  duration_ms: 3.255745
+  duration_ms: 3.100538
   ...
 # [API Error Detail]: Error: El cuerpo debe ser un objeto JSON.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:8:16)
@@ -50,7 +50,7 @@ ok 4 - admite tasas cero y negativas finitas con resultados representables
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 2.093 ms - 194
+# POST /pruebas/v2/quant/black-scholes 400 1.620 ms - 194
 # [API Error Detail]: Error: spotPrice es obligatorio.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:16:20)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -75,35 +75,41 @@ ok 4 - admite tasas cero y negativas finitas con resultados representables
 #     headers: {}
 #   }
 # }
-# [API Error Detail]: Error: spotPrice es obligatorio.
-#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:16:20)
-#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
-#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
-#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
-#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
-#   data: null,
-#   isBoom: true,
-#   isServer: false,
-#   output: {
-#     statusCode: 400,
-#     payload: {
-#       statusCode: 400,
-#       error: 'Bad Request',
-#       message: 'spotPrice es obligatorio.'
-#     },
-#     headers: {}
-#   }
-# }
-# POST /pruebas/v2/quant/black-scholes 400 0.442 ms - 185
+# POST /pruebas/v2/quant/black-scholes 400 0.509 ms - 185
 # Subtest: rechaza cuerpos que no sean objetos de parámetros
 ok 5 - rechaza cuerpos que no sean objetos de parámetros
   ---
-  duration_ms: 6.124979
+  duration_ms: 4.988027
+  ...
+# [API Error Detail]: Error: spotPrice es obligatorio.
+#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:16:20)
+#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
+#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'spotPrice es obligatorio.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.532 ms - 185
+# Subtest: rechaza la ausencia de spotPrice
+ok 6 - rechaza la ausencia de spotPrice
+  ---
+  duration_ms: 2.206604
   ...
 # [API Error Detail]: Error: strikePrice es obligatorio.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:16:20)
@@ -129,6 +135,12 @@ ok 5 - rechaza cuerpos que no sean objetos de parámetros
 #     headers: {}
 #   }
 # }
+# POST /pruebas/v2/quant/black-scholes 400 0.574 ms - 187
+# Subtest: rechaza la ausencia de strikePrice
+ok 7 - rechaza la ausencia de strikePrice
+  ---
+  duration_ms: 2.341977
+  ...
 # [API Error Detail]: Error: timeToExpirationYears es obligatorio.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:16:20)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -153,12 +165,6 @@ ok 5 - rechaza cuerpos que no sean objetos de parámetros
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.954 ms - 185
-# Subtest: rechaza la ausencia de spotPrice
-ok 6 - rechaza la ausencia de spotPrice
-  ---
-  duration_ms: 3.069614
-  ...
 # [API Error Detail]: Error: spotPrice debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -183,113 +189,11 @@ ok 6 - rechaza la ausencia de spotPrice
 #     headers: {}
 #   }
 # }
-# [API Error Detail]: Error: spotPrice debe ser un número finito.
-#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
-#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
-#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
-#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
-#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
-#   data: null,
-#   isBoom: true,
-#   isServer: false,
-#   output: {
-#     statusCode: 400,
-#     payload: {
-#       statusCode: 400,
-#       error: 'Bad Request',
-#       message: 'spotPrice debe ser un número finito.'
-#     },
-#     headers: {}
-#   }
-# }
-# [API Error Detail]: Error: spotPrice debe ser un número finito.
-#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
-#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
-#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
-#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
-#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
-#   data: null,
-#   isBoom: true,
-#   isServer: false,
-#   output: {
-#     statusCode: 400,
-#     payload: {
-#       statusCode: 400,
-#       error: 'Bad Request',
-#       message: 'spotPrice debe ser un número finito.'
-#     },
-#     headers: {}
-#   }
-# }
-# [API Error Detail]: Error: spotPrice debe ser un número finito.
-#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
-#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
-#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
-#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
-#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
-#   data: null,
-#   isBoom: true,
-#   isServer: false,
-#   output: {
-#     statusCode: 400,
-#     payload: {
-#       statusCode: 400,
-#       error: 'Bad Request',
-#       message: 'spotPrice debe ser un número finito.'
-#     },
-#     headers: {}
-#   }
-# }
-# POST /pruebas/v2/quant/black-scholes 400 0.637 ms - 187
-# Subtest: rechaza la ausencia de strikePrice
-ok 7 - rechaza la ausencia de strikePrice
-  ---
-  duration_ms: 2.325635
-  ...
-# [API Error Detail]: Error: spotPrice debe ser un número finito.
-#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
-#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
-#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
-#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
-#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
-#   data: null,
-#   isBoom: true,
-#   isServer: false,
-#   output: {
-#     statusCode: 400,
-#     payload: {
-#       statusCode: 400,
-#       error: 'Bad Request',
-#       message: 'spotPrice debe ser un número finito.'
-#     },
-#     headers: {}
-#   }
-# }
-# POST /pruebas/v2/quant/black-scholes 400 0.445 ms - 197
+# POST /pruebas/v2/quant/black-scholes 400 0.416 ms - 197
 # Subtest: rechaza la ausencia de timeToExpirationYears
 ok 8 - rechaza la ausencia de timeToExpirationYears
   ---
-  duration_ms: 1.906649
+  duration_ms: 1.970577
   ...
 # [API Error Detail]: Error: spotPrice debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
@@ -339,14 +243,84 @@ ok 8 - rechaza la ausencia de timeToExpirationYears
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.809 ms - 197
-# POST /pruebas/v2/quant/black-scholes 400 0.617 ms - 197
-# POST /pruebas/v2/quant/black-scholes 400 0.434 ms - 197
-# POST /pruebas/v2/quant/black-scholes 400 0.547 ms - 197
-# POST /pruebas/v2/quant/black-scholes 400 0.424 ms - 197
-# POST /pruebas/v2/quant/black-scholes 400 0.373 ms - 197
-# POST /pruebas/v2/quant/black-scholes 400 0.550 ms - 197
-# POST /pruebas/v2/quant/black-scholes 400 0.440 ms - 197
+# POST /pruebas/v2/quant/black-scholes 400 0.450 ms - 197
+# POST /pruebas/v2/quant/black-scholes 400 0.570 ms - 197
+# POST /pruebas/v2/quant/black-scholes 400 0.451 ms - 197
+# [API Error Detail]: Error: spotPrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
+#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'spotPrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.428 ms - 197
+# [API Error Detail]: Error: spotPrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
+#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'spotPrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.397 ms - 197
+# [API Error Detail]: Error: spotPrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
+#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'spotPrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.382 ms - 197
 # [API Error Detail]: Error: spotPrice debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -395,62 +369,88 @@ ok 8 - rechaza la ausencia de timeToExpirationYears
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.376 ms - 197
-# POST /pruebas/v2/quant/black-scholes 400 0.334 ms - 197
-# POST /pruebas/v2/quant/black-scholes 400 0.317 ms - 197
+# POST /pruebas/v2/quant/black-scholes 400 0.608 ms - 197
+# POST /pruebas/v2/quant/black-scholes 400 0.445 ms - 197
+# POST /pruebas/v2/quant/black-scholes 400 0.405 ms - 197
+# [API Error Detail]: Error: spotPrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
+#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'spotPrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# [API Error Detail]: Error: spotPrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
+#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'spotPrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.374 ms - 197
+# [API Error Detail]: Error: spotPrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
+#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'spotPrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.337 ms - 197
 # Subtest: rechaza valores no numéricos y coerciones inválidas en spotPrice
 ok 9 - rechaza valores no numéricos y coerciones inválidas en spotPrice
   ---
-  duration_ms: 20.9203
+  duration_ms: 15.724363
   ...
-# [API Error Detail]: Error: spotPrice debe ser un número finito.
-#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
-#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
-#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
-#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
-#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
-#   data: null,
-#   isBoom: true,
-#   isServer: false,
-#   output: {
-#     statusCode: 400,
-#     payload: {
-#       statusCode: 400,
-#       error: 'Bad Request',
-#       message: 'spotPrice debe ser un número finito.'
-#     },
-#     headers: {}
-#   }
-# }
-# [API Error Detail]: Error: spotPrice debe ser un número finito.
-#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
-#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
-#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
-#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
-#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
-#   data: null,
-#   isBoom: true,
-#   isServer: false,
-#   output: {
-#     statusCode: 400,
-#     payload: {
-#       statusCode: 400,
-#       error: 'Bad Request',
-#       message: 'spotPrice debe ser un número finito.'
-#     },
-#     headers: {}
-#   }
-# }
 # [API Error Detail]: Error: strikePrice debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -475,9 +475,157 @@ ok 9 - rechaza valores no numéricos y coerciones inválidas en spotPrice
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.464 ms - 199
+# POST /pruebas/v2/quant/black-scholes 400 0.413 ms - 199
+# [API Error Detail]: Error: strikePrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
+#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'strikePrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.346 ms - 199
+# [API Error Detail]: Error: strikePrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
+#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'strikePrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
 # POST /pruebas/v2/quant/black-scholes 400 0.327 ms - 199
-# POST /pruebas/v2/quant/black-scholes 400 0.434 ms - 199
+# [API Error Detail]: Error: strikePrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
+#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'strikePrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.310 ms - 199
+# [API Error Detail]: Error: strikePrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
+#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'strikePrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.446 ms - 199
+# [API Error Detail]: Error: strikePrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
+#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'strikePrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.372 ms - 199
+# [API Error Detail]: Error: strikePrice debe ser un número finito.
+#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
+#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'strikePrice debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.355 ms - 199
 # [API Error Detail]: Error: strikePrice debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -526,6 +674,8 @@ ok 9 - rechaza valores no numéricos y coerciones inválidas en spotPrice
 #     headers: {}
 #   }
 # }
+# POST /pruebas/v2/quant/black-scholes 400 0.368 ms - 199
+# POST /pruebas/v2/quant/black-scholes 400 0.310 ms - 199
 # [API Error Detail]: Error: strikePrice debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -550,7 +700,7 @@ ok 9 - rechaza valores no numéricos y coerciones inválidas en spotPrice
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.334 ms - 199
+# POST /pruebas/v2/quant/black-scholes 400 0.508 ms - 199
 # [API Error Detail]: Error: strikePrice debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -575,8 +725,7 @@ ok 9 - rechaza valores no numéricos y coerciones inválidas en spotPrice
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.475 ms - 199
-# [API Error Detail]: Error: strikePrice debe ser un número finito.
+# [API Error Detail]: Error: timeToExpirationYears debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
 #     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
@@ -595,142 +744,17 @@ ok 9 - rechaza valores no numéricos y coerciones inválidas en spotPrice
 #     payload: {
 #       statusCode: 400,
 #       error: 'Bad Request',
-#       message: 'strikePrice debe ser un número finito.'
+#       message: 'timeToExpirationYears debe ser un número finito.'
 #     },
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.380 ms - 199
-# [API Error Detail]: Error: strikePrice debe ser un número finito.
-#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
-#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
-#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
-#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
-#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
-#   data: null,
-#   isBoom: true,
-#   isServer: false,
-#   output: {
-#     statusCode: 400,
-#     payload: {
-#       statusCode: 400,
-#       error: 'Bad Request',
-#       message: 'strikePrice debe ser un número finito.'
-#     },
-#     headers: {}
-#   }
-# }
-# POST /pruebas/v2/quant/black-scholes 400 0.391 ms - 199
-# POST /pruebas/v2/quant/black-scholes 400 0.367 ms - 199
-# [API Error Detail]: Error: strikePrice debe ser un número finito.
-#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
-#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
-#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
-#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
-#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
-#   data: null,
-#   isBoom: true,
-#   isServer: false,
-#   output: {
-#     statusCode: 400,
-#     payload: {
-#       statusCode: 400,
-#       error: 'Bad Request',
-#       message: 'strikePrice debe ser un número finito.'
-#     },
-#     headers: {}
-#   }
-# }
-# [API Error Detail]: Error: strikePrice debe ser un número finito.
-#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
-#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
-#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
-#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
-#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
-#   data: null,
-#   isBoom: true,
-#   isServer: false,
-#   output: {
-#     statusCode: 400,
-#     payload: {
-#       statusCode: 400,
-#       error: 'Bad Request',
-#       message: 'strikePrice debe ser un número finito.'
-#     },
-#     headers: {}
-#   }
-# }
-# [API Error Detail]: Error: strikePrice debe ser un número finito.
-#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
-#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
-#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
-#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
-#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
-#   data: null,
-#   isBoom: true,
-#   isServer: false,
-#   output: {
-#     statusCode: 400,
-#     payload: {
-#       statusCode: 400,
-#       error: 'Bad Request',
-#       message: 'strikePrice debe ser un número finito.'
-#     },
-#     headers: {}
-#   }
-# }
-# POST /pruebas/v2/quant/black-scholes 400 0.345 ms - 199
-# POST /pruebas/v2/quant/black-scholes 400 0.358 ms - 199
-# POST /pruebas/v2/quant/black-scholes 400 0.556 ms - 199
+# POST /pruebas/v2/quant/black-scholes 400 0.319 ms - 199
 # Subtest: rechaza valores no numéricos y coerciones inválidas en strikePrice
 ok 10 - rechaza valores no numéricos y coerciones inválidas en strikePrice
   ---
-  duration_ms: 17.184793
+  duration_ms: 16.667049
   ...
-# [API Error Detail]: Error: strikePrice debe ser un número finito.
-#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
-#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
-#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
-#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
-#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
-#   data: null,
-#   isBoom: true,
-#   isServer: false,
-#   output: {
-#     statusCode: 400,
-#     payload: {
-#       statusCode: 400,
-#       error: 'Bad Request',
-#       message: 'strikePrice debe ser un número finito.'
-#     },
-#     headers: {}
-#   }
-# }
 # [API Error Detail]: Error: timeToExpirationYears debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -755,6 +779,8 @@ ok 10 - rechaza valores no numéricos y coerciones inválidas en strikePrice
 #     headers: {}
 #   }
 # }
+# POST /pruebas/v2/quant/black-scholes 400 0.253 ms - 209
+# POST /pruebas/v2/quant/black-scholes 400 0.268 ms - 209
 # [API Error Detail]: Error: timeToExpirationYears debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -779,9 +805,7 @@ ok 10 - rechaza valores no numéricos y coerciones inválidas en strikePrice
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.299 ms - 209
-# POST /pruebas/v2/quant/black-scholes 400 0.314 ms - 209
-# POST /pruebas/v2/quant/black-scholes 400 0.380 ms - 209
+# POST /pruebas/v2/quant/black-scholes 400 0.308 ms - 209
 # [API Error Detail]: Error: timeToExpirationYears debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -806,6 +830,7 @@ ok 10 - rechaza valores no numéricos y coerciones inválidas en strikePrice
 #     headers: {}
 #   }
 # }
+# POST /pruebas/v2/quant/black-scholes 400 0.283 ms - 209
 # [API Error Detail]: Error: timeToExpirationYears debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -830,7 +855,7 @@ ok 10 - rechaza valores no numéricos y coerciones inválidas en strikePrice
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.327 ms - 209
+# POST /pruebas/v2/quant/black-scholes 400 0.259 ms - 209
 # [API Error Detail]: Error: timeToExpirationYears debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -855,6 +880,7 @@ ok 10 - rechaza valores no numéricos y coerciones inválidas en strikePrice
 #     headers: {}
 #   }
 # }
+# POST /pruebas/v2/quant/black-scholes 400 0.358 ms - 209
 # [API Error Detail]: Error: timeToExpirationYears debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -879,9 +905,7 @@ ok 10 - rechaza valores no numéricos y coerciones inválidas en strikePrice
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.386 ms - 209
-# POST /pruebas/v2/quant/black-scholes 400 0.350 ms - 209
-# POST /pruebas/v2/quant/black-scholes 400 0.316 ms - 209
+# POST /pruebas/v2/quant/black-scholes 400 0.326 ms - 209
 # [API Error Detail]: Error: timeToExpirationYears debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -906,6 +930,7 @@ ok 10 - rechaza valores no numéricos y coerciones inválidas en strikePrice
 #     headers: {}
 #   }
 # }
+# POST /pruebas/v2/quant/black-scholes 400 0.278 ms - 209
 # [API Error Detail]: Error: timeToExpirationYears debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -930,7 +955,7 @@ ok 10 - rechaza valores no numéricos y coerciones inválidas en strikePrice
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.386 ms - 209
+# POST /pruebas/v2/quant/black-scholes 400 0.306 ms - 209
 # [API Error Detail]: Error: timeToExpirationYears debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -955,7 +980,7 @@ ok 10 - rechaza valores no numéricos y coerciones inválidas en strikePrice
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.346 ms - 209
+# POST /pruebas/v2/quant/black-scholes 400 0.260 ms - 209
 # [API Error Detail]: Error: timeToExpirationYears debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -980,36 +1005,11 @@ ok 10 - rechaza valores no numéricos y coerciones inválidas en strikePrice
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.349 ms - 209
-# [API Error Detail]: Error: timeToExpirationYears debe ser un número finito.
-#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
-#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
-#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
-#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
-#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
-#   data: null,
-#   isBoom: true,
-#   isServer: false,
-#   output: {
-#     statusCode: 400,
-#     payload: {
-#       statusCode: 400,
-#       error: 'Bad Request',
-#       message: 'timeToExpirationYears debe ser un número finito.'
-#     },
-#     headers: {}
-#   }
-# }
-# POST /pruebas/v2/quant/black-scholes 400 0.334 ms - 209
+# POST /pruebas/v2/quant/black-scholes 400 0.240 ms - 209
 # Subtest: rechaza valores no numéricos y coerciones inválidas en timeToExpirationYears
 ok 11 - rechaza valores no numéricos y coerciones inválidas en timeToExpirationYears
   ---
-  duration_ms: 12.751822
+  duration_ms: 10.174877
   ...
 # [API Error Detail]: Error: volatility debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
@@ -1035,7 +1035,7 @@ ok 11 - rechaza valores no numéricos y coerciones inválidas en timeToExpiratio
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.298 ms - 198
+# POST /pruebas/v2/quant/black-scholes 400 0.244 ms - 198
 # [API Error Detail]: Error: volatility debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -1060,7 +1060,6 @@ ok 11 - rechaza valores no numéricos y coerciones inválidas en timeToExpiratio
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.330 ms - 198
 # [API Error Detail]: Error: volatility debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -1085,7 +1084,8 @@ ok 11 - rechaza valores no numéricos y coerciones inválidas en timeToExpiratio
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.291 ms - 198
+# POST /pruebas/v2/quant/black-scholes 400 0.257 ms - 198
+# POST /pruebas/v2/quant/black-scholes 400 0.279 ms - 198
 # [API Error Detail]: Error: volatility debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -1110,7 +1110,7 @@ ok 11 - rechaza valores no numéricos y coerciones inválidas en timeToExpiratio
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.296 ms - 198
+# POST /pruebas/v2/quant/black-scholes 400 0.252 ms - 198
 # [API Error Detail]: Error: volatility debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -1135,7 +1135,7 @@ ok 11 - rechaza valores no numéricos y coerciones inválidas en timeToExpiratio
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.274 ms - 198
+# POST /pruebas/v2/quant/black-scholes 400 0.263 ms - 198
 # [API Error Detail]: Error: volatility debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -1160,7 +1160,7 @@ ok 11 - rechaza valores no numéricos y coerciones inválidas en timeToExpiratio
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.397 ms - 198
+# POST /pruebas/v2/quant/black-scholes 400 0.270 ms - 198
 # [API Error Detail]: Error: volatility debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -1185,7 +1185,7 @@ ok 11 - rechaza valores no numéricos y coerciones inválidas en timeToExpiratio
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.286 ms - 198
+# POST /pruebas/v2/quant/black-scholes 400 0.237 ms - 198
 # [API Error Detail]: Error: volatility debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -1210,7 +1210,7 @@ ok 11 - rechaza valores no numéricos y coerciones inválidas en timeToExpiratio
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.296 ms - 198
+# POST /pruebas/v2/quant/black-scholes 400 0.239 ms - 198
 # [API Error Detail]: Error: volatility debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -1235,7 +1235,7 @@ ok 11 - rechaza valores no numéricos y coerciones inválidas en timeToExpiratio
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.290 ms - 198
+# POST /pruebas/v2/quant/black-scholes 400 0.249 ms - 198
 # [API Error Detail]: Error: volatility debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -1260,7 +1260,7 @@ ok 11 - rechaza valores no numéricos y coerciones inválidas en timeToExpiratio
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.298 ms - 198
+# POST /pruebas/v2/quant/black-scholes 400 0.313 ms - 198
 # [API Error Detail]: Error: volatility debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -1285,62 +1285,12 @@ ok 11 - rechaza valores no numéricos y coerciones inválidas en timeToExpiratio
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.267 ms - 198
+# POST /pruebas/v2/quant/black-scholes 400 0.272 ms - 198
 # Subtest: rechaza valores no numéricos y coerciones inválidas en volatility
 ok 12 - rechaza valores no numéricos y coerciones inválidas en volatility
   ---
-  duration_ms: 12.57176
+  duration_ms: 9.731049
   ...
-# [API Error Detail]: Error: riskFreeRate debe ser un número finito.
-#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
-#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
-#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
-#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
-#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
-#   data: null,
-#   isBoom: true,
-#   isServer: false,
-#   output: {
-#     statusCode: 400,
-#     payload: {
-#       statusCode: 400,
-#       error: 'Bad Request',
-#       message: 'riskFreeRate debe ser un número finito.'
-#     },
-#     headers: {}
-#   }
-# }
-# POST /pruebas/v2/quant/black-scholes 400 0.384 ms - 200
-# [API Error Detail]: Error: riskFreeRate debe ser un número finito.
-#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
-#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
-#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
-#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
-#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
-#   data: null,
-#   isBoom: true,
-#   isServer: false,
-#   output: {
-#     statusCode: 400,
-#     payload: {
-#       statusCode: 400,
-#       error: 'Bad Request',
-#       message: 'riskFreeRate debe ser un número finito.'
-#     },
-#     headers: {}
-#   }
-# }
-# POST /pruebas/v2/quant/black-scholes 400 0.394 ms - 200
 # [API Error Detail]: Error: riskFreeRate debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -1390,6 +1340,181 @@ ok 12 - rechaza valores no numéricos y coerciones inválidas en volatility
 #     headers: {}
 #   }
 # }
+# [API Error Detail]: Error: riskFreeRate debe ser un número finito.
+#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
+#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'riskFreeRate debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.312 ms - 200
+# POST /pruebas/v2/quant/black-scholes 400 0.287 ms - 200
+# [API Error Detail]: Error: riskFreeRate debe ser un número finito.
+#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
+#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'riskFreeRate debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.316 ms - 200
+# [API Error Detail]: Error: riskFreeRate debe ser un número finito.
+#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
+#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'riskFreeRate debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.278 ms - 200
+# [API Error Detail]: Error: riskFreeRate debe ser un número finito.
+#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
+#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'riskFreeRate debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# [API Error Detail]: Error: riskFreeRate debe ser un número finito.
+#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
+#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'riskFreeRate debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.291 ms - 200
+# POST /pruebas/v2/quant/black-scholes 400 0.293 ms - 200
+# [API Error Detail]: Error: riskFreeRate debe ser un número finito.
+#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
+#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'riskFreeRate debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.279 ms - 200
+# [API Error Detail]: Error: riskFreeRate debe ser un número finito.
+#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
+#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
+#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'riskFreeRate debe ser un número finito.'
+#     },
+#     headers: {}
+#   }
+# }
 # POST /pruebas/v2/quant/black-scholes 400 0.285 ms - 200
 # [API Error Detail]: Error: riskFreeRate debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
@@ -1415,7 +1540,7 @@ ok 12 - rechaza valores no numéricos y coerciones inválidas en volatility
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.268 ms - 200
+# POST /pruebas/v2/quant/black-scholes 400 0.284 ms - 200
 # [API Error Detail]: Error: riskFreeRate debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -1440,136 +1565,11 @@ ok 12 - rechaza valores no numéricos y coerciones inválidas en volatility
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.364 ms - 200
-# [API Error Detail]: Error: riskFreeRate debe ser un número finito.
-#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
-#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
-#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
-#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
-#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
-#   data: null,
-#   isBoom: true,
-#   isServer: false,
-#   output: {
-#     statusCode: 400,
-#     payload: {
-#       statusCode: 400,
-#       error: 'Bad Request',
-#       message: 'riskFreeRate debe ser un número finito.'
-#     },
-#     headers: {}
-#   }
-# }
-# POST /pruebas/v2/quant/black-scholes 400 0.346 ms - 200
-# [API Error Detail]: Error: riskFreeRate debe ser un número finito.
-#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
-#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
-#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
-#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
-#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
-#   data: null,
-#   isBoom: true,
-#   isServer: false,
-#   output: {
-#     statusCode: 400,
-#     payload: {
-#       statusCode: 400,
-#       error: 'Bad Request',
-#       message: 'riskFreeRate debe ser un número finito.'
-#     },
-#     headers: {}
-#   }
-# }
-# [API Error Detail]: Error: riskFreeRate debe ser un número finito.
-#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
-#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
-#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
-#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
-#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
-#   data: null,
-#   isBoom: true,
-#   isServer: false,
-#   output: {
-#     statusCode: 400,
-#     payload: {
-#       statusCode: 400,
-#       error: 'Bad Request',
-#       message: 'riskFreeRate debe ser un número finito.'
-#     },
-#     headers: {}
-#   }
-# }
-# POST /pruebas/v2/quant/black-scholes 400 0.310 ms - 200
-# POST /pruebas/v2/quant/black-scholes 400 0.303 ms - 200
-# [API Error Detail]: Error: riskFreeRate debe ser un número finito.
-#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
-#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
-#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
-#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
-#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
-#   data: null,
-#   isBoom: true,
-#   isServer: false,
-#   output: {
-#     statusCode: 400,
-#     payload: {
-#       statusCode: 400,
-#       error: 'Bad Request',
-#       message: 'riskFreeRate debe ser un número finito.'
-#     },
-#     headers: {}
-#   }
-# }
-# POST /pruebas/v2/quant/black-scholes 400 0.309 ms - 200
-# [API Error Detail]: Error: riskFreeRate debe ser un número finito.
-#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
-#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
-#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
-#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
-#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
-#   data: null,
-#   isBoom: true,
-#   isServer: false,
-#   output: {
-#     statusCode: 400,
-#     payload: {
-#       statusCode: 400,
-#       error: 'Bad Request',
-#       message: 'riskFreeRate debe ser un número finito.'
-#     },
-#     headers: {}
-#   }
-# }
-# POST /pruebas/v2/quant/black-scholes 400 0.296 ms - 200
+# POST /pruebas/v2/quant/black-scholes 400 0.270 ms - 200
 # Subtest: rechaza valores no numéricos y coerciones inválidas en riskFreeRate
 ok 13 - rechaza valores no numéricos y coerciones inválidas en riskFreeRate
   ---
-  duration_ms: 12.960348
+  duration_ms: 11.400623
   ...
 # [API Error Detail]: Error: spotPrice debe ser mayor que cero.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
@@ -1595,7 +1595,7 @@ ok 13 - rechaza valores no numéricos y coerciones inválidas en riskFreeRate
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.289 ms - 194
+# POST /pruebas/v2/quant/black-scholes 400 0.304 ms - 194
 # [API Error Detail]: Error: spotPrice debe ser mayor que cero.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -1620,7 +1620,7 @@ ok 13 - rechaza valores no numéricos y coerciones inválidas en riskFreeRate
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.319 ms - 194
+# POST /pruebas/v2/quant/black-scholes 400 0.286 ms - 194
 # [API Error Detail]: Error: spotPrice debe ser mayor que cero.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -1645,7 +1645,7 @@ ok 13 - rechaza valores no numéricos y coerciones inválidas en riskFreeRate
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.285 ms - 194
+# POST /pruebas/v2/quant/black-scholes 400 0.316 ms - 194
 # [API Error Detail]: Error: spotPrice debe ser mayor que cero.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -1670,11 +1670,11 @@ ok 13 - rechaza valores no numéricos y coerciones inválidas en riskFreeRate
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.270 ms - 194
+# POST /pruebas/v2/quant/black-scholes 400 0.274 ms - 194
 # Subtest: rechaza cero y negativos en spotPrice
 ok 14 - rechaza cero y negativos en spotPrice
   ---
-  duration_ms: 4.057636
+  duration_ms: 4.396203
   ...
 # [API Error Detail]: Error: strikePrice debe ser mayor que cero.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
@@ -1700,7 +1700,7 @@ ok 14 - rechaza cero y negativos en spotPrice
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.290 ms - 196
+# POST /pruebas/v2/quant/black-scholes 400 0.283 ms - 196
 # [API Error Detail]: Error: strikePrice debe ser mayor que cero.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -1725,7 +1725,7 @@ ok 14 - rechaza cero y negativos en spotPrice
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.717 ms - 196
+# POST /pruebas/v2/quant/black-scholes 400 0.298 ms - 196
 # [API Error Detail]: Error: strikePrice debe ser mayor que cero.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -1750,7 +1750,7 @@ ok 14 - rechaza cero y negativos en spotPrice
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.626 ms - 196
+# POST /pruebas/v2/quant/black-scholes 400 0.385 ms - 196
 # [API Error Detail]: Error: strikePrice debe ser mayor que cero.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -1775,12 +1775,37 @@ ok 14 - rechaza cero y negativos en spotPrice
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.326 ms - 196
+# [API Error Detail]: Error: timeToExpirationYears debe ser mayor que cero.
+#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
+#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
+#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'timeToExpirationYears debe ser mayor que cero.'
+#     },
+#     headers: {}
+#   }
+# }
+# POST /pruebas/v2/quant/black-scholes 400 0.303 ms - 196
 # Subtest: rechaza cero y negativos en strikePrice
 ok 15 - rechaza cero y negativos en strikePrice
   ---
-  duration_ms: 8.573688
+  duration_ms: 4.409494
   ...
+# POST /pruebas/v2/quant/black-scholes 400 0.279 ms - 206
 # [API Error Detail]: Error: timeToExpirationYears debe ser mayor que cero.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -1805,7 +1830,7 @@ ok 15 - rechaza cero y negativos en strikePrice
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.292 ms - 206
+# POST /pruebas/v2/quant/black-scholes 400 0.379 ms - 206
 # [API Error Detail]: Error: timeToExpirationYears debe ser mayor que cero.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -1830,7 +1855,7 @@ ok 15 - rechaza cero y negativos en strikePrice
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.337 ms - 206
+# POST /pruebas/v2/quant/black-scholes 400 0.263 ms - 206
 # [API Error Detail]: Error: timeToExpirationYears debe ser mayor que cero.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -1855,36 +1880,11 @@ ok 15 - rechaza cero y negativos en strikePrice
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.304 ms - 206
-# [API Error Detail]: Error: timeToExpirationYears debe ser mayor que cero.
-#     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
-#     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
-#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
-#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
-#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
-#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:346:12)
-#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10)
-#     at Function.handle (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:175:3) {
-#   data: null,
-#   isBoom: true,
-#   isServer: false,
-#   output: {
-#     statusCode: 400,
-#     payload: {
-#       statusCode: 400,
-#       error: 'Bad Request',
-#       message: 'timeToExpirationYears debe ser mayor que cero.'
-#     },
-#     headers: {}
-#   }
-# }
-# POST /pruebas/v2/quant/black-scholes 400 0.292 ms - 206
+# POST /pruebas/v2/quant/black-scholes 400 0.301 ms - 206
 # Subtest: rechaza cero y negativos en timeToExpirationYears
 ok 16 - rechaza cero y negativos en timeToExpirationYears
   ---
-  duration_ms: 4.585475
+  duration_ms: 5.239622
   ...
 # [API Error Detail]: Error: volatility debe ser mayor que cero.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
@@ -1910,7 +1910,7 @@ ok 16 - rechaza cero y negativos en timeToExpirationYears
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.257 ms - 195
+# POST /pruebas/v2/quant/black-scholes 400 0.403 ms - 195
 # [API Error Detail]: Error: volatility debe ser mayor que cero.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -1935,7 +1935,7 @@ ok 16 - rechaza cero y negativos en timeToExpirationYears
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.269 ms - 195
+# POST /pruebas/v2/quant/black-scholes 400 0.333 ms - 195
 # [API Error Detail]: Error: volatility debe ser mayor que cero.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -1960,7 +1960,7 @@ ok 16 - rechaza cero y negativos en timeToExpirationYears
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.259 ms - 195
+# POST /pruebas/v2/quant/black-scholes 400 0.295 ms - 195
 # [API Error Detail]: Error: volatility debe ser mayor que cero.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:29:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -1985,11 +1985,11 @@ ok 16 - rechaza cero y negativos en timeToExpirationYears
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.263 ms - 195
+# POST /pruebas/v2/quant/black-scholes 400 0.268 ms - 195
 # Subtest: rechaza cero y negativos en volatility
 ok 17 - rechaza cero y negativos en volatility
   ---
-  duration_ms: 4.121159
+  duration_ms: 3.940824
   ...
 # [API Error Detail]: Error: spotPrice debe ser un número finito.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:24:18)
@@ -2015,11 +2015,11 @@ ok 17 - rechaza cero y negativos en volatility
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.244 ms - 197
+# POST /pruebas/v2/quant/black-scholes 400 0.303 ms - 197
 # Subtest: rechaza números JSON que desbordan a infinito
 ok 18 - rechaza números JSON que desbordan a infinito
   ---
-  duration_ms: 2.049197
+  duration_ms: 1.210975
   ...
 # [API Error Detail]: Error: optionType debe ser CALL o PUT.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:37:18)
@@ -2045,7 +2045,7 @@ ok 18 - rechaza números JSON que desbordan a infinito
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.364 ms - 191
+# POST /pruebas/v2/quant/black-scholes 400 0.311 ms - 191
 # [API Error Detail]: Error: optionType debe ser CALL o PUT.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:37:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -2070,7 +2070,7 @@ ok 18 - rechaza números JSON que desbordan a infinito
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.429 ms - 191
+# POST /pruebas/v2/quant/black-scholes 400 0.266 ms - 191
 # [API Error Detail]: Error: optionType debe ser CALL o PUT.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:37:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -2095,7 +2095,7 @@ ok 18 - rechaza números JSON que desbordan a infinito
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.294 ms - 191
+# POST /pruebas/v2/quant/black-scholes 400 0.270 ms - 191
 # [API Error Detail]: Error: optionType debe ser CALL o PUT.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:37:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -2120,7 +2120,7 @@ ok 18 - rechaza números JSON que desbordan a infinito
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.905 ms - 191
+# POST /pruebas/v2/quant/black-scholes 400 0.299 ms - 191
 # [API Error Detail]: Error: optionType debe ser CALL o PUT.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:37:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -2145,7 +2145,7 @@ ok 18 - rechaza números JSON que desbordan a infinito
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.379 ms - 191
+# POST /pruebas/v2/quant/black-scholes 400 0.341 ms - 191
 # [API Error Detail]: Error: optionType debe ser CALL o PUT.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:37:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -2170,7 +2170,7 @@ ok 18 - rechaza números JSON que desbordan a infinito
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.409 ms - 191
+# POST /pruebas/v2/quant/black-scholes 400 0.269 ms - 191
 # [API Error Detail]: Error: optionType debe ser CALL o PUT.
 #     at validateBlackScholesInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:37:18)
 #     at valuateBlackScholes (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/controllers/quant.controller.js:6:19)
@@ -2195,11 +2195,11 @@ ok 18 - rechaza números JSON que desbordan a infinito
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.295 ms - 191
+# POST /pruebas/v2/quant/black-scholes 400 0.442 ms - 191
 # Subtest: rechaza optionType nulo, no textual o desconocido con un error de entrada
 ok 19 - rechaza optionType nulo, no textual o desconocido con un error de entrada
   ---
-  duration_ms: 8.437414
+  duration_ms: 10.738716
   ...
 # [API Error Detail]: Error: Los parámetros exceden el rango numérico admitido para Black-Scholes.
 #     at assertFiniteBlackScholesResult (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v1/validators/black-scholes.validator.js:48:16)
@@ -2225,23 +2225,23 @@ ok 19 - rechaza optionType nulo, no textual o desconocido con un error de entrad
 #     headers: {}
 #   }
 # }
-# POST /pruebas/v2/quant/black-scholes 400 0.318 ms - 231
+# POST /pruebas/v2/quant/black-scholes 400 0.346 ms - 231
 # Subtest: rechaza resultados no finitos en lugar de responder cálculos null
 ok 20 - rechaza resultados no finitos en lugar de responder cálculos null
   ---
-  duration_ms: 1.234611
+  duration_ms: 1.245694
   ...
-# POST /pruebas/v2/quant/implied-volatility 200 0.333 ms - 148
+# POST /pruebas/v2/quant/implied-volatility 200 0.313 ms - 148
 # Subtest: conserva la respuesta existente de volatilidad implícita
 ok 21 - conserva la respuesta existente de volatilidad implícita
   ---
-  duration_ms: 1.146155
+  duration_ms: 1.091731
   ...
-# GET /pruebas/v2/spec.json 200 14.002 ms - 48221
+# GET /pruebas/v2/spec.json 200 17.696 ms - 69953
 # Subtest: publica el contrato Black-Scholes con sus valores predeterminados y error 400
 ok 22 - publica el contrato Black-Scholes con sus valores predeterminados y error 400
   ---
-  duration_ms: 16.153938
+  duration_ms: 20.041033
   ...
 1..22
 # tests 22
@@ -2251,4 +2251,4 @@ ok 22 - publica el contrato Black-Scholes con sus valores predeterminados y erro
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 483.619586
+# duration_ms 419.00508

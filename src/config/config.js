@@ -20,14 +20,14 @@ const config = {
   DEFAULT_BROKER: (process.env.DEFAULT_BROKER || 'WEBULL').toUpperCase(),
 
   // Broker Alpaca
-  ALPACA_API_KEY_ID: process.env.ALPACA_API_KEY_ID || 'PK4V5IGAOIZNH2XKBQYF6DW2XJ',
-  ALPACA_API_SECRET_KEY: process.env.ALPACA_API_SECRET_KEY || '5tTmeXfiEFdMWRZkbkXCi53VsCKFvitrrgAmajxteUcB',
+  ALPACA_API_KEY_ID: process.env.ALPACA_API_KEY_ID,
+  ALPACA_API_SECRET_KEY: process.env.ALPACA_API_SECRET_KEY,
   ALPACA_BASE_URL: process.env.ALPACA_BASE_URL || 'https://paper-api.alpaca.markets',
   ALPACA_DATA_URL: process.env.ALPACA_DATA_URL || 'https://data.alpaca.markets/v2',
 
   // Broker Webull OpenAPI
-  WEBULL_APP_KEY: process.env.WEBULL_APP_KEY || 'us.d099728c9dc63c32a77ea49fc73ec4b5',
-  WEBULL_APP_SECRET: process.env.WEBULL_APP_SECRET || '961df980a66ff97bdd5bfe9de3fd3a04',
+  WEBULL_APP_KEY: process.env.WEBULL_APP_KEY,
+  WEBULL_APP_SECRET: process.env.WEBULL_APP_SECRET,
   WEBULL_ACCOUNT_ID: process.env.WEBULL_ACCOUNT_ID || 'DEV4Q8EB',
   WEBULL_BASE_URL: process.env.WEBULL_BASE_URL || 'https://api.webull.com/openapi',
 

@@ -41,7 +41,7 @@ A pesar de que el frontend y el consumidor REST reciben la misma interfaz JSON u
 * **Alpaca Markets (Estática y Ligera)**:
   * Utiliza un modelo estándar de API Keys estáticas enviadas mediante headers HTTP:
     ```http
-    APCA-API-KEY-ID: PK4V5IGAOIZNH2XKBQYF6DW2XJ
+    APCA-API-KEY-ID: <ALPACA_API_KEY_ID>
     APCA-API-SECRET-KEY: 5tTmeXfiEFdMWRZkbkXCi...
     ```
   * No requiere firma criptográfica ni control de nonce temporal por petición.

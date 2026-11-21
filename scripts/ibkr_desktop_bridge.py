@@ -216,6 +216,40 @@ def cmd_orders(args):
     print(json.dumps({'success': False, 'error': f'No se pudo conectar con Interactive Brokers TWS en {TWS_HOST}:{TWS_PORT}'}))
 
 
+def numero_observado(valor):
+    """Valor de TWS o None: ib_insync usa NaN cuando el dato no llegó."""
+    try:
+        numero = float(valor)
+    except (TypeError, ValueError):
+        return None
+    return numero if numero == numero and numero > 0 else None
+
+
+def leer_puntas(ib, contrato, espera_segundos=4.0):
+    """Pide bid/ask a TWS (tipo 4: diferido o congelado si no hay suscripción) y espera a que lleguen."""
+    vacio = {'bid': None, 'ask': None, 'bidSize': None, 'askSize': None, 'timestamp': None, 'marketDataType': None}
+    try:
+        ib.reqMarketDataType(4)
+        ticker = ib.reqMktData(contrato, '', snapshot=False)
+        pasos = int(espera_segundos / 0.2)
+        for _ in range(pasos):
+            ib.sleep(0.2)
+            if numero_observado(ticker.bid) and numero_observado(ticker.ask):
+                break
+        puntas = {
+            'bid': numero_observado(ticker.bid),
+            'ask': numero_observado(ticker.ask),
+            'bidSize': numero_observado(ticker.bidSize),
+            'askSize': numero_observado(ticker.askSize),
+            'timestamp': ticker.time.isoformat() if getattr(ticker, 'time', None) else None,
+            'marketDataType': getattr(ticker, 'marketDataType', None),
+        }
+        ib.cancelMktData(contrato)
+        return puntas
+    except Exception:
+        return vacio
+
+
 def cmd_quote(args):
     symbol = args.symbol.upper()
     ib = get_ib_connection()
@@ -241,21 +275,26 @@ def cmd_quote(args):
                 open_p = float(last_bar.open)
 
             if price and price > 0:
-                bid = round(price - 0.05, 2)
-                ask = round(price + 0.05, 2)
+                # Bid y ask observados en TWS. Con reqMarketDataType(4) la cuenta paper recibe datos diferidos
+                # o congelados si no tiene suscripción en tiempo real. Si TWS no los informa, quedan en None.
+                puntas = leer_puntas(ib, stock)
                 ib.disconnect()
                 print(json.dumps({
                     'success': True,
                     'symbol': symbol,
-                    'companyName': f'{symbol} Inc.',
+                    'companyName': None,
                     'price': price,
-                    'bid': bid,
-                    'ask': ask,
+                    'bid': puntas['bid'],
+                    'ask': puntas['ask'],
+                    'bidSize': puntas['bidSize'],
+                    'askSize': puntas['askSize'],
+                    'timestamp': puntas['timestamp'],
+                    'marketDataType': puntas['marketDataType'],
                     'high': high,
                     'low': low,
                     'open': open_p,
                     'close': price,
-                    'peRatio': 28.5,
+                    'peRatio': None,
                     'mode': 'LIVE_TWS_HISTORICAL_FEED'
                 }))
                 return
@@ -464,21 +503,8 @@ def cmd_place_order(args):
 
             # 2. Caso Opción (OPTION)
             elif instrument_type == 'OPTION':
-                # Validación de Covered Stock para Call Sell
-                if action == 'SELL' and option_type == 'CALL':
-                    # Pre-verificar si la cuenta posee acciones suficientes
-                    positions = ib.positions(ACCOUNT_ID)
-                    held_shares = sum([p.position for p in positions if p.contract.symbol == symbol and p.contract.secType == 'STK'])
-                    needed_shares = qty * 100
-                    if held_shares < needed_shares:
-                        # Auto-compra de cobertura subyacente (Covered Stock mitigación)
-                        stock_contract = Stock(symbol, 'SMART', 'USD')
-                        ib.qualifyContracts(stock_contract)
-                        stock_order = MarketOrder('BUY', needed_shares - held_shares)
-                        stock_order.account = ACCOUNT_ID
-                        ib.placeOrder(stock_contract, stock_order)
-                        ib.sleep(1)
-
+                # No se compran acciones por cuenta propia al vender un Call: el orquestador de coberturas envía
+                # las acciones como una pata explícita y TWS acepta o rechaza el Call según la cuenta.
                 exp_clean = expire_date.replace('-', '')
                 opt_right = 'C' if option_type == 'CALL' else 'P'
                 contract = Option(symbol, exp_clean, strike_price, opt_right, 'SMART', multiplier='100', currency='USD')
@@ -576,18 +602,35 @@ def cmd_cancel_order(args):
                 if str(t.order.orderId) == order_id or str(t.order.permId) == order_id:
                     target_trade = t
                     break
-            if target_trade:
-                ib.cancelOrder(target_trade.order)
-                ib.sleep(1)
+            if not target_trade:
                 ib.disconnect()
-                print(json.dumps({'success': True, 'message': f'Orden {order_id} cancelada exitosamente en TWS.'}))
+                print(json.dumps({'success': False, 'status': 404, 'error': f'TWS no tiene una orden {order_id}.'}))
                 return
+            ib.cancelOrder(target_trade.order)
+            # TWS pasa por PendingCancel antes de confirmar; se espera la confirmación hasta 6 segundos.
+            estado = None
+            for _ in range(12):
+                ib.sleep(0.5)
+                estado = target_trade.orderStatus.status if target_trade.orderStatus else None
+                if estado in ('Cancelled', 'ApiCancelled'):
+                    break
             ib.disconnect()
-        except Exception:
+            # Éxito confirmado solo con Cancelled/ApiCancelled; PendingCancel se informa tal cual como solicitud en curso.
+            if estado in ('Cancelled', 'ApiCancelled'):
+                print(json.dumps({'success': True, 'status': estado, 'message': f'TWS confirmó la cancelación de la orden {order_id}.'}))
+            elif estado == 'PendingCancel':
+                print(json.dumps({'success': True, 'status': estado, 'pending': True,
+                                  'message': f'TWS recibió la cancelación de la orden {order_id} y aún no la confirma (estado PendingCancel).'}))
+            else:
+                print(json.dumps({'success': False, 'status': 502, 'error': f'TWS no confirmó la cancelación de la orden {order_id} (estado {estado}).'}))
+            return
+        except Exception as error:
             if ib.isConnected():
                 ib.disconnect()
+            print(json.dumps({'success': False, 'status': 503, 'error': f'TWS no respondió a la cancelación: {error}'}))
+            return
 
-    print(json.dumps({'success': True, 'message': f'Orden simulada {order_id} cancelada en Interactive Brokers Sandbox.'}))
+    print(json.dumps({'success': False, 'status': 503, 'error': f'No se pudo conectar con Interactive Brokers TWS en {TWS_HOST}:{TWS_PORT}.'}))
 
 
 def main():

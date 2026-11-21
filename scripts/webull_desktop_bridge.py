@@ -28,8 +28,8 @@ from webull.core.http.initializer.client_initializer import ClientInitializer
 # Prevenir error 429 TOO_MANY_REQUESTS en chequeo redundante de token
 ClientInitializer._check_token_enable = lambda self: False
 
-APP_KEY = os.getenv('WEBULL_APP_KEY') or 'us.d099728c9dc63c32a77ea49fc73ec4b5'
-APP_SECRET = os.getenv('WEBULL_APP_SECRET') or '961df980a66ff97bdd5bfe9de3fd3a04'
+APP_KEY = os.getenv('WEBULL_APP_KEY')
+APP_SECRET = os.getenv('WEBULL_APP_SECRET')
 REGION_ID = os.getenv('WEBULL_REGION_ID') or 'us'
 DEFAULT_ENDPOINT = os.getenv('WEBULL_ENDPOINT') or 'api.sandbox.webull.com'
 TARGET_ACCOUNT_NUM = os.getenv('WEBULL_ACCOUNT_ID') or 'DEV4Q8EB'
@@ -41,19 +41,62 @@ def get_clients():
     dc = DataClient(client)
     return tc, dc
 
+class CuentaNoDisponible(Exception):
+    pass
+
+
 def resolve_account_id(tc):
-    """Resuelve el account_id interno de Webull (ej. GBG647DN3VL57GSDVGA47NCG18) dado el numero DEV4Q8EB"""
+    """Resuelve el account_id interno de Webull a partir del número configurado; sin cuenta confirmada no hay identificador."""
+    respuesta = tc.account_v2.get_account_list()
+    if respuesta.status_code != 200:
+        raise CuentaNoDisponible(f'Webull no entregó el listado de cuentas (HTTP {respuesta.status_code}).')
+    cuentas = respuesta.json()
+    if isinstance(cuentas, list):
+        for cuenta in cuentas:
+            if isinstance(cuenta, dict) and TARGET_ACCOUNT_NUM in (cuenta.get('account_number'), cuenta.get('account_id')):
+                return cuenta.get('account_id'), cuenta
+    raise CuentaNoDisponible('La cuenta configurada no aparece en el listado de Webull.')
+
+
+def imprimir(datos):
+    print(json.dumps(datos, allow_nan=False))
+
+
+def numero_reportado(valor):
+    """Convierte un valor reportado por Webull; None si falta o no es numérico (nunca un valor por defecto)."""
+    if valor is None or valor == '':
+        return None
     try:
-        acc_list = tc.account_v2.get_account_list().json()
-        if isinstance(acc_list, list):
-            for acc in acc_list:
-                if acc.get('account_number') == TARGET_ACCOUNT_NUM or acc.get('account_id') == TARGET_ACCOUNT_NUM:
-                    return acc.get('account_id'), acc
-            if acc_list:
-                return acc_list[0].get('account_id'), acc_list[0]
-    except Exception as e:
-        pass
-    return 'GBG647DN3VL57GSDVGA47NCG18', {'account_number': TARGET_ACCOUNT_NUM, 'account_id': 'GBG647DN3VL57GSDVGA47NCG18'}
+        return float(valor)
+    except (TypeError, ValueError):
+        return None
+
+
+def con_cuenta(comando):
+    """Ejecuta el comando con la cuenta confirmada; si Webull no responde, informa 503 sin datos supuestos."""
+    def envoltura(args):
+        try:
+            tc, _ = get_clients()
+            acc_id, acc_meta = resolve_account_id(tc)
+        except Exception as error:
+            imprimir({'success': False, 'status': 503, 'error': str(error)})
+            return
+        try:
+            comando(args, tc, acc_id, acc_meta)
+        except Exception as error:
+            imprimir({'success': False, 'status': estado_de_excepcion(error), 'error': str(error)})
+    return envoltura
+
+
+def estado_de_excepcion(error):
+    """Un 4xx del SDK (por ejemplo 417 con un código de negocio) es un rechazo de Webull, no una falta de respuesta."""
+    estado = getattr(error, 'http_status', None)
+    try:
+        estado = int(estado)
+    except (TypeError, ValueError):
+        return 503
+    return estado if 400 <= estado < 500 else 503
+
 
 def leerRespuestaConfirmada(respuesta):
     if respuesta.status_code != 200:
@@ -94,426 +137,220 @@ def consultarPortafolioConfirmado(esConsultaCuenta):
 def cmd_account(args):
     if getattr(args, 'strict', False):
         return consultarPortafolioConfirmado(True)
+    return _cmd_account(args)
 
-    tc, _ = get_clients()
-    acc_id, acc_meta = resolve_account_id(tc)
+
+@con_cuenta
+def _cmd_account(args, tc, acc_id, acc_meta):
     bal_res = tc.account_v2.get_account_balance(acc_id)
-    if bal_res.status_code == 200:
-        data = bal_res.json()
-        out = {
-            'success': True,
-            'broker': 'WEBULL',
-            'accountNumber': acc_meta.get('account_number', TARGET_ACCOUNT_NUM),
-            'accountId': acc_id,
-            'accountType': acc_meta.get('account_type', 'CASH'),
-            'currency': data.get('total_asset_currency', 'USD'),
-            'portfolioValue': float(data.get('total_net_liquidation_value', 1000000.0)),
-            'cash': float(data.get('total_cash_balance', 1000000.0)),
-            'buyingPower': float(data.get('account_currency_assets', [{}])[0].get('buying_power', 1000000.0)),
-            'unrealizedPL': float(data.get('total_unrealized_profit_loss', 0.0)),
-            'dayPL': float(data.get('total_day_profit_loss', 0.0)),
-            'raw': data
-        }
-        print(json.dumps(out))
-    else:
-        print(json.dumps({'success': False, 'status': bal_res.status_code, 'error': bal_res.text}))
+    if bal_res.status_code != 200:
+        imprimir({'success': False, 'status': 503, 'error': bal_res.text})
+        return
+    data = bal_res.json()
+    activos = data.get('account_currency_assets') or [{}]
+    saldos = {
+        'portfolioValue': numero_reportado(data.get('total_net_liquidation_value')),
+        'cash': numero_reportado(data.get('total_cash_balance')),
+        'buyingPower': numero_reportado((activos[0] or {}).get('buying_power')),
+    }
+    faltan = [campo for campo, valor in saldos.items() if valor is None]
+    if faltan:
+        imprimir({'success': False, 'status': 502, 'error': f"Webull no informó {', '.join(faltan)} en el balance."})
+        return
+    imprimir({
+        'success': True,
+        'broker': 'WEBULL',
+        'accountNumber': acc_meta.get('account_number'),
+        'accountId': acc_id,
+        'accountType': acc_meta.get('account_type'),
+        'currency': data.get('total_asset_currency'),
+        **saldos,
+        'unrealizedPL': numero_reportado(data.get('total_unrealized_profit_loss')),
+        'dayPL': numero_reportado(data.get('total_day_profit_loss')),
+    })
+
 
 def cmd_positions(args):
     if getattr(args, 'strict', False):
         return consultarPortafolioConfirmado(False)
+    return _cmd_positions(args)
 
-    tc, _ = get_clients()
-    acc_id, _ = resolve_account_id(tc)
+
+@con_cuenta
+def _cmd_positions(args, tc, acc_id, _meta):
     pos_res = tc.account_v2.get_account_position(acc_id)
     if pos_res.status_code == 200:
-        data = pos_res.json()
-        print(json.dumps({'success': True, 'positions': data}))
+        imprimir({'success': True, 'positions': pos_res.json()})
     else:
-        print(json.dumps({'success': False, 'status': pos_res.status_code, 'error': pos_res.text}))
+        imprimir({'success': False, 'status': 503, 'error': pos_res.text})
 
-def cmd_orders(args):
-    tc, _ = get_clients()
-    acc_id, _ = resolve_account_id(tc)
-    open_orders_res = tc.order_v2.get_order_open(acc_id)
-    history_res = tc.order_v2.get_order_history(acc_id)
-    raw_open = open_orders_res.json() if open_orders_res.status_code == 200 else []
-    raw_history = history_res.json() if history_res.status_code == 200 else []
 
-    flattened = []
-    # Normalizar ordenes abiertas (pueden venir envueltas en combo_type / orders)
-    if isinstance(raw_open, list):
-        for item in raw_open:
-            if 'orders' in item and isinstance(item['orders'], list):
-                for sub in item['orders']:
-                    sub['parent_client_order_id'] = item.get('client_order_id')
-                    sub['combo_order_id'] = item.get('combo_order_id')
-                    flattened.append(sub)
-            else:
-                flattened.append(item)
+def aplanar_ordenes(crudas):
+    aplanadas = []
+    for item in crudas:
+        if isinstance(item.get('orders'), list):
+            for sub in item['orders']:
+                sub['parent_client_order_id'] = item.get('client_order_id')
+                sub['combo_order_id'] = item.get('combo_order_id')
+                aplanadas.append(sub)
+        else:
+            aplanadas.append(item)
+    return aplanadas
 
-    if isinstance(raw_history, list):
-        for item in raw_history:
-            if 'orders' in item and isinstance(item['orders'], list):
-                for sub in item['orders']:
-                    sub['parent_client_order_id'] = item.get('client_order_id')
-                    sub['combo_order_id'] = item.get('combo_order_id')
-                    flattened.append(sub)
-            else:
-                flattened.append(item)
 
-    print(json.dumps({'success': True, 'orders': flattened}))
+@con_cuenta
+def cmd_orders(args, tc, acc_id, _meta):
+    abiertas = tc.order_v2.get_order_open(acc_id)
+    historial = tc.order_v2.get_order_history(acc_id)
+    for nombre, consulta in (('abiertas', abiertas), ('historial', historial)):
+        if consulta.status_code != 200:
+            imprimir({'success': False, 'status': 503, 'error': f'Webull no entregó las órdenes {nombre} (HTTP {consulta.status_code}): {consulta.text}'})
+            return
+    crudas_abiertas, crudas_historial = abiertas.json(), historial.json()
+    if not isinstance(crudas_abiertas, list) or not isinstance(crudas_historial, list):
+        imprimir({'success': False, 'status': 502, 'error': 'Webull devolvió órdenes con un formato inesperado.'})
+        return
+    imprimir({'success': True, 'orders': aplanar_ordenes(crudas_abiertas) + aplanar_ordenes(crudas_historial)})
+
 
 def cmd_quote(args):
-    _, dc = get_clients()
     symbol = args.symbol.upper()
     try:
+        _, dc = get_clients()
         snap_res = dc.market_data.get_snapshot(symbol, Category.US_STOCK.name)
-        if snap_res.status_code == 200:
-            data = snap_res.json()
-            item = data[0] if isinstance(data, list) and data else {}
-            out = {
-                'success': True,
-                'symbol': symbol,
-                'price': float(item.get('price', 0.0)),
-                'bid': float(item.get('bid', 0.0)),
-                'ask': float(item.get('ask', 0.0)),
-                'high': float(item.get('high', 0.0)),
-                'low': float(item.get('low', 0.0)),
-                'open': float(item.get('open', 0.0)),
-                'close': float(item.get('close', 0.0)),
-                'peRatio': float(item.get('pe_ratio', 0.0)) if item.get('pe_ratio') else None,
-                'raw': item
-            }
-            print(json.dumps(out))
-            return
-    except Exception as e:
-        pass
-    print(json.dumps({'success': False, 'symbol': symbol, 'error': 'Quote unavailable'}))
-
-def cmd_place_order(args):
-    tc, _ = get_clients()
-    acc_id, _ = resolve_account_id(tc)
-    symbol = args.symbol.upper()
-    qty = int(args.qty)
-    action = args.action.upper()
-    order_type = args.type.upper()
-    price = str(args.price) if args.price else "200.00"
-    client_order_id = uuid.uuid4().hex
-
-    new_simple_orders = [
-        {
-            "combo_type": "NORMAL",
-            "client_order_id": client_order_id,
-            "symbol": symbol,
-            "instrument_type": "EQUITY",
-            "market": "US",
-            "order_type": order_type,
-            "limit_price": price,
-            "quantity": str(qty),
-            "support_trading_session": "CORE",
-            "side": action,
-            "time_in_force": (getattr(args, 'time_in_force', None) or 'DAY').upper(),
-            "entrust_type": "QTY"
-        }
-    ]
-
-    if getattr(args, 'preview', False):
-        try:
-            prev = tc.order_v2.preview_order(acc_id, new_simple_orders)
-            prev_data = prev.json() if prev.status_code == 200 else {}
-            print(json.dumps({
-                'success': True,
-                'mode': 'SANDBOX_PREVIEW_CONFIRMED',
-                'clientOrderId': client_order_id,
-                'note': 'Validado via OpenAPI preview_order.',
-                'preview': prev_data,
-                'order': {
-                    'symbol': symbol,
-                    'instrumentType': 'EQUITY',
-                    'qty': qty,
-                    'side': action,
-                    'type': order_type,
-                    'price': price,
-                    'clientOrderId': client_order_id,
-                    'status': 'previewed'
-                }
-            }))
-            return
-        except Exception as e:
-            print(json.dumps({'success': False, 'mode': 'PREVIEW_ERROR', 'error': str(e)}))
-            return
-
-    try:
-        res = tc.order_v2.place_order(acc_id, new_simple_orders)
-        if res.status_code == 200:
-            res_data = res.json()
-            order_id = res_data.get('order_id') or res_data.get('combo_order_id')
-            print(json.dumps({
-                'success': True,
-                'mode': 'LIVE_OPENAPI',
-                'clientOrderId': client_order_id,
-                'result': res_data,
-                'order': {
-                    'id': order_id,
-                    'symbol': symbol,
-                    'instrumentType': 'EQUITY',
-                    'qty': qty,
-                    'side': action,
-                    'type': order_type,
-                    'price': price,
-                    'clientOrderId': client_order_id,
-                    'status': 'submitted'
-                }
-            }))
-            return
-        else:
-            print(json.dumps({
-                'success': False,
-                'mode': 'LIVE_OPENAPI',
-                'status': res.status_code,
-                'clientOrderId': client_order_id,
-                'error': res.text
-            }))
-            return
-    except Exception as e:
-        print(json.dumps({
-            'success': False,
-            'mode': 'LIVE_OPENAPI',
-            'clientOrderId': client_order_id,
-            'error': str(e)
-        }))
+    except Exception as error:
+        imprimir({'success': False, 'status': 503, 'symbol': symbol, 'error': str(error)})
         return
-
-def cmd_place_option(args):
-    tc, _ = get_clients()
-    acc_id, _ = resolve_account_id(tc)
-    symbol = args.symbol.upper()
-    qty = int(args.qty)
-    action = args.action.upper() # BUY or SELL
-    order_type = args.type.upper() # LIMIT
-    price = str(args.price) if args.price else "5.00"
-    strike_price = str(args.strike_price) if args.strike_price else "230.00"
-    expire_date = args.expire_date or "2026-12-18"
-    option_type = args.option_type.upper() # CALL or PUT
-    strategy = getattr(args, 'strategy', 'SINGLE').upper()
-    client_order_id = uuid.uuid4().hex
-
-    # Estrategia Combo COVERED_STOCK (BUY 100 EQUITY + SELL 1 CALL)
-    if strategy == 'COVERED_STOCK' or (action == 'SELL' and option_type == 'CALL' and getattr(args, 'strategy', None) == 'COVERED_STOCK'):
-        stock_quote_price = getattr(args, 'stock_price', 0.0)
-        if not stock_quote_price or stock_quote_price <= 0:
-            try:
-                q_res = tc.trade_instrument.get_instrument_quote('US', symbol)
-                if q_res.status_code == 200:
-                    stock_quote_price = float(q_res.json().get('price', 220.0))
-                else:
-                    stock_quote_price = 220.0
-            except Exception:
-                stock_quote_price = 220.0
-
-        covered_payload = [
-            {
-                "client_order_id": client_order_id,
-                "combo_type": "NORMAL",
-                "order_type": order_type,
-                "quantity": str(qty),
-                "limit_price": str(stock_quote_price),
-                "option_strategy": "COVERED_STOCK",
-                "side": "BUY",
-                "time_in_force": (getattr(args, 'time_in_force', None) or 'DAY').upper(),
-                "entrust_type": "QTY",
-                "legs": [
-                    {
-                        "side": "BUY",
-                        "quantity": str(qty * 100),
-                        "symbol": symbol,
-                        "instrument_type": "EQUITY",
-                        "market": "US"
-                    },
-                    {
-                        "side": "SELL",
-                        "quantity": str(qty),
-                        "symbol": symbol,
-                        "strike_price": strike_price,
-                        "option_expire_date": expire_date,
-                        "instrument_type": "OPTION",
-                        "option_type": "CALL",
-                        "market": "US"
-                    }
-                ]
-            }
-        ]
-
-        if getattr(args, 'preview', False):
-            try:
-                prev = tc.order_v2.preview_option(acc_id, covered_payload)
-                prev_data = prev.json() if prev.status_code == 200 else {}
-                print(json.dumps({
-                    'success': True,
-                    'mode': 'SANDBOX_PREVIEW_CONFIRMED',
-                    'strategy': 'COVERED_STOCK',
-                    'clientOrderId': client_order_id,
-                    'preview': prev_data
-                }))
-                return
-            except Exception as e:
-                print(json.dumps({'success': False, 'mode': 'PREVIEW_ERROR', 'error': str(e)}))
-                return
-
-        try:
-            res = tc.order_v2.place_option(acc_id, covered_payload)
-            if res.status_code == 200:
-                res_data = res.json()
-                order_id = res_data.get('order_id') or res_data.get('combo_order_id')
-                print(json.dumps({
-                    'success': True,
-                    'mode': 'LIVE_OPENAPI_OPTION',
-                    'strategy': 'COVERED_STOCK',
-                    'clientOrderId': client_order_id,
-                    'result': res_data,
-                    'order': {
-                        'id': order_id,
-                        'symbol': symbol,
-                        'instrumentType': 'OPTION',
-                        'optionType': option_type,
-                        'strikePrice': float(strike_price),
-                        'expirationDate': expire_date,
-                        'qty': qty,
-                        'side': action,
-                        'price': float(price),
-                        'stockPrice': float(stock_quote_price),
-                        'status': 'submitted',
-                        'clientOrderId': client_order_id,
-                        'strategy': 'COVERED_STOCK'
-                    }
-                }))
-                return
-            else:
-                print(json.dumps({
-                    'success': False,
-                    'mode': 'LIVE_OPENAPI_OPTION',
-                    'strategy': 'COVERED_STOCK',
-                    'status': res.status_code,
-                    'clientOrderId': client_order_id,
-                    'error': res.text
-                }))
-                return
-        except Exception as e:
-            print(json.dumps({
-                'success': False,
-                'mode': 'LIVE_OPENAPI_OPTION',
-                'strategy': 'COVERED_STOCK',
-                'clientOrderId': client_order_id,
-                'error': str(e)
-            }))
-            return
-
-    # Orden Simple (SINGLE OPTION: PUT o CALL)
-    option_payload = [
-        {
-            "client_order_id": client_order_id,
-            "combo_type": "NORMAL",
-            "order_type": order_type,
-            "quantity": str(qty),
-            "limit_price": price,
-            "option_strategy": "SINGLE",
-            "side": action,
-            "time_in_force": (getattr(args, 'time_in_force', None) or 'DAY').upper(),
-            "entrust_type": "QTY",
-            "legs": [
-                {
-                    "side": action,
-                    "quantity": str(qty),
-                    "symbol": symbol,
-                    "strike_price": strike_price,
-                    "option_expire_date": expire_date,
-                    "instrument_type": "OPTION",
-                    "option_type": option_type,
-                    "market": "US"
-                }
-            ]
-        }
-    ]
-
-    if getattr(args, 'preview', False):
-        try:
-            prev = tc.order_v2.preview_option(acc_id, option_payload)
-            prev_data = prev.json() if prev.status_code == 200 else {}
-            print(json.dumps({
-                'success': True,
-                'mode': 'SANDBOX_PREVIEW_CONFIRMED',
-                'clientOrderId': client_order_id,
-                'preview': prev_data
-            }))
-            return
-        except Exception as e:
-            print(json.dumps({'success': False, 'mode': 'PREVIEW_ERROR', 'error': str(e)}))
-            return
-
-    try:
-        res = tc.order_v2.place_option(acc_id, option_payload)
-        if res.status_code == 200:
-            res_data = res.json()
-            order_id = res_data.get('order_id') or res_data.get('combo_order_id')
-            print(json.dumps({
-                'success': True,
-                'mode': 'LIVE_OPENAPI_OPTION',
-                'strategy': 'SINGLE',
-                'clientOrderId': client_order_id,
-                'result': res_data,
-                'order': {
-                    'id': order_id,
-                    'symbol': symbol,
-                    'instrumentType': 'OPTION',
-                    'optionType': option_type,
-                    'strikePrice': float(strike_price),
-                    'expirationDate': expire_date,
-                    'qty': qty,
-                    'side': action,
-                    'price': float(price),
-                    'status': 'submitted',
-                    'clientOrderId': client_order_id
-                }
-            }))
-            return
-        else:
-            print(json.dumps({
-                'success': False,
-                'mode': 'LIVE_OPENAPI_OPTION',
-                'strategy': 'SINGLE',
-                'status': res.status_code,
-                'clientOrderId': client_order_id,
-                'error': res.text
-            }))
-            return
-    except Exception as e:
-        print(json.dumps({
-            'success': False,
-            'mode': 'LIVE_OPENAPI_OPTION',
-            'strategy': 'SINGLE',
-            'clientOrderId': client_order_id,
-            'error': str(e)
-        }))
+    if snap_res.status_code != 200:
+        imprimir({'success': False, 'status': 503, 'symbol': symbol, 'error': snap_res.text})
         return
+    data = snap_res.json()
+    item = data[0] if isinstance(data, list) and data else {}
+    precio = numero_reportado(item.get('price'))
+    if not precio:
+        imprimir({'success': False, 'status': 502, 'symbol': symbol, 'error': 'Webull no informó un precio.'})
+        return
+    imprimir({
+        'success': True,
+        'symbol': symbol,
+        'price': precio,
+        'bid': numero_reportado(item.get('bid')),
+        'ask': numero_reportado(item.get('ask')),
+        'high': numero_reportado(item.get('high')),
+        'low': numero_reportado(item.get('low')),
+        'open': numero_reportado(item.get('open')),
+        'close': numero_reportado(item.get('close')),
+        'peRatio': numero_reportado(item.get('pe_ratio')),
+    })
 
-def cmd_cancel_order(args):
-    tc, _ = get_clients()
-    acc_id, _ = resolve_account_id(tc)
-    try:
-        res = tc.order_v2.cancel_option(acc_id, args.order_id)
+
+def precio_de_orden(args):
+    """LIMIT exige precio positivo; MARKET se envía sin limit_price. Devuelve (precio, error)."""
+    tipo = args.type.upper()
+    if tipo == 'LIMIT':
+        if not args.price or args.price <= 0:
+            return None, 'Una orden LIMIT requiere --price positivo.'
+        return str(args.price), None
+    if tipo == 'MARKET':
+        return None, None
+    return None, f'Tipo de orden no admitido: {tipo}.'
+
+
+def enviar(tc, metodo, acc_id, carga, client_order_id, extra=None):
+    res = getattr(tc.order_v2, metodo)(acc_id, carga)
+    if res.status_code == 200:
+        imprimir({'success': True, 'clientOrderId': client_order_id, 'result': res.json(), **(extra or {})})
+    else:
+        imprimir({'success': False, 'status': res.status_code, 'clientOrderId': client_order_id, 'error': res.text})
+
+
+@con_cuenta
+def cmd_place_order(args, tc, acc_id, _meta):
+    precio, error = precio_de_orden(args)
+    if error:
+        imprimir({'success': False, 'status': 400, 'error': error})
+        return
+    client_order_id = uuid.uuid4().hex
+    orden = {
+        "combo_type": "NORMAL",
+        "client_order_id": client_order_id,
+        "symbol": args.symbol.upper(),
+        "instrument_type": "EQUITY",
+        "market": "US",
+        "order_type": args.type.upper(),
+        "quantity": str(args.qty),
+        "support_trading_session": "CORE",
+        "side": args.action.upper(),
+        "time_in_force": args.time_in_force.upper(),
+        "entrust_type": "QTY",
+    }
+    if precio is not None:
+        orden["limit_price"] = precio
+    enviar(tc, 'place_order', acc_id, [orden], client_order_id)
+
+
+@con_cuenta
+def cmd_place_option(args, tc, acc_id, _meta):
+    precio, error = precio_de_orden(args)
+    estrategia = args.strategy.upper()
+    if not error and estrategia == 'COVERED_STOCK' and not (args.stock_price and args.stock_price > 0):
+        error = 'COVERED_STOCK requiere --stock_price positivo; no se usa una cotización de respaldo.'
+    if error:
+        imprimir({'success': False, 'status': 400, 'error': error})
+        return
+    symbol = args.symbol.upper()
+    client_order_id = uuid.uuid4().hex
+    pata_opcion = {
+        "side": args.action.upper() if estrategia == 'SINGLE' else "SELL",
+        "quantity": str(args.qty),
+        "symbol": symbol,
+        "strike_price": str(args.strike_price),
+        "option_expire_date": args.expire_date,
+        "instrument_type": "OPTION",
+        "option_type": args.option_type.upper() if estrategia == 'SINGLE' else "CALL",
+        "market": "US",
+    }
+    orden = {
+        "client_order_id": client_order_id,
+        "combo_type": "NORMAL",
+        "order_type": args.type.upper(),
+        "quantity": str(args.qty),
+        "option_strategy": estrategia,
+        "side": args.action.upper() if estrategia == 'SINGLE' else "BUY",
+        "time_in_force": args.time_in_force.upper(),
+        "entrust_type": "QTY",
+        "legs": [pata_opcion] if estrategia == 'SINGLE' else [
+            {"side": "BUY", "quantity": str(args.qty * 100), "symbol": symbol, "instrument_type": "EQUITY", "market": "US"},
+            pata_opcion,
+        ],
+    }
+    if precio is not None:
+        # En COVERED_STOCK el limit_price es el neto por acción del combo (acciones − prima del Call):
+        # preview_option devolvió estimated_cost = limit_price × 100 (verificado el 2026-11-20).
+        orden["limit_price"] = precio
+    enviar(tc, 'place_option', acc_id, [orden], client_order_id, {'strategy': estrategia})
+
+
+@con_cuenta
+def cmd_cancel_order(args, tc, acc_id, _meta):
+    """Éxito solo si alguna de las dos rutas (opción o acción) responde 200; si ambas fallan, se informan las dos causas."""
+    errores = []
+    estado = None
+    for metodo, tipo in (('cancel_option', 'OPTION'), ('cancel_order', 'STOCK')):
+        try:
+            res = getattr(tc.order_v2, metodo)(acc_id, args.order_id)
+        except Exception as error:
+            errores.append(f'{tipo}: {error}')
+            continue
         if res.status_code == 200:
-            print(json.dumps({'success': True, 'type': 'OPTION', 'result': res.json()}))
+            imprimir({'success': True, 'type': tipo, 'result': res.json()})
             return
-    except Exception:
-        pass
+        estado = res.status_code
+        errores.append(f'{tipo} (HTTP {res.status_code}): {res.text}')
+    imprimir({'success': False, 'status': estado or 503, 'error': ' | '.join(errores)})
 
-    try:
-        res = tc.order_v2.cancel_order(acc_id, args.order_id)
-        print(json.dumps({'success': True, 'type': 'STOCK', 'result': res.json() if res.status_code == 200 else res.text}))
-    except Exception as e:
-        print(json.dumps({'success': False, 'error': str(e)}))
 
-def main():
+def construir_parser():
     parser = argparse.ArgumentParser(description='Webull Official OpenAPI Bridge')
     subparsers = parser.add_subparsers(dest='command')
 
@@ -524,52 +361,45 @@ def main():
     p_quote = subparsers.add_parser('quote')
     p_quote.add_argument('--symbol', required=True)
 
-    # place_order (stocks)
+    # Sin valores por defecto de cantidad, lado, tipo, precio, contrato ni vencimiento.
     p_order = subparsers.add_parser('place_order')
     p_order.add_argument('--symbol', required=True)
-    p_order.add_argument('--qty', type=int, default=1)
-    p_order.add_argument('--action', default='BUY')
-    p_order.add_argument('--price', type=float, default=0.0)
-    p_order.add_argument('--type', default='LIMIT')
-    p_order.add_argument('--time_in_force', default='DAY')
-    p_order.add_argument('--preview', action='store_true', default=False)
+    p_order.add_argument('--qty', type=int, required=True)
+    p_order.add_argument('--action', required=True, choices=['BUY', 'SELL'], type=str.upper)
+    p_order.add_argument('--type', required=True, choices=['LIMIT', 'MARKET'], type=str.upper)
+    p_order.add_argument('--price', type=float)
+    p_order.add_argument('--time_in_force', default='DAY', choices=['DAY', 'GTC'], type=str.upper)
 
-    # place_option (calls & puts)
     p_opt = subparsers.add_parser('place_option')
     p_opt.add_argument('--symbol', required=True)
     p_opt.add_argument('--strike_price', type=float, required=True)
-    p_opt.add_argument('--option_type', default='CALL')
-    p_opt.add_argument('--expire_date', default='2026-12-18')
-    p_opt.add_argument('--qty', type=int, default=1)
-    p_opt.add_argument('--action', default='BUY')
-    p_opt.add_argument('--price', type=float, default=5.0)
-    p_opt.add_argument('--stock_price', type=float, default=0.0)
-    p_opt.add_argument('--strategy', default='SINGLE', choices=['SINGLE', 'COVERED_STOCK'])
-    p_opt.add_argument('--type', default='LIMIT')
-    p_opt.add_argument('--time_in_force', default='DAY')
-    p_opt.add_argument('--preview', action='store_true', default=False)
+    p_opt.add_argument('--option_type', required=True, choices=['CALL', 'PUT'], type=str.upper)
+    p_opt.add_argument('--expire_date', required=True)
+    p_opt.add_argument('--qty', type=int, required=True)
+    p_opt.add_argument('--action', required=True, choices=['BUY', 'SELL'], type=str.upper)
+    p_opt.add_argument('--type', required=True, choices=['LIMIT', 'MARKET'], type=str.upper)
+    p_opt.add_argument('--price', type=float)
+    p_opt.add_argument('--stock_price', type=float)
+    p_opt.add_argument('--strategy', default='SINGLE', choices=['SINGLE', 'COVERED_STOCK'], type=str.upper)
+    p_opt.add_argument('--time_in_force', default='DAY', choices=['DAY', 'GTC'], type=str.upper)
 
-    # cancel_order
     p_cancel = subparsers.add_parser('cancel_order')
     p_cancel.add_argument('--order_id', required=True)
+    return parser
 
+
+def main():
+    parser = construir_parser()
     args = parser.parse_args()
-    if args.command == 'account':
-        cmd_account(args)
-    elif args.command == 'positions':
-        cmd_positions(args)
-    elif args.command == 'orders':
-        cmd_orders(args)
-    elif args.command == 'quote':
-        cmd_quote(args)
-    elif args.command == 'place_order':
-        cmd_place_order(args)
-    elif args.command == 'place_option':
-        cmd_place_option(args)
-    elif args.command == 'cancel_order':
-        cmd_cancel_order(args)
+    comandos = {
+        'account': cmd_account, 'positions': cmd_positions, 'orders': cmd_orders, 'quote': cmd_quote,
+        'place_order': cmd_place_order, 'place_option': cmd_place_option, 'cancel_order': cmd_cancel_order,
+    }
+    if args.command in comandos:
+        comandos[args.command](args)
     else:
         parser.print_help()
+
 
 if __name__ == '__main__':
     main()

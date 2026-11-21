@@ -169,7 +169,7 @@
                   }
                 ],
                 "url": {
-                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/options-chain/NVDA?expiration=2026-10-16",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/options-chain/NVDA",
                   "protocol": "https",
                   "host": [
                     "lsw-eq1-proyecto",
@@ -182,12 +182,6 @@
                     "broker",
                     "options-chain",
                     "NVDA"
-                  ],
-                  "query": [
-                    {
-                      "key": "expiration",
-                      "value": "2026-10-16"
-                    }
                   ]
                 }
               },
@@ -295,7 +289,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"symbol\": \"NVDA\",\n  \"qty\": 100,\n  \"side\": \"buy\",\n  \"type\": \"limit\",\n  \"limitPrice\": 214.5,\n  \"timeInForce\": \"day\"\n}",
+                  "raw": "{\n  \"symbol\": \"NVDA\",\n  \"qty\": 100,\n  \"side\": \"buy\",\n  \"type\": \"limit\",\n  \"limitPrice\": 214.5,\n  \"timeInForce\": \"day\",\n  \"instrumentType\": \"EQUITY\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -444,6 +438,52 @@
               "response": []
             },
             {
+              "name": "Vista previa del Auto-Collar (Core 004, sin órdenes)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "x-database-selection",
+                    "value": "mongodb"
+                  },
+                  {
+                    "key": "x-broker-selection",
+                    "value": "WEBULL"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"symbol\": \"AAPL\",\n  \"executeOrders\": false\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/hedging/auto-collar",
+                  "protocol": "https",
+                  "host": [
+                    "lsw-eq1-proyecto",
+                    "onrender",
+                    "com"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "hedging",
+                    "auto-collar"
+                  ]
+                },
+                "description": "Devuelve el Put y el Call que selecciona el Core 004 sobre la cadena real (contratos de Alpaca con cotizaciones de Webull OpenAPI), con instante, retraso, fuente y métricas. No emite órdenes ni guarda registros (200). Responde 503 si no hay contratos cotizados."
+              },
+              "response": []
+            },
+            {
               "name": "9_AutomáticoWebull (Zero-Cost Auto-Collar)",
               "request": {
                 "method": "POST",
@@ -463,7 +503,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"symbol\": \"NVDA\",\n  \"sharesCount\": 100,\n  \"portfolioId\": \"PORT-AUTO-WEBULL\",\n  \"broker\": \"WEBULL\",\n  \"expirationDate\": \"2026-10-16\",\n  \"executeOrders\": true\n}",
+                  "raw": "{\n  \"symbol\": \"NVDA\",\n  \"sharesCount\": 100,\n  \"portfolioId\": \"PORT-AUTO-WEBULL\",\n  \"broker\": \"WEBULL\",\n  \"executeOrders\": true\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -601,7 +641,7 @@
                   }
                 ],
                 "url": {
-                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/options-chain/AAPL?expiration=2026-10-16",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/options-chain/AAPL",
                   "protocol": "https",
                   "host": [
                     "lsw-eq1-proyecto",
@@ -614,12 +654,6 @@
                     "broker",
                     "options-chain",
                     "AAPL"
-                  ],
-                  "query": [
-                    {
-                      "key": "expiration",
-                      "value": "2026-10-16"
-                    }
                   ]
                 }
               },
@@ -727,7 +761,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"symbol\": \"AAPL\",\n  \"qty\": 100,\n  \"side\": \"buy\",\n  \"type\": \"limit\",\n  \"limitPrice\": 345.0,\n  \"timeInForce\": \"day\"\n}",
+                  "raw": "{\n  \"symbol\": \"AAPL\",\n  \"qty\": 100,\n  \"side\": \"buy\",\n  \"type\": \"limit\",\n  \"limitPrice\": 345.0,\n  \"timeInForce\": \"day\",\n  \"instrumentType\": \"EQUITY\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -768,7 +802,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"symbol\": \"AAPL261016P00310000\",\n  \"qty\": 1,\n  \"side\": \"buy\",\n  \"type\": \"limit\",\n  \"limitPrice\": 2.15,\n  \"timeInForce\": \"day\"\n}",
+                  "raw": "{\n  \"contractSymbol\": \"AAPL261016P00310000\",\n  \"instrumentType\": \"OPTION\",\n  \"qty\": 1,\n  \"side\": \"buy\",\n  \"type\": \"limit\",\n  \"limitPrice\": 2.15,\n  \"timeInForce\": \"day\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -809,7 +843,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"symbol\": \"AAPL261016C00360000\",\n  \"qty\": 1,\n  \"side\": \"sell\",\n  \"type\": \"limit\",\n  \"limitPrice\": 2.5,\n  \"timeInForce\": \"day\"\n}",
+                  "raw": "{\n  \"contractSymbol\": \"AAPL261016C00360000\",\n  \"instrumentType\": \"OPTION\",\n  \"qty\": 1,\n  \"side\": \"sell\",\n  \"type\": \"limit\",\n  \"limitPrice\": 2.5,\n  \"timeInForce\": \"day\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -895,7 +929,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"symbol\": \"AAPL\",\n  \"sharesCount\": 100,\n  \"portfolioId\": \"PORT-AUTO-ALPACA\",\n  \"broker\": \"ALPACA\",\n  \"expirationDate\": \"2026-10-16\",\n  \"executeOrders\": true\n}",
+                  "raw": "{\n  \"symbol\": \"AAPL\",\n  \"sharesCount\": 100,\n  \"portfolioId\": \"PORT-AUTO-ALPACA\",\n  \"broker\": \"ALPACA\",\n  \"executeOrders\": true\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -1033,7 +1067,7 @@
                   }
                 ],
                 "url": {
-                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/options-chain/AAPL?expiration=2026-10-16",
+                  "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/options-chain/AAPL",
                   "protocol": "https",
                   "host": [
                     "lsw-eq1-proyecto",
@@ -1046,12 +1080,6 @@
                     "broker",
                     "options-chain",
                     "AAPL"
-                  ],
-                  "query": [
-                    {
-                      "key": "expiration",
-                      "value": "2026-10-16"
-                    }
                   ]
                 }
               },
@@ -1159,7 +1187,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"symbol\": \"AAPL\",\n  \"qty\": 100,\n  \"side\": \"buy\",\n  \"type\": \"limit\",\n  \"limitPrice\": 345.0,\n  \"timeInForce\": \"DAY\"\n}",
+                  "raw": "{\n  \"symbol\": \"AAPL\",\n  \"qty\": 100,\n  \"side\": \"buy\",\n  \"type\": \"limit\",\n  \"limitPrice\": 345.0,\n  \"timeInForce\": \"DAY\",\n  \"instrumentType\": \"EQUITY\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -1327,7 +1355,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"symbol\": \"AAPL\",\n  \"sharesCount\": 100,\n  \"portfolioId\": \"PORT-AUTO-IBKR\",\n  \"broker\": \"IBKR\",\n  \"expirationDate\": \"2026-10-16\",\n  \"executeOrders\": true\n}",
+                  "raw": "{\n  \"symbol\": \"AAPL\",\n  \"sharesCount\": 100,\n  \"portfolioId\": \"PORT-AUTO-IBKR\",\n  \"broker\": \"IBKR\",\n  \"executeOrders\": true\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -3049,7 +3077,7 @@
               }
             ],
             "url": {
-              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/options-chain/NVDA?expiration=2026-10-16",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/options-chain/NVDA",
               "protocol": "https",
               "host": [
                 "lsw-eq1-proyecto",
@@ -3062,12 +3090,6 @@
                 "broker",
                 "options-chain",
                 "NVDA"
-              ],
-              "query": [
-                {
-                  "key": "expiration",
-                  "value": "2026-10-16"
-                }
               ]
             }
           },
@@ -3084,7 +3106,7 @@
               }
             ],
             "url": {
-              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/options-chain/AAPL?expiration=2026-10-16",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/options-chain/AAPL",
               "protocol": "https",
               "host": [
                 "lsw-eq1-proyecto",
@@ -3097,12 +3119,6 @@
                 "broker",
                 "options-chain",
                 "AAPL"
-              ],
-              "query": [
-                {
-                  "key": "expiration",
-                  "value": "2026-10-16"
-                }
               ]
             }
           },
@@ -3195,7 +3211,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"symbol\": \"NVDA\",\n  \"qty\": 100,\n  \"side\": \"buy\",\n  \"type\": \"limit\",\n  \"limitPrice\": 221.30,\n  \"timeInForce\": \"day\"\n}\n\n@webullOrderId = {{orderWebull.response.body.order.id}}",
+              "raw": "{\n  \"symbol\": \"NVDA\",\n  \"qty\": 100,\n  \"side\": \"buy\",\n  \"type\": \"limit\",\n  \"limitPrice\": 221.3,\n  \"timeInForce\": \"day\",\n  \"instrumentType\": \"EQUITY\"\n}\n\n@webullOrderId = {{orderWebull.response.body.order.id}}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3236,7 +3252,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"symbol\": \"AAPL\",\n  \"qty\": 100,\n  \"side\": \"buy\",\n  \"type\": \"limit\",\n  \"limitPrice\": 343.85,\n  \"timeInForce\": \"day\"\n}\n\n@alpacaOrderId = {{orderAlpaca.response.body.order.id}}",
+              "raw": "{\n  \"symbol\": \"AAPL\",\n  \"qty\": 100,\n  \"side\": \"buy\",\n  \"type\": \"limit\",\n  \"limitPrice\": 343.85,\n  \"timeInForce\": \"day\",\n  \"instrumentType\": \"EQUITY\"\n}\n\n@alpacaOrderId = {{orderAlpaca.response.body.order.id}}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3466,7 +3482,7 @@
               }
             ],
             "url": {
-              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/options-chain/AAPL?expiration=2026-10-16",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/broker/options-chain/AAPL",
               "protocol": "https",
               "host": [
                 "lsw-eq1-proyecto",
@@ -3479,12 +3495,6 @@
                 "broker",
                 "options-chain",
                 "AAPL"
-              ],
-              "query": [
-                {
-                  "key": "expiration",
-                  "value": "2026-10-16"
-                }
               ]
             }
           },
@@ -3790,7 +3800,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"symbol\": \"AAPL\",\n  \"sharesCount\": 100,\n  \"portfolioId\": \"PORT-AUTO-IBKR\",\n  \"broker\": \"IBKR\",\n  \"expirationDate\": \"2026-10-16\",\n  \"executeOrders\": true\n}",
+              "raw": "{\n  \"symbol\": \"AAPL\",\n  \"sharesCount\": 100,\n  \"portfolioId\": \"PORT-AUTO-IBKR\",\n  \"broker\": \"IBKR\",\n  \"executeOrders\": true\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3816,7 +3826,7 @@
               }
             ],
             "url": {
-              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/market/scanner/top-collars?limit=5&sortBy=probability&dteHorizon=45",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v2/market/scanner/top-collars?limit=5&sortBy=probability&dteHorizon=45",
               "protocol": "https",
               "host": [
                 "lsw-eq1-proyecto",
@@ -3825,7 +3835,7 @@
               ],
               "path": [
                 "api",
-                "v1",
+                "v2",
                 "market",
                 "scanner",
                 "top-collars"
@@ -3844,7 +3854,8 @@
                   "value": "45"
                 }
               ]
-            }
+            },
+            "description": "BREAKING: las primas del escáner son teóricas (putFloor/callCeiling.theoreticalPremium, antes marketPremium) y cada candidato trae pricing (modelo, volatilidad supuesta con su origen, tasa). Ya no hay technicalOutlook ni precios de referencia: un activo sin cotización va a unavailable con el motivo, y si ninguno cotiza la respuesta es 503."
           },
           "response": []
         },
@@ -3859,7 +3870,7 @@
               }
             ],
             "url": {
-              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/market/scanner/top-collars?limit=10&sortBy=netCredit&dteHorizon=45",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v2/market/scanner/top-collars?limit=10&sortBy=netCredit&dteHorizon=45",
               "protocol": "https",
               "host": [
                 "lsw-eq1-proyecto",
@@ -3868,7 +3879,7 @@
               ],
               "path": [
                 "api",
-                "v1",
+                "v2",
                 "market",
                 "scanner",
                 "top-collars"
@@ -3887,7 +3898,8 @@
                   "value": "45"
                 }
               ]
-            }
+            },
+            "description": "BREAKING: las primas del escáner son teóricas (putFloor/callCeiling.theoreticalPremium, antes marketPremium) y cada candidato trae pricing (modelo, volatilidad supuesta con su origen, tasa). Ya no hay technicalOutlook ni precios de referencia: un activo sin cotización va a unavailable con el motivo, y si ninguno cotiza la respuesta es 503."
           },
           "response": []
         },
@@ -3902,7 +3914,7 @@
               }
             ],
             "url": {
-              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/market/scanner/company-criteria",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v2/market/scanner/company-criteria",
               "protocol": "https",
               "host": [
                 "lsw-eq1-proyecto",
@@ -3911,7 +3923,7 @@
               ],
               "path": [
                 "api",
-                "v1",
+                "v2",
                 "market",
                 "scanner",
                 "company-criteria"
@@ -3931,7 +3943,7 @@
               }
             ],
             "url": {
-              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v1/market/scanner/tradingview/NVDA",
+              "raw": "https://lsw-eq1-proyecto.onrender.com/api/v2/market/scanner/tradingview/NVDA",
               "protocol": "https",
               "host": [
                 "lsw-eq1-proyecto",
@@ -3940,7 +3952,7 @@
               ],
               "path": [
                 "api",
-                "v1",
+                "v2",
                 "market",
                 "scanner",
                 "tradingview",
@@ -4079,7 +4091,7 @@
         {
           "name": "Ranking por confluencia para Collar Spread",
           "request": {
-            "description": "Usa el token de /auth/login en tokenScreener. El análisis devuelve HTTP 503 si las fuentes reales no permiten evaluar el universo.",
+            "description": "Usa el token de /auth/login en tokenScreener. El análisis devuelve HTTP 503 si las fuentes reales no permiten evaluar el universo. El Core 001 usa velas diarias de dos años: soportes y resistencias puntuados, tendencias en tres escalas con su fecha de confirmación y una proyección informativa del cruce de medias con su precisión medida (no entra al puntaje). Cada core de cada empresa informa su participación en role (CONFLUENCE, GATE, DEPENDENCY, SYNTHESIS o NOT_COMPUTED) y, si entra a la confluencia, su effectiveWeight (por ejemplo 0.225 para el 001 con los cinco cores seleccionados). Cada empresa en excluded trae exclusionType: VIABILITY_VETO (MARGINAL o NO_VIABLE), NO_COLLAR (el Core 004 no encontró un par líquido) o INSUFFICIENT_DATA (faltaron datos). Si Webull no entrega la fecha de resultados, no se estima: el riesgo de eventos queda UNVERIFIED, el Core 002 conserva su puntaje como PARTIAL, el Core 003 responde HOLD con EVENT_UNVERIFIED y la empresa sigue en el ranking con partial: true.",
             "method": "POST",
             "auth": {
               "type": "bearer",
@@ -4115,6 +4127,35 @@
                   "language": "json"
                 }
               }
+            }
+          }
+        },
+        {
+          "name": "Serie técnica del Core 001 para la gráfica",
+          "request": {
+            "description": "Usa el token de /auth/login en tokenScreener. Devuelve las velas diarias cerradas de dos años del símbolo con SMA200, EMA50 y EMA20, las bandas de soporte y resistencia (lower/upper), los tramos de tendencia, la proyección del Core 001 con su precisión medida, las sesiones futuras del calendario de Alpaca, la fuente y el instante de corte. No requiere evaluar los cores y guarda el resultado 90 s. Responde 400 con un símbolo inválido, 401 sin sesión y 503 con la causa si Alpaca no entrega velas suficientes; nunca entrega datos supuestos.",
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenScreener}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlScreener}}/strategy-screener/technical/AAPL",
+              "host": [
+                "{{baseUrlScreener}}"
+              ],
+              "path": [
+                "strategy-screener",
+                "technical",
+                "AAPL"
+              ]
             }
           }
         }

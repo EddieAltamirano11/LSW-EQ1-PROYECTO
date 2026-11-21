@@ -106,8 +106,8 @@ En `src/api/v1/services/broker.service.js`:
 ### Paso 4: Criptografía y Firma HMAC-SHA256 en Webull
 Dentro de `scripts/webull_desktop_bridge.py`:
 1. Se cargan las credenciales oficiales de Webull OpenAPI:
-   * `WEBULL_APP_KEY = us.d099728c9dc63c32a77ea49fc73ec4b5`
-   * `WEBULL_APP_SECRET = 961df980a66ff97bdd5bfe9de3fd3a04`
+   * `WEBULL_APP_KEY = <WEBULL_APP_KEY>`
+   * `WEBULL_APP_SECRET = <WEBULL_APP_SECRET>`
    * `WEBULL_ACCOUNT_ID = DEV4Q8EB`
 2. `ApiClient` del SDK oficial `webull-openapi-python-sdk` ensambla la firma para cada petición:
    * Nonce criptográfico aleatorio (`x-signature-nonce`).

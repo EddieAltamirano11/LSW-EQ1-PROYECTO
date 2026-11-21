@@ -9,7 +9,10 @@ Este documento explica el funcionamiento interno del motor de evaluación cuanti
 En el dashboard conviven dos capas de ranking complementarias:
 
 1. **Escáner Base Rápido (`/api/v2/market/scanner/top-collars`):**  
-   Evalúa la canasta de mercado (más cualquier empresa que añadas manualmente) usando cotización spot del broker y valuación teórica **Black-Scholes** para estimar strikes OTM (~5%), primas y probabilidad de piso seguro. Permite ordenar por *Probabilidad*, *Crédito Neto* o *Retorno Máximo*.
+   Evalúa la canasta de mercado (más cualquier empresa que añadas manualmente) usando la cotización spot del broker y valuación teórica **Black-Scholes** para estimar strikes OTM (~5%), primas y probabilidad de piso seguro. Permite ordenar por *Probabilidad*, *Crédito Neto* o *Retorno Máximo*.
+   - **Sin precios fijos:** si el broker no cotiza un activo (o tarda más de 3 s), el activo no aparece con un precio de referencia: va a `unavailable` con el motivo. Si no cotiza ninguno, responde `503`.
+   - **Valores teóricos:** las primas se llaman `theoreticalPremium` (precio Black-Scholes, sin ajustes de spread) y cada candidato trae `pricing` con el modelo, la volatilidad supuesta y su origen (referencia de la canasta o 0.28 declarado para tickers añadidos) y la tasa (4.5 %). El panel las rotula como teóricas; el collar real lo da el Core 004.
+   - Se retiraron `technicalOutlook`, `technicalSummary`, `rsi14` y `aboveSma200`, que salían de valores fijos en el código; el diagnóstico técnico real es el del Core 001.
 2. **Evaluación de Cores Cuantitativos (`/api/v2/strategy-screener/run`):**  
    Al presionar **"Evaluar Cores Cuantitativos"**, el sistema ejecuta un pipeline de datos reales multi-fuente (**Alpaca Market Data**, **SEC EDGAR** y **Webull OpenAPI**) que calcula 7 cores independientes, aplica vetos duros de solvencia/liquidez y sintetiza un puntaje comparable de **0 a 100** en el **Core 007 (Confluencia)**. Al finalizar, la tabla principal se reordena automáticamente por este puntaje (`sortBy = 'cores'`).
 
@@ -128,25 +131,39 @@ Una vez agregadas las zonas del activo:
 
 ## 3. Funcionamiento del Resto de los Cores
 
-### Core 001 — Análisis Técnico Multi-Timeframe (`technicalCore.js`)
-- **Fuente:** Velas cerradas de **Alpaca Market Data IEX** en 3 marcos temporales: `1Day`, `1Hour` y `15Min` (mínimo 60 velas cerradas por marco).
+### Core 001 — Análisis Técnico Multi-Timeframe (`technicalCore.js` + `historialTecnico.js`)
+- **Fuente:** Velas cerradas de **Alpaca Market Data IEX** en 3 marcos temporales: `1Day` (dos años, unas 500 sesiones), `1Hour` (35 días) y `15Min` (24 días), con mínimo 60 velas cerradas por marco.
 - **Indicadores calculados por timeframe:**
   - Tendencia: `EMA 20`, `EMA 50`, pendiente de `EMA 20`, estructura de máximos/mínimos y fuerza `ADX(14) >= 20`.
   - Momentum: `RSI(14)` (alcista en $[55, 75)$, bajista en $(25, 45]$), histograma `MACD(12, 26, 9)` y `ROC(10)`.
-  - Volatilidad y ruptura: `ATR(14)` vs media de 20 periodos, Bandas de Bollinger $(20, 2\sigma)$, volumen relativo ($> 1.2$ para confirmar ruptura) y zonas de soporte/resistencia por pivotes.
+  - Volatilidad y ruptura: `ATR(14)` vs media de 20 periodos, Bandas de Bollinger $(20, 2\sigma)$ y volumen relativo ($> 1.2$ para confirmar ruptura).
 - **Cálculo de sesgo (`bias` en $[-100, 100]$):**
   $$\text{bias} = \text{clamp}\!\Big((45 \cdot d_{\text{daily}} + 25 \cdot c_{\text{daily}} + 15 \cdot c_{\text{hourly}} + 15 \cdot b_{\text{15m}}) \times (1 - 0.25 \cdot \text{conflictos}),\; -100,\; 100\Big)$$
   Donde `conflictos` cuenta cuántos marcos menores (`1Hour`, `15Min`) contradicen la dirección diaria.
 - **Dirección:** $+1$ si $\text{bias} \ge 25$, $-1$ si $\text{bias} \le -25$, $0$ en otro caso.
 - **Puntaje y confianza:**
   $$\text{score}_{001} = \text{clamp}(68 + 0.28 \times \text{bias},\; 0,\; 100), \qquad \text{confidence} = 0.82 - 0.15 \times \text{conflictos}$$
+- **Histórico de dos años (informativo; no cambia el puntaje):**
+  - **Soportes y resistencias puntuados:** pivotes de las velas diarias de dos años, agrupados con tolerancia $\max(0.35 \cdot ATR,\ 0.2\%)$ del precio y dentro de $\pm 20\%$ del cierre. Cada nivel recibe un puntaje de 0 a 100: $40\%$ toques (tope 5), $25\%$ antigüedad (vida media de 120 sesiones), $20\%$ volumen relativo cercano y $15\%$ proximidad al precio. Se reportan los tres mejores de cada lado, con toques, fecha del último toque y distancia.
+  - **Tendencias en tres escalas**, cada una con su **fecha de confirmación**: la del cruce vigente, siempre que se haya mantenido al menos 3 sesiones.
+    - Primaria: precio frente a la `SMA200` y pendiente de la `SMA200` en 20 sesiones.
+    - Intermedia: `EMA50` frente a la `SMA200`.
+    - Corta: `EMA20` frente a la `EMA50`, válida con $ADX \ge 20$.
+    - Las escalas que usan la `SMA200` necesitan al menos 220 velas; si no las hay, se informan como no disponibles. También se reportan los tramos de tendencia de los dos años; los de menos de 10 sesiones se fusionan con el vecino.
+  - **Proyección de cambio de tendencia:** no da un día exacto. Si las medias de la escala intermedia o corta convergen, se ajusta una regresión lineal a los últimos 20 valores de su diferencia. La ventana de fechas en que se cruzarían, si esa pendiente se mantiene ($\pm 1.96$ errores estándar), se fecha con el calendario bursátil de Alpaca. El horizonte máximo es de 60 sesiones.
+  - **Precisión medida (walk-forward):** cada proyección informa qué proporción de los cruces del histórico cayó dentro de la ventana de la primera proyección de su régimen, el error medio en sesiones y el número de casos. Con menos de 3 casos se marca como muestra insuficiente. Con datos reales del 2026-11-20, la escala corta acertó entre 25 % y 60 %, con errores medios de 10 a 28 sesiones; por eso la proyección es informativa.
+  - **Lectura de indicadores (diario):**
+    - `RSI(14)` con su zona (`OVERSOLD` < 30, `OVERBOUGHT` > 70).
+    - `MACD(12,26,9)` con línea, señal, histograma y fecha de su último cruce.
+    - `ADX(14)` con $+DI$/$-DI$ y su clase (`NO_TREND` < 20, `WEAK` 20–25, `STRONG` 25–50, `VERY_STRONG` ≥ 50).
+    - Bandas de Bollinger con su ancho.
 
 ---
 
 ### Core 002 — Análisis Fundamental, Solvencia y Riesgo de Eventos (`fundamentalCore.js` + `edgar.js`)
 - **Fuentes:**
   - **SEC EDGAR:** Estados financieros auditados (`10-K` o `20-F`) de los últimos **2 ejercicios fiscales consecutivos** en formato XBRL (`us-gaap`).
-  - **Webull Financial Alerts:** Ventana de próximos reportes de ganancias (*earnings*). Si la alerta no responde, se estima de forma segura a 60 días para no bloquear la evaluación.
+  - **Webull Financial Alerts:** Ventana de próximos reportes de ganancias (*earnings*). Si la alerta no responde o no trae una fecha utilizable, **no se estima ninguna fecha**: el riesgo de eventos queda `UNVERIFIED` con la causa y sin evidencia del calendario.
 - **Modelos financieros aplicados:**
   1. **Altman Z-Score:**
      - Empresas manufactureras públicas (SIC `2000–3999`): $Z = 1.2 X_1 + 1.4 X_2 + 3.3 X_3 + 0.6 X_4 + X_5$ (umbrales `1.81` y `2.99`).
@@ -165,6 +182,7 @@ Una vez agregadas las zonas del activo:
   - *Crecimiento:* $\text{clamp}(50 + \text{crecimientoIngresos} \times 140)$
   - *Valuación:* $\text{clamp}(100 - 1.6 \cdot \text{P/E} - 2 \cdot \text{P/S})$ (o `20` si no hay utilidades positivas)
 - **Riesgo de Earnings (`eventRisk`):** `HIGH` si faltan $\le 7$ días, `MEDIUM` si faltan $\le 30$ días, `LOW` si faltan $> 30$ días.
+- **Earnings sin verificar (`UNVERIFIED`):** sin fecha de resultados, el Core 002 conserva su puntaje (que no depende de los eventos) con estado `PARTIAL`; el Core 003 se abstiene; la empresa conserva su posición y se marca como parcial (`partial: true`, respuesta `PARTIAL`). La consulta por core lo muestra como «Earnings sin verificar» con la causa.
 
 ---
 
@@ -172,6 +190,7 @@ Una vez agregadas las zonas del activo:
 - **Dependencia:** Consume directamente el resultado del **Core 001** y el **Riesgo de Eventos** (earnings).
 - **Reglas de decisión:**
   - Si `risk === 'HIGH'` (earnings en 7 días o menos): fuerza señal `HOLD` (`side = 0`, regla `EVENT_RISK`) y resta **20 puntos**.
+  - Si `risk === 'UNVERIFIED'` (sin fecha de resultados verificable): se abstiene con `HOLD`, regla `EVENT_UNVERIFIED`, puntaje neutral `65`, confianza `0.50` y estado `PARTIAL`.
   - Si el riesgo no es alto, la tendencia diaria y horaria coinciden con la dirección del Core 001 **y** $|\text{bias}| \ge 45$: emite `BUY` (`+1`) o `SELL` (`-1`, regla `DIRECTION_CONFIRMED`).
   - En cualquier otro caso: `HOLD` (`INSUFFICIENT_CONFIRMATION`).
 - **Puntaje y confianza:**
@@ -255,7 +274,21 @@ Para evitar señales falsas:
    - `SELL`: sin conflicto, `confidence >= 0.65` y al menos **2 grupos independientes** en dirección bajista.
    - `HOLD`: en caso de conflicto, baja confianza o falta de consenso entre al menos 2 grupos.
 
-### 4.4. Reglas Exactas de Ordenamiento y Exclusión del Ranking
+### 4.4. Participación de cada core (`role` y `effectiveWeight`)
+
+En la respuesta, cada core de cada empresa informa cómo participó:
+
+| `role` | Significado |
+| :--- | :--- |
+| `CONFLUENCE` | Está seleccionado y su puntaje entra a la confluencia. Incluye `effectiveWeight`, el peso normalizado que aplicó el 007 (por ejemplo, `0.225` para el 001 con los cinco cores seleccionados). |
+| `GATE` | Se calculó como filtro sin ponderar: Fundamental (002) cuando no está seleccionado, por el veto de viabilidad, y Estrategia (004). |
+| `DEPENDENCY` | Se calculó solo porque otro core seleccionado lo necesita, como Técnico (001) cuando solo está seleccionado Señales directas (003). |
+| `SYNTHESIS` | Confluencia (007). |
+| `NOT_COMPUTED` | No se calculó; por ejemplo, 005 o 006 sin seleccionar, o 004 en una empresa vetada o sin viabilidad verificada. |
+
+Si un core seleccionado no tiene puntaje, la confluencia no se calcula y su `effectiveWeight` no aparece. En el panel, el botón con ícono de ojo junto a cada core abre esta información por empresa y la explicación de cómo se calcula el core.
+
+### 4.5. Reglas Exactas de Ordenamiento y Exclusión del Ranking
 
 En `src/api/v2/services/strategyScreener.service.js`:
 
@@ -264,6 +297,8 @@ En `src/api/v2/services/strategyScreener.service.js`:
    - Su viabilidad no pudo verificarse (`UNKNOWN`) o fallaron sus datos de eventos/opciones.
    - El Core 004 determinó que no existe un par Collar líquido y verificable (`eligible: false`).
    - Alguno de los cores activos seleccionados no devolvió un `score` válido.
+
+   Cada empresa excluida trae `exclusionType`: `VIABILITY_VETO` (veto fundamental), `NO_COLLAR` (sin par líquido del Core 004) o `INSUFFICIENT_DATA` (viabilidad sin verificar, fallas de datos o un core activo sin puntaje). La columna de cores del ranking muestra ese tipo y su causa.
 2. **Ordenamiento de Candidatos (`candidates`):**
    ```javascript
    rows
@@ -277,3 +312,5 @@ En `src/api/v2/services/strategyScreener.service.js`:
    - Se asigna la posición `rank` (`1, 2, 3...`) hasta el límite configurado (`limit`).
 3. **Reflejo en la Interfaz (`Dashboard.jsx`):**
    - Al recibir el resultado de la API, el dashboard cambia el criterio de ordenamiento a `cores` (`setSortBy('cores')`) y muestra las empresas aprobadas arriba de la tabla ordenadas por su puntaje del Core 007, conservando sus evidencias auditables (fuente, timestamp y referencia de cada observación).
+4. **Collar en la tabla del ranking:** después de evaluar los cores, las columnas Piso Put, Techo Call, Prima Neta y Retorno Máx. de cada empresa apta muestran el collar del Core 004, marcado «Real · Core 004» con la hora de la cotización más antigua de las dos patas. La prima neta se expresa como débito o crédito por acción, y el retorno máximo es `maxProfit / (precio × acciones)`. En esas filas la probabilidad N(d₂) dice «No aplica», porque el escáner la calcula para su strike teórico. Antes de evaluar, y en las filas sin collar del Core 004, se muestran los valores del escáner marcados «Teórico · escáner».
+

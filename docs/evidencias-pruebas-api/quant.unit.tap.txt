@@ -2,42 +2,42 @@ TAP version 13
 # Subtest: [unitaria] CALL coincide con la referencia independiente 10.4506
 ok 1 - [unitaria] CALL coincide con la referencia independiente 10.4506
   ---
-  duration_ms: 0.779475
+  duration_ms: 1.190741
   ...
 # Subtest: [unitaria] CALL y PUT cumplen paridad con tolerancia de redondeo
 ok 2 - [unitaria] CALL y PUT cumplen paridad con tolerancia de redondeo
   ---
-  duration_ms: 0.121896
+  duration_ms: 0.196388
   ...
 # Subtest: [unitaria] el precio CALL aumenta con el precio del subyacente
 ok 3 - [unitaria] el precio CALL aumenta con el precio del subyacente
   ---
-  duration_ms: 0.08465
+  duration_ms: 0.131754
   ...
 # Subtest: [unitaria] volatilidad implícita recupera el 20 por ciento de una referencia
 ok 4 - [unitaria] volatilidad implícita recupera el 20 por ciento de una referencia
   ---
-  duration_ms: 0.149079
+  duration_ms: 0.221422
   ...
 # Subtest: [unitaria] collar limita pérdidas y ganancias en tres escenarios
 ok 5 - [unitaria] collar limita pérdidas y ganancias en tres escenarios
   ---
-  duration_ms: 0.435567
+  duration_ms: 0.679373
   ...
 # Subtest: [unitaria] validador normaliza sin modificar el objeto original
 ok 6 - [unitaria] validador normaliza sin modificar el objeto original
   ---
-  duration_ms: 0.397038
+  duration_ms: 0.65016
   ...
 # Subtest: [unitaria] controlador aislado devuelve 200 mediante mocks de respuesta
 ok 7 - [unitaria] controlador aislado devuelve 200 mediante mocks de respuesta
   ---
-  duration_ms: 0.282134
+  duration_ms: 0.478261
   ...
 # Subtest: [unitaria] controlador deriva el error a next sin responder éxito
 ok 8 - [unitaria] controlador deriva el error a next sin responder éxito
   ---
-  duration_ms: 0.239802
+  duration_ms: 0.354554
   ...
 1..8
 # tests 8
@@ -47,4 +47,4 @@ ok 8 - [unitaria] controlador deriva el error a next sin responder éxito
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 82.175199
+# duration_ms 72.651283

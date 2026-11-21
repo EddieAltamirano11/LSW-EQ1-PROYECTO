@@ -3,8 +3,16 @@ import sys
 import json
 import requests
 import subprocess
-ALPACA_KEY = 'PK4V5IGAOIZNH2XKBQYF6DW2XJ'
-ALPACA_SECRET = '5tTmeXfiEFdMWRZkbkXCi53VsCKFvitrrgAmajxteUcB'
+import os
+from pathlib import Path
+
+# Credenciales desde el .env de la raíz del proyecto (no se escriben en el código).
+for _linea in (Path(__file__).resolve().parents[1] / '.env').read_text(encoding='utf-8').splitlines():
+    if '=' in _linea and not _linea.lstrip().startswith('#'):
+        _clave, _valor = _linea.split('=', 1)
+        os.environ.setdefault(_clave.strip(), _valor.strip().strip('"').strip("'"))
+ALPACA_KEY = os.environ['ALPACA_API_KEY_ID']
+ALPACA_SECRET = os.environ['ALPACA_API_SECRET_KEY']
 ALPACA_BASE = 'https://paper-api.alpaca.markets'
 
 def check_alpaca():
