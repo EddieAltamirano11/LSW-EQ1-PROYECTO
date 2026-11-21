@@ -1,0 +1,55 @@
+TAP version 13
+# Subtest: 001 confirma la tendencia intermedia en la fecha del cruce y arma tramos con fechas
+ok 1 - 001 confirma la tendencia intermedia en la fecha del cruce y arma tramos con fechas
+  ---
+  duration_ms: 9.507453
+  ...
+# Subtest: 001 elige los soportes por puntaje y no solo por cercanía
+ok 2 - 001 elige los soportes por puntaje y no solo por cercanía
+  ---
+  duration_ms: 2.555265
+  ...
+# Subtest: 001 informa como no disponibles las escalas sin velas suficientes para la SMA200
+ok 3 - 001 informa como no disponibles las escalas sin velas suficientes para la SMA200
+  ---
+  duration_ms: 1.337163
+  ...
+# Subtest: 001 proyecta una ventana de fechas, no un día exacto, cuando las medias convergen
+ok 4 - 001 proyecta una ventana de fechas, no un día exacto, cuando las medias convergen
+  ---
+  duration_ms: 4.188542
+  ...
+# Subtest: 001 indica que no hay cambio proyectado cuando las medias se separan
+ok 5 - 001 indica que no hay cambio proyectado cuando las medias se separan
+  ---
+  duration_ms: 1.45974
+  ...
+# Subtest: la proyección respeta el horizonte de 60 sesiones
+ok 6 - la proyección respeta el horizonte de 60 sesiones
+  ---
+  duration_ms: 0.144521
+  ...
+# Subtest: la precisión medida cuenta los cruces precedidos de una proyección y advierte muestras pequeñas
+ok 7 - la precisión medida cuenta los cruces precedidos de una proyección y advierte muestras pequeñas
+  ---
+  duration_ms: 0.901018
+  ...
+# Subtest: 001 lee los indicadores con los parámetros de la guía
+ok 8 - 001 lee los indicadores con los parámetros de la guía
+  ---
+  duration_ms: 1.967567
+  ...
+# Subtest: el puntaje, la dirección y la confianza del 001 no dependen de la proyección
+ok 9 - el puntaje, la dirección y la confianza del 001 no dependen de la proyección
+  ---
+  duration_ms: 3.235735
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 98.640106

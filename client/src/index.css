@@ -329,7 +329,8 @@ body::-webkit-scrollbar,
   color: var(--ui-green);
 }
 
-.ui-option[aria-pressed="true"] {
+.ui-option[aria-pressed="true"],
+.ui-option[aria-selected="true"] {
   border-color: var(--ui-border);
   background: var(--ui-surface);
   color: var(--ui-green);

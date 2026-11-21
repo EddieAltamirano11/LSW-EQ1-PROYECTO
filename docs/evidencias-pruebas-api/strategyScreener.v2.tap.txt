@@ -3,30 +3,30 @@ TAP version 13
 # Subtest: 001 combina temporalidades, requiere volumen en ruptura y expone la cobertura
 ok 1 - 001 combina temporalidades, requiere volumen en ruptura y expone la cobertura
   ---
-  duration_ms: 2.853522
+  duration_ms: 3.814671
   ...
 # Subtest: 002 distingue los cuatro estados y 003 aplica confirmación y riesgo
 ok 2 - 002 distingue los cuatro estados y 003 aplica confirmación y riesgo
   ---
-  duration_ms: 2.862654
+  duration_ms: 3.61209
   ...
 # Subtest: 004 valora ask y bid observados y rechaza un par sin liquidez o entregables compatibles
 ok 3 - 004 valora ask y bid observados y rechaza un par sin liquidez o entregables compatibles
   ---
-  duration_ms: 0.416289
+  duration_ms: 0.493922
   ...
 # Subtest: 005 respeta el lado observado y 006 distingue ventanas vacías de fallas
 ok 4 - 005 respeta el lado observado y 006 distingue ventanas vacías de fallas
   ---
-  duration_ms: 1.949333
+  duration_ms: 2.12783
   ...
 # Subtest: 007 combina pesos sin tratar 001 y 003 como confirmaciones independientes
 ok 5 - 007 combina pesos sin tratar 001 y 003 como confirmaciones independientes
   ---
-  duration_ms: 0.488781
+  duration_ms: 0.516435
   ...
 # [API Error Detail]: Error: La consulta requiere una sesión válida.
-#     at file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/routes/strategyScreener.routes.js:9:33
+#     at file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/routes/strategyScreener.routes.js:11:33
 #     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
 #     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
 #     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
@@ -50,8 +50,8 @@ ok 5 - 007 combina pesos sin tratar 001 y 003 como confirmaciones independientes
 #   }
 # }
 # [API Error Detail]: Error: Selecciona cores distintos del conjunto 001, 002, 003, 005 y 006.
-#     at parseScreenerInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/services/strategyScreener.service.js:23:16)
-#     at file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/routes/strategyScreener.routes.js:10:32
+#     at parseScreenerInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/services/strategyScreener.service.js:24:16)
+#     at file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/routes/strategyScreener.routes.js:12:32
 #     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
 #     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
 #     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
@@ -74,8 +74,8 @@ ok 5 - 007 combina pesos sin tratar 001 y 003 como confirmaciones independientes
 #   }
 # }
 # [API Error Detail]: Error: limit debe ser un entero entre 1 y 25.
-#     at parseScreenerInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/services/strategyScreener.service.js:25:71)
-#     at file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/routes/strategyScreener.routes.js:10:32
+#     at parseScreenerInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/services/strategyScreener.service.js:26:71)
+#     at file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/routes/strategyScreener.routes.js:12:32
 #     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
 #     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
 #     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
@@ -98,9 +98,9 @@ ok 5 - 007 combina pesos sin tratar 001 y 003 como confirmaciones independientes
 #   }
 # }
 # [API Error Detail]: Error: Datos reales insuficientes. Sin estados financieros.
-#     at run (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/services/strategyScreener.service.js:133:18)
+#     at run (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/services/strategyScreener.service.js:153:18)
 #     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-#     at async file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/routes/strategyScreener.routes.js:10:22 {
+#     at async file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/routes/strategyScreener.routes.js:12:22 {
 #   data: null,
 #   isBoom: true,
 #   isServer: true,
@@ -117,11 +117,11 @@ ok 5 - 007 combina pesos sin tratar 001 y 003 como confirmaciones independientes
 # Subtest: ruta autenticada entrega resultados completos y parciales, veta, valida y reporta 503
 ok 6 - ruta autenticada entrega resultados completos y parciales, veta, valida y reporta 503
   ---
-  duration_ms: 52.770983
+  duration_ms: 51.371758
   ...
 # [API Error Detail]: Error: limit debe ser un entero entre 1 y 25.
-#     at parseScreenerInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/services/strategyScreener.service.js:25:71)
-#     at file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/routes/strategyScreener.routes.js:10:32
+#     at parseScreenerInput (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/services/strategyScreener.service.js:26:71)
+#     at file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/routes/strategyScreener.routes.js:12:32
 #     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
 #     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
 #     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
@@ -143,18 +143,38 @@ ok 6 - ruta autenticada entrega resultados completos y parciales, veta, valida y
 #     headers: {}
 #   }
 # }
-# POST /api/v2/strategy-screener/run 400 1.412 ms - 196
+# POST /api/v2/strategy-screener/run 400 1.181 ms - 196
 # Subtest: la ruta pública del escáner valida el cuerpo original antes de inyectar contextos heredados
 ok 7 - la ruta pública del escáner valida el cuerpo original antes de inyectar contextos heredados
   ---
-  duration_ms: 37.209643
+  duration_ms: 33.656379
   ...
-1..7
-# tests 7
+# Subtest: cada core informa su participación: confluencia con peso efectivo, filtro, dependencia, síntesis o no calculado
+ok 8 - cada core informa su participación: confluencia con peso efectivo, filtro, dependencia, síntesis o no calculado
+  ---
+  duration_ms: 2.409361
+  ...
+# Subtest: cada empresa excluida informa su tipo de exclusión: veto, sin collar o datos insuficientes
+ok 9 - cada empresa excluida informa su tipo de exclusión: veto, sin collar o datos insuficientes
+  ---
+  duration_ms: 1.79514
+  ...
+# Subtest: sin fecha de earnings la empresa conserva su posición con riesgo UNVERIFIED y el 003 se abstiene
+ok 10 - sin fecha de earnings la empresa conserva su posición con riesgo UNVERIFIED y el 003 se abstiene
+  ---
+  duration_ms: 1.558046
+  ...
+# Subtest: el calendario de resultados no inventa fechas cuando Webull no entrega una
+ok 11 - el calendario de resultados no inventa fechas cuando Webull no entrega una
+  ---
+  duration_ms: 3.973822
+  ...
+1..11
+# tests 11
 # suites 0
-# pass 7
+# pass 11
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 388.054121
+# duration_ms 369.157072

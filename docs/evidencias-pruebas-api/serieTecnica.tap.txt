@@ -1,0 +1,186 @@
+TAP version 13
+# ⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715
+# Subtest: la serie técnica entrega velas, medias, niveles con banda, tramos y proyección del Core 001
+ok 1 - la serie técnica entrega velas, medias, niveles con banda, tramos y proyección del Core 001
+  ---
+  duration_ms: 28.40826
+  ...
+# [API Error Detail]: Error: La consulta requiere una sesión válida.
+#     at file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/routes/strategyScreener.routes.js:21:33
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at param (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:365:14)
+#     at param (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:376:14)
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:421:3)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:280:10) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 401,
+#     payload: {
+#       statusCode: 401,
+#       error: 'Unauthorized',
+#       message: 'La consulta requiere una sesión válida.'
+#     },
+#     headers: {}
+#   }
+# }
+# [API Error Detail]: Error: El símbolo debe tener de 1 a 5 letras, con una clase opcional como BRK.B.
+#     at parseTechnicalSymbol (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/services/strategyScreener.service.js:168:50)
+#     at file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/routes/strategyScreener.routes.js:22:41
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at param (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:365:14)
+#     at param (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:376:14)
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:421:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'El símbolo debe tener de 1 a 5 letras, con una clase opcional como BRK.B.'
+#     },
+#     headers: {}
+#   }
+# }
+# [API Error Detail]: Error: El símbolo debe tener de 1 a 5 letras, con una clase opcional como BRK.B.
+#     at parseTechnicalSymbol (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/services/strategyScreener.service.js:168:50)
+#     at file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/routes/strategyScreener.routes.js:22:41
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at param (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:365:14)
+#     at param (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:376:14)
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:421:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'El símbolo debe tener de 1 a 5 letras, con una clase opcional como BRK.B.'
+#     },
+#     headers: {}
+#   }
+# }
+# [API Error Detail]: Error: El símbolo debe tener de 1 a 5 letras, con una clase opcional como BRK.B.
+#     at parseTechnicalSymbol (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/services/strategyScreener.service.js:168:50)
+#     at file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/routes/strategyScreener.routes.js:22:41
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at param (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:365:14)
+#     at param (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:376:14)
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:421:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'El símbolo debe tener de 1 a 5 letras, con una clase opcional como BRK.B.'
+#     },
+#     headers: {}
+#   }
+# }
+# [API Error Detail]: Error: El símbolo debe tener de 1 a 5 letras, con una clase opcional como BRK.B.
+#     at parseTechnicalSymbol (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/services/strategyScreener.service.js:168:50)
+#     at file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/routes/strategyScreener.routes.js:22:41
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at next (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:149:13)
+#     at Route.dispatch (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/route.js:119:3)
+#     at Layer.handle [as handle_request] (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/layer.js:95:5)
+#     at /home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:284:15
+#     at param (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:365:14)
+#     at param (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:376:14)
+#     at Function.process_params (/home/ealtamiranop/Github/LSW-EQ1-PROYECTO/node_modules/express/lib/router/index.js:421:3) {
+#   data: null,
+#   isBoom: true,
+#   isServer: false,
+#   output: {
+#     statusCode: 400,
+#     payload: {
+#       statusCode: 400,
+#       error: 'Bad Request',
+#       message: 'El símbolo debe tener de 1 a 5 letras, con una clase opcional como BRK.B.'
+#     },
+#     headers: {}
+#   }
+# }
+# Subtest: la serie técnica exige sesión y rechaza símbolos inválidos sin consultar la fuente
+ok 2 - la serie técnica exige sesión y rechaza símbolos inválidos sin consultar la fuente
+  ---
+  duration_ms: 12.066002
+  ...
+# [API Error Detail]: Error: Datos reales insuficientes. Serie 1Day incompleta o fuera de vigencia para AAPL.
+#     at sourceFailure (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/services/strategyScreener.service.js:173:49)
+#     at series (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/services/strategyScreener.service.js:223:13)
+#     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+#     at async file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/routes/strategyScreener.routes.js:22:28 {
+#   data: null,
+#   isBoom: true,
+#   isServer: true,
+#   output: {
+#     statusCode: 503,
+#     payload: {
+#       statusCode: 503,
+#       error: 'Service Unavailable',
+#       message: 'Datos reales insuficientes. Serie 1Day incompleta o fuera de vigencia para AAPL.'
+#     },
+#     headers: {}
+#   }
+# }
+# Subtest: la serie técnica responde 503 con la causa cuando la fuente no entrega velas y no guarda el fallo
+ok 3 - la serie técnica responde 503 con la causa cuando la fuente no entrega velas y no guarda el fallo
+  ---
+  duration_ms: 7.784277
+  ...
+# [API Error Detail]: Error: Datos reales insuficientes. Faltan velas cerradas para el análisis técnico.
+#     at technicalSeries (file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/services/strategyScreener.service.js:183:32)
+#     at file:///home/ealtamiranop/Github/LSW-EQ1-PROYECTO/src/api/v2/services/strategyScreener.service.js:220:16
+#     at process.processTicksAndRejections (node:internal/process/task_queues:95:5) {
+#   data: null,
+#   isBoom: true,
+#   isServer: true,
+#   output: {
+#     statusCode: 503,
+#     payload: {
+#       statusCode: 503,
+#       error: 'Service Unavailable',
+#       message: 'Datos reales insuficientes. Faltan velas cerradas para el análisis técnico.'
+#     },
+#     headers: {}
+#   }
+# }
+# Subtest: la serie técnica responde 503 cuando el Core 001 no tiene velas suficientes
+ok 4 - la serie técnica responde 503 cuando el Core 001 no tiene velas suficientes
+  ---
+  duration_ms: 4.047746
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 330.626233

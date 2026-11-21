@@ -1,23 +1,37 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { LogOut } from 'lucide-react';
 import LoginView from './components/LoginView';
 import Dashboard from './components/Dashboard';
 import VistaPortafolio from './components/VistaPortafolio';
+import { AVISO_SESION_VENCIDA, esRechazoDeSesion, tokenVencido, vencimientoDelToken } from './services/sesion';
 
 const pestanas = [
   { id: 'dashboard', etiqueta: 'Dashboard' },
   { id: 'portafolio', etiqueta: 'Portafolio' },
 ];
 
+// Datos para volver a iniciar sesión con el mismo usuario, base, broker y servidor.
+const contextoDeSesion = (sesion, aviso) => sesion && ({
+  username: sesion.user?.username,
+  databaseTarget: sesion.databaseTarget,
+  brokerTarget: sesion.brokerTarget,
+  backendUrl: sesion.backendUrl,
+  aviso,
+});
+
+function leerSesionGuardada() {
+  try {
+    const saved = localStorage.getItem('hedging_quant_session');
+    return saved ? JSON.parse(saved) : null;
+  } catch (_) {
+    return null;
+  }
+}
+
 export default function App() {
-  const [session, setSession] = useState(() => {
-    try {
-      const saved = localStorage.getItem('hedging_quant_session');
-      return saved ? JSON.parse(saved) : null;
-    } catch (_) {
-      return null;
-    }
-  });
+  // Una sesión guardada con el token vencido no se reutiliza: se pide iniciar sesión de nuevo.
+  const [sesionInicial] = useState(leerSesionGuardada);
+  const [session, setSession] = useState(() => (sesionInicial && !tokenVencido(sesionInicial.token) ? sesionInicial : null));
 
   const sessionIdentity = useRef(Symbol());
   const currentIdentity = sessionIdentity.current;
@@ -31,7 +45,9 @@ export default function App() {
   };
 
   const [pestanaActiva, setPestanaActiva] = useState(getRutaInicial);
-  const [loginContext, setLoginContext] = useState(null);
+  const [loginContext, setLoginContext] = useState(() => (
+    sesionInicial && tokenVencido(sesionInicial.token) ? contextoDeSesion(sesionInicial, AVISO_SESION_VENCIDA) : null
+  ));
   const urlBaseApi = (session?.backendUrl ?? import.meta.env.VITE_API_URL ?? 'https://lsw-eq1-proyecto.onrender.com').replace(/\/$/, '');
 
   const seleccionarPestana = (id) => {
@@ -80,6 +96,35 @@ export default function App() {
     setLoginContext({ username: user?.username, databaseTarget, brokerTarget, backendUrl: urlBaseApi });
     handleLogout();
   };
+
+  const cerrarPorVencimiento = () => {
+    setSession((actual) => {
+      if (actual) setLoginContext(contextoDeSesion(actual, AVISO_SESION_VENCIDA));
+      return null;
+    });
+    sessionIdentity.current = Symbol();
+  };
+
+  // Al llegar el vencimiento del token se vuelve al inicio de sesión.
+  useEffect(() => {
+    const vence = vencimientoDelToken(session?.token);
+    if (vence === null) return undefined;
+    const temporizador = setTimeout(cerrarPorVencimiento, Math.max(0, Math.min(vence - Date.now(), 2 ** 31 - 1)));
+    return () => clearTimeout(temporizador);
+  }, [session?.token]);
+
+  // Si el backend rechaza el token de la sesión (401), la sesión deja de ser válida en todas las vistas.
+  // useLayoutEffect: queda instalado antes de que las vistas hagan sus primeras consultas en sus efectos.
+  useLayoutEffect(() => {
+    if (!session?.token) return undefined;
+    const fetchOriginal = window.fetch;
+    window.fetch = async (url, opciones) => {
+      const respuesta = await fetchOriginal(url, opciones);
+      if (esRechazoDeSesion(url, opciones, respuesta.status, urlBaseApi)) cerrarPorVencimiento();
+      return respuesta;
+    };
+    return () => { window.fetch = fetchOriginal; };
+  }, [session?.token, urlBaseApi]);
 
   const handleSessionChange = (changes) => {
     if (currentIdentity !== sessionIdentity.current) return false;

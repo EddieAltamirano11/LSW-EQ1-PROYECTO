@@ -103,13 +103,23 @@ function TablaPortafolio({ titulo, columnas, filas }) {
   );
 }
 
+// Describe el contrato que reporta el broker: en opciones la cantidad son contratos o combos, no acciones.
+function describirInstrumento(posicion) {
+  const simbolo = esTextoValido(posicion.symbol) ? posicion.symbol : posicion.assetId;
+  if (posicion.instrumentType !== 'OPTION') return simbolo;
+  const opcion = (posicion.legs ?? []).find((pata) => pata?.instrumentType === 'OPTION');
+  const contrato = opcion ? [opcion.optionType, opcion.strikePrice, opcion.expirationDate].filter((v) => v !== null && v !== undefined).join(' ') : '';
+  const estrategia = posicion.optionStrategy === 'COVERED_STOCK' ? `Covered Stock (${formatoCantidad.format(posicion.equityQty ?? 0)} acciones)` : null;
+  return [simbolo, estrategia, contrato].filter(Boolean).join(' · ');
+}
+
 function TablaPosiciones({ posiciones }) {
   if (!posiciones.length) return <p className="text-sm text-[var(--ui-muted)]">La cuenta no tiene posiciones abiertas.</p>;
 
   const filas = posiciones.map((posicion, indice) => ({
     clave: `${posicion.assetId ?? posicion.symbol}-${indice}`,
     valores: [
-      esTextoValido(posicion.symbol) ? posicion.symbol : posicion.assetId,
+      describirInstrumento(posicion),
       formatoCantidad.format(posicion.qty),
       etiquetasLado.get(posicion.side) ?? textoNoDisponible,
     ],

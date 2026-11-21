@@ -30,12 +30,20 @@ export default function BrokerExecutionModal({ isOpen, onClose, modalData }) {
   const dbLabel = (databaseTarget || modalData.database || 'MONGODB').toString().toUpperCase();
   const brokerLabel = (broker || 'BROKER').toString().toUpperCase();
   const expLabel = candidate?.optimalExpiration || payload?.expirationDate || modalData.payload?.expirationDate || 'Vencimiento Activo';
+  // La prima enviada en la orden se distingue de la teórica del escáner (Black-Scholes), que no es una cotización.
+  // La prima observada de la vista previa (que el backend vuelve a cotizar al emitir) también se distingue de la teórica.
+  const primaDe = pata => pata?.observedPremium ?? pata?.theoreticalPremium;
+  const rotuloDe = pata => (pata?.observedPremium != null ? 'Prima observada (vista previa)' : 'Prima teórica (escáner)');
+  const primaPut = payload?.putPremium ?? primaDe(candidate?.putFloor);
+  const rotuloPrimaPut = payload?.putPremium != null ? 'Prima enviada' : rotuloDe(candidate?.putFloor);
 
   const isSuccess = ok && (status === 200 || status === 201);
   const analysis = data?.analysis || candidate;
   const execution = data?.brokerExecution || data?.data?.brokerExecution;
   const strategy = data?.strategy || data?.data;
-  const orders = execution?.orders || data?.orders || [];
+  const orders = execution?.orders || data?.orders || data?.data?.orders || [];
+  // Ejecución parcial (409): quedaron patas vivas o ejecutadas y la estrategia se guardó como PARTIALLY_EXECUTED.
+  const esParcial = status === 409 || data?.strategy?.status === 'PARTIALLY_EXECUTED' || data?.data?.strategy?.status === 'PARTIALLY_EXECUTED';
 
   const handleCopyJson = () => {
     try {
@@ -158,7 +166,7 @@ export default function BrokerExecutionModal({ isOpen, onClose, modalData }) {
                     Strike ${payload?.putStrike || candidate?.putFloor?.strike} Put
                   </div>
                   <div className="text-xs text-[var(--ui-muted)]">
-                    Prima: <span className="text-[var(--ui-ink)] font-mono">${payload?.putPremium || candidate?.putFloor?.marketPremium} USD/acc</span>
+                    {rotuloPrimaPut}: <span className="text-[var(--ui-ink)] font-mono">${primaPut} USD/acc</span>
                   </div>
                   <div className="text-xs text-[var(--ui-muted)] pt-1 border-t border-[var(--ui-border)]">
                     Rol: Póliza de Seguro (Piso de Venta Garantizado)
@@ -258,7 +266,7 @@ export default function BrokerExecutionModal({ isOpen, onClose, modalData }) {
                   </div>
                   <div className="text-sm font-bold text-[var(--ui-ink)]">Strike ${candidate?.putFloor?.strike} Put</div>
                   <div className="text-xs text-[var(--ui-muted)]">
-                    Prima: <span className="text-[var(--ui-ink)] font-mono">${candidate?.putFloor?.marketPremium}</span> ({candidate?.putFloor?.moneyness})
+                    {rotuloDe(candidate?.putFloor)}: <span className="text-[var(--ui-ink)] font-mono">${primaDe(candidate?.putFloor)}</span> ({candidate?.putFloor?.moneyness})
                   </div>
                   <div className="text-xs text-[var(--ui-muted)] pt-1 border-t border-[var(--ui-border)]">
                     Rol: Póliza de Seguro (Piso de Pérdida)
@@ -275,7 +283,7 @@ export default function BrokerExecutionModal({ isOpen, onClose, modalData }) {
                   </div>
                   <div className="text-sm font-bold text-[var(--ui-ink)]">Strike ${candidate?.callCeiling?.strike} Call</div>
                   <div className="text-xs text-[var(--ui-muted)]">
-                    Prima: <span className="text-[var(--ui-ink)] font-mono">${candidate?.callCeiling?.marketPremium}</span> ({candidate?.callCeiling?.moneyness})
+                    {rotuloDe(candidate?.callCeiling)}: <span className="text-[var(--ui-ink)] font-mono">${primaDe(candidate?.callCeiling)}</span> ({candidate?.callCeiling?.moneyness})
                   </div>
                   <div className="text-xs text-[var(--ui-muted)] pt-1 border-t border-[var(--ui-border)]">
                     Rol: Financia la Put (Costo Cero)
@@ -285,12 +293,19 @@ export default function BrokerExecutionModal({ isOpen, onClose, modalData }) {
             </div>
           )}
 
-          {/* Órdenes Confirmadas en el Broker si se ejecutó en vivo */}
+          {esParcial && (
+            <div role="alert" className="rounded-xl border border-amber-300 bg-amber-50 p-3.5 text-sm text-amber-900">
+              <strong>Ejecución parcial · PARTIALLY_EXECUTED.</strong> Una pata falló después de que otra quedó viva o ejecutada.
+              Las patas ejecutadas no se cerraron; revisa el estado de cada orden en la tabla y en el broker.
+            </div>
+          )}
+
+          {/* Órdenes procesadas por el broker, con el estado que él reporta */}
           {orders.length > 0 && (
             <div>
               <h3 className="text-xs font-bold text-amber-900 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
                 <Server className="w-4 h-4 text-amber-800" />
-                <span>Órdenes Confirmadas por el Matching Engine ({broker})</span>
+                <span>Órdenes procesadas por {broker}</span>
               </h3>
               <div className="overflow-x-auto rounded-xl border border-[var(--ui-border)] bg-white" role="region" aria-label="Tabla de órdenes confirmadas" tabIndex={0}>
                 <table className="w-full min-w-[36rem] text-left text-xs tabular-nums">
@@ -315,14 +330,26 @@ export default function BrokerExecutionModal({ isOpen, onClose, modalData }) {
                               ord.action === 'BUY' ? 'text-emerald-800 bg-emerald-50' : 'text-amber-800 bg-amber-50'
                             }`}
                           >
-                            {ord.action} {ord.quantity}x
+                            {ord.action ?? String(ord.side ?? '').toUpperCase()} {ord.quantity}x
                           </span>
                         </td>
                         <td className="py-2 px-3 text-right font-bold text-[var(--ui-ink)]">${ord.limitPrice}</td>
                         <td className="py-2 px-3 text-center">
-                          <span className="text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
-                            {ord.status || 'submitted'}
+                          <span className="text-xs text-[var(--ui-ink)] bg-[var(--ui-page)] border border-[var(--ui-border)] px-2 py-0.5 rounded">
+                            {ord.status ?? (ord.accepted === false ? 'rechazada' : 'sin estado del broker')}
                           </span>
+                          <div className="mt-0.5 text-[11px] text-[var(--ui-muted)]">
+                            Ejecutado: {ord.filledQty ?? 'sin dato'}
+                            {ord.verifiedInBroker === false && ord.orderId ? ' · no verificada en el libro' : ''}
+                          </div>
+                          {ord.cancellation?.requested && (
+                            <div className="text-[11px] text-[var(--ui-muted)]">
+                              Cancelación {ord.cancellation.confirmed ? 'confirmada' : 'no confirmada'}
+                            </div>
+                          )}
+                          {ord.accepted === false && ord.brokerMessage && (
+                            <div className="text-[11px] text-red-800 break-words">{ord.brokerMessage}</div>
+                          )}
                         </td>
                         <td className="py-2 px-3 text-center text-[var(--ui-muted)] text-xs">
                           <div className="font-mono text-[var(--ui-ink)]">{ord.orderId || 'N/A'}</div>
@@ -352,9 +379,9 @@ export default function BrokerExecutionModal({ isOpen, onClose, modalData }) {
               </div>
 
               <div>
-                <div className="text-xs text-[var(--ui-muted)] uppercase tracking-wider">Costo de Seguro</div>
+                <div className="text-xs text-[var(--ui-muted)] uppercase tracking-wider">Costo de Seguro · {rotuloPrimaPut}</div>
                 <div className="text-sm font-bold text-[var(--ui-ink)] mt-0.5">
-                  ${payload?.putPremium || candidate?.putFloor?.marketPremium} USD/acc
+                  ${primaPut} USD/acc
                 </div>
                 <div className="text-xs text-[var(--ui-muted)]">Prima Neta Pagada</div>
               </div>
@@ -362,10 +389,12 @@ export default function BrokerExecutionModal({ isOpen, onClose, modalData }) {
               <div>
                 <div className="text-xs text-[var(--ui-muted)] uppercase tracking-wider">Riesgo Máximo</div>
                 <div className="text-sm font-bold text-amber-800 mt-0.5">
-                  ${(
-                    ((candidate?.spotPrice || 200) - (payload?.putStrike || candidate?.putFloor?.strike || 190)) +
-                    (payload?.putPremium || candidate?.putFloor?.marketPremium || 4.5)
-                  ).toFixed(2)} USD/acc
+                  {(() => {
+                    const spot = Number(candidate?.spotPrice);
+                    const strike = Number(payload?.putStrike ?? candidate?.putFloor?.strike);
+                    const prima = Number(primaPut);
+                    return [spot, strike, prima].every(Number.isFinite) && spot > 0 ? `$${(spot - strike + prima).toFixed(2)} USD/acc` : 'sin dato';
+                  })()}
                 </div>
                 <div className="text-xs text-[var(--ui-muted)]">Pérdida Acotada</div>
               </div>

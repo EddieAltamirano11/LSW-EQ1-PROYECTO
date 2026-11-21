@@ -36,7 +36,7 @@ export default function LoginView({ onLoginSuccess, loginContext }) {
   const [backendUrl, setBackendUrl] = useState(() => loginContext?.backendUrl ?? getDefaultBackendUrl());
   const [showServerSettings, setShowServerSettings] = useState(Boolean(loginContext));
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState(loginContext?.aviso ?? null);
 
   const cleanBackendUrl = (url) => (url ? url.trim().replace(/\/$/, '') : '');
 

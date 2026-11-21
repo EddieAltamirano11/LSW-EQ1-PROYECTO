@@ -1,12 +1,8 @@
 import { available, iso, observation, partial, time, unavailable } from './observations.js';
 import { clamp, round } from './technicalCore.js';
+import { elegirCollar, spreadRelativo as spread } from '../../../v1/services/cadenaOpciones.service.js';
 
-const spread = option => 2 * (option.ask - option.bid) / (option.ask + option.bid);
-
-function liquid(option) {
-  return option.standard && option.multiplier === 100 && option.bid > 0 && option.ask >= option.bid
-    && spread(option) <= 0.35 && option.interest >= 10 && option.volume >= 1;
-}
+// La regla de liquidez y de selección del collar vive en el servicio compartido: el Auto-Collar usa exactamente la misma.
 
 function contractEvidence(option) {
   return observation('Webull OpenAPI · Option Snapshot', iso(option.at), option.symbol, option.delay);
@@ -14,19 +10,8 @@ function contractEvidence(option) {
 
 export function strategyCore(spot, chain) {
   if (!chain || !(spot?.price > 0)) return unavailable('Faltan precio del subyacente o cadena con cotizaciones verificables.');
-  const quotes = chain.contracts.filter(liquid);
-  const pairs = quotes.filter(option => option.type === 'put' && option.strike < spot.price).flatMap(put => quotes
-    .filter(call => call.type === 'call' && call.expiration === put.expiration && call.strike > spot.price
-      && call.multiplier === put.multiplier && call.underlying === put.underlying)
-    .map(call => ({ put, call, distance: Math.abs(put.strike / spot.price - 0.95) + Math.abs(call.strike / spot.price - 1.05) })));
-  pairs.sort((a, b) => Math.abs(time(a.put.expiration) - chain.target) - Math.abs(time(b.put.expiration) - chain.target)
-    || a.distance - b.distance || spread(a.put) + spread(a.call) - spread(b.put) - spread(b.call)
-    || a.put.symbol.localeCompare(b.put.symbol) || a.call.symbol.localeCompare(b.call.symbol));
   const baseEvidence = [spot.evidence, ...chain.evidence];
-  const pair = pairs.find(({ put, call }) => {
-    const basis = spot.price + put.ask - call.bid;
-    return basis >= put.strike && basis <= call.strike;
-  });
+  const pair = elegirCollar(spot, chain);
   if (!pair) return available({ eligible: false, reason: 'No hay un put y un call compatibles con liquidez y costo verificables.' }, baseEvidence);
   const { put, call } = pair;
   const cost = put.ask - call.bid;

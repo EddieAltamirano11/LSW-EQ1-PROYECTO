@@ -1,7 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ExternalLink, LineChart, Gauge } from 'lucide-react';
+import VistaCoreTecnico from './VistaCoreTecnico';
 
-export default function TradingViewWidget({ symbol = 'NASDAQ:AAPL', companyName = 'Apple Inc.' }) {
+const VISTAS = [
+  { id: 'tradingview', etiqueta: 'TradingView' },
+  { id: 'tecnico', etiqueta: 'Core técnico' },
+];
+const CLAVE_VISTA = 'lsw.vistaCentral';
+
+function vistaGuardada() {
+  try {
+    return sessionStorage.getItem(CLAVE_VISTA) === 'tecnico' ? 'tecnico' : 'tradingview';
+  } catch {
+    return 'tradingview';
+  }
+}
+
+export default function TradingViewWidget({ symbol = 'NASDAQ:AAPL', ticker, companyName = 'Apple Inc.', apiBase = '', token }) {
+  // TradingView es la vista por defecto; la elección se conserva mientras dure la sesión del navegador.
+  const [vista, setVista] = useState(vistaGuardada);
   const [isDiagnosticOpen, setIsDiagnosticOpen] = useState(false);
   const [isChartActive, setIsChartActive] = useState(false);
   const techContainerRef = useRef(null);
@@ -25,6 +42,17 @@ export default function TradingViewWidget({ symbol = 'NASDAQ:AAPL', companyName 
 
   // Normalizar símbolo asegurando prefijo de mercado para TradingView
   const cleanSymbol = symbol.includes(':') ? symbol : `NASDAQ:${symbol}`;
+  const tickerTecnico = (ticker || cleanSymbol.split(':').at(-1) || '').toUpperCase();
+
+  const elegirVista = (siguiente) => {
+    setVista(siguiente);
+    setIsChartActive(false);
+    try {
+      sessionStorage.setItem(CLAVE_VISTA, siguiente);
+    } catch {
+      // Sin almacenamiento de sesión, la elección dura hasta recargar la página.
+    }
+  };
 
   // Estudios predeterminados: SMA y RSI (14) superpuestos en el gráfico interactivo
   const studiesParam = encodeURIComponent(JSON.stringify(['STD;SMA', 'STD;RSI']));
@@ -70,7 +98,7 @@ export default function TradingViewWidget({ symbol = 'NASDAQ:AAPL', companyName 
         techContainerRef.current.innerHTML = '';
       }
     };
-  }, [isDiagnosticOpen, cleanSymbol]);
+  }, [isDiagnosticOpen, cleanSymbol, vista]);
 
   return (
     <div className="min-w-0 p-4 sm:p-5" aria-labelledby="tradingview-title">
@@ -84,6 +112,19 @@ export default function TradingViewWidget({ symbol = 'NASDAQ:AAPL', companyName 
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <div className="ui-segments grid-cols-2 w-56" role="group" aria-label="Vista de la gráfica">
+            {VISTAS.map(({ id, etiqueta }) => (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={vista === id}
+                onClick={() => elegirVista(id)}
+                className="ui-option py-1.5 text-sm font-semibold"
+              >
+                {etiqueta}
+              </button>
+            ))}
+          </div>
           <a
             href={`https://www.tradingview.com/symbols/${cleanSymbol.replace(':', '-')}/`}
             target="_blank"
@@ -96,7 +137,10 @@ export default function TradingViewWidget({ symbol = 'NASDAQ:AAPL', companyName 
         </div>
       </div>
 
-      {/* Gráfico TradingView Principal a 100% de Ancho */}
+      {vista === 'tecnico' ? (
+        <VistaCoreTecnico ticker={tickerTecnico} apiBase={apiBase} token={token} onVolver={() => elegirVista('tradingview')} />
+      ) : (
+      /* Gráfico TradingView Principal a 100% de Ancho */
       <div className="space-y-4">
         <div
           ref={chartWrapperRef}
@@ -163,6 +207,7 @@ export default function TradingViewWidget({ symbol = 'NASDAQ:AAPL', companyName 
           <div ref={techContainerRef} className="flex w-full justify-center overflow-hidden py-2" />
         </details>
       </div>
+      )}
     </div>
   );
 }

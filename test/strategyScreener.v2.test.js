@@ -191,3 +191,109 @@ test('la ruta pública del escáner valida el cuerpo original antes de inyectar 
   assert.equal(response.status, 400);
   assert.match((await response.json()).message, /limit/);
 });
+
+test('cada core informa su participación: confluencia con peso efectivo, filtro, dependencia, síntesis o no calculado', async () => {
+  const run = createStrategyScreener({ universe: [{ symbol: 'AAA', companyName: 'AAA' }, { symbol: 'BBB', companyName: 'BBB' }], now: () => asOf,
+    edgar: { issuerIndex: async () => new Map(), holdingsReport: async () => ({ evidence: observed }), reportedHoldings: () => ({}),
+      statements: async symbol => financial(symbol === 'BBB' ? 'MARGINAL' : 'VIABLE') },
+    marketData: { obtenerSesionBursatil: async () => ({}), obtenerPrecioSubyacente: async () => stock,
+      obtenerHistorialVelas: async () => history(), obtenerFechaResultados: async () => earnings, obtenerCadenaOpciones: async () => chain(),
+      obtenerNoticiasAccion: async () => ({ articles: [], evidence: observed }), obtenerFlujoOpciones: async () => [{ contract: chain().contracts[0],
+        trades: [{ price: 2, size: 2, side: null }], evidence: observed }] },
+  });
+  const roles = cores => Object.fromEntries(Object.entries(cores).map(([id, core]) => [id, core.role]));
+
+  const todos = (await run(criteria)).candidates[0].cores;
+  assert.deepEqual(roles(todos), { '001': 'CONFLUENCE', '002': 'CONFLUENCE', '003': 'CONFLUENCE', '004': 'GATE',
+    '005': 'CONFLUENCE', '006': 'CONFLUENCE', '007': 'SYNTHESIS' });
+  assert.equal(todos['001'].effectiveWeight, 0.225);
+  assert.equal(todos['002'].effectiveWeight, 0.25);
+  const pesos = Object.values(todos).filter(core => core.role === 'CONFLUENCE').reduce((suma, core) => suma + core.effectiveWeight, 0);
+  assert.ok(Math.abs(pesos - 1) < 1e-9);
+  for (const id of ['004', '007']) assert.equal('effectiveWeight' in todos[id], false);
+
+  const senales = (await run({ ...criteria, activeCores: ['003'] })).candidates[0].cores;
+  assert.deepEqual(roles(senales), { '001': 'DEPENDENCY', '002': 'GATE', '003': 'CONFLUENCE', '004': 'GATE',
+    '005': 'NOT_COMPUTED', '006': 'NOT_COMPUTED', '007': 'SYNTHESIS' });
+  assert.equal('effectiveWeight' in senales['001'], false);
+  assert.equal(senales['003'].effectiveWeight, 1);
+
+  const vetada = (await run({ ...criteria, activeCores: ['006'] })).excluded.find(row => row.symbol === 'BBB').cores;
+  assert.equal(vetada['002'].role, 'GATE');
+  assert.equal(vetada['004'].role, 'NOT_COMPUTED');
+  assert.equal(vetada['001'].role, 'NOT_COMPUTED');
+});
+
+test('cada empresa excluida informa su tipo de exclusión: veto, sin collar o datos insuficientes', async () => {
+  const universe = ['VET', 'SIN', 'DAT', 'BUE'].map(symbol => ({ symbol, companyName: symbol }));
+  const run = createStrategyScreener({ universe, now: () => asOf,
+    edgar: { issuerIndex: async () => new Map(), holdingsReport: async () => ({ evidence: observed }), reportedHoldings: () => ({}),
+      statements: async symbol => financial(symbol === 'VET' ? 'MARGINAL' : 'VIABLE') },
+    marketData: { obtenerSesionBursatil: async () => ({}), obtenerPrecioSubyacente: async () => stock,
+      obtenerHistorialVelas: async symbol => {
+        if (symbol === 'DAT') throw new SourceError('Alpaca', 'Serie 1Day incompleta.');
+        return history();
+      },
+      obtenerFechaResultados: async () => earnings,
+      obtenerCadenaOpciones: async symbol => {
+        const data = chain();
+        if (symbol === 'SIN') data.contracts[0].interest = 0;
+        return data;
+      },
+      obtenerNoticiasAccion: async () => ({ articles: [], evidence: observed }), obtenerFlujoOpciones: async () => [] },
+  });
+  const result = await run({ ...criteria, activeCores: ['001'] });
+  const tipos = Object.fromEntries(result.excluded.map(row => [row.symbol, row.exclusionType]));
+  assert.deepEqual(tipos, { VET: 'VIABILITY_VETO', SIN: 'NO_COLLAR', DAT: 'INSUFFICIENT_DATA' });
+  assert.ok(result.excluded.every(row => row.reason));
+  assert.deepEqual(result.candidates.map(row => row.symbol), ['BUE']);
+  assert.equal('exclusionType' in result.candidates[0], false);
+});
+
+test('sin fecha de earnings la empresa conserva su posición con riesgo UNVERIFIED y el 003 se abstiene', async () => {
+  let calendario = 'CAIDO';
+  const run = createStrategyScreener({ universe: [{ symbol: 'AAA', companyName: 'AAA' }], now: () => asOf + (calendario === 'CAIDO' ? 0 : 100_000),
+    edgar: { issuerIndex: async () => new Map(), holdingsReport: async () => ({ evidence: observed }), reportedHoldings: () => ({}),
+      statements: async () => financial('VIABLE') },
+    marketData: { obtenerSesionBursatil: async () => ({}), obtenerPrecioSubyacente: async () => stock,
+      obtenerHistorialVelas: async () => history(),
+      obtenerFechaResultados: async () => {
+        if (calendario === 'CAIDO') throw new SourceError('Webull OpenAPI · Financial Alerts', 'Webull no entregó una fecha de resultados utilizable.');
+        return earnings;
+      },
+      obtenerCadenaOpciones: async () => chain(), obtenerNoticiasAccion: async () => ({ articles: [], evidence: observed }),
+      obtenerFlujoOpciones: async () => [{ contract: chain().contracts[0], trades: [{ price: 2, size: 2, side: null }], evidence: observed }] },
+  });
+  let result = await run(criteria);
+  assert.equal(result.status, 'PARTIAL');
+  const [fila] = result.candidates;
+  assert.equal(fila?.symbol, 'AAA');
+  assert.equal(fila.partial, true);
+  assert.equal(fila.cores['002'].result.risk, 'UNVERIFIED');
+  assert.match(fila.cores['002'].result.event.reason, /fecha de resultados utilizable/);
+  assert.equal(fila.cores['002'].result.event.start, null);
+  assert.equal(fila.cores['002'].status, 'PARTIAL');
+  assert.ok(Number.isFinite(fila.cores['002'].score));
+  assert.deepEqual([fila.cores['003'].result.signal, fila.cores['003'].result.rule, fila.cores['003'].status], ['HOLD', 'EVENT_UNVERIFIED', 'PARTIAL']);
+  assert.equal(JSON.stringify(fila).includes('Financial Alerts ('), false);
+  assert.equal(Object.values(fila.cores).flatMap(core => core.evidence).some(e => /Financial Alerts/.test(e.source)), false);
+
+  calendario = 'CON_FECHA';
+  result = await run(criteria);
+  assert.equal(result.candidates[0].cores['002'].result.risk, 'LOW');
+  assert.equal(result.candidates[0].cores['002'].result.event.start, '2027-01-20');
+});
+
+test('el calendario de resultados no inventa fechas cuando Webull no entrega una', async prueba => {
+  const original = { ...config };
+  Object.assign(config, { WEBULL_APP_KEY: 'app', WEBULL_APP_SECRET: 'secreto' });
+  prueba.after(() => Object.assign(config, original));
+  const { obtenerFechaResultados } = await import('../src/api/v2/services/strategyScreener/marketData.js');
+  let respuesta = {};
+  prueba.mock.method(globalThis, 'fetch', async () => ({ ok: true, status: 200, json: async () => respuesta }));
+  await assert.rejects(obtenerFechaResultados('AAPL', asOf), error => error instanceof SourceError && /fecha de resultados/.test(error.reason));
+  respuesta = { start_date: '2027-01-20', end_date: '2027-01-21' };
+  const fecha = await obtenerFechaResultados('AAPL', asOf);
+  assert.equal(fecha.start, '2027-01-20');
+  assert.doesNotMatch(fecha.evidence.source, /Estimado/);
+});

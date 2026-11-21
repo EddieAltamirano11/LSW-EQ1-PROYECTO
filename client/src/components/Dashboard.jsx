@@ -27,10 +27,22 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import TradingViewWidget from './TradingViewWidget';
+import { CeldaCores, CeldasCollar } from './RankingCeldas';
+import { collarDeFila } from '../services/rankingCollar';
 import CriteriaModal from './CriteriaModal';
 import BrokerExecutionModal from './BrokerExecutionModal';
+import { BoletaCollar, BoletaProtectivePut } from './BoletaCoberturas';
+import {
+  avisoExito, cargarRecomendacionPut, cargarVistaPreviaCollar, collarDelRanking, enviarUnaVez, payloadAutoCollar, payloadProtectivePut,
+} from '../services/vistaPreviaCobertura';
 import StrategyScreenerPanel from './StrategyScreenerPanel';
 import { brokerOptions, databaseOptions, DEFAULT_BROKER, DEFAULT_DATABASE } from '../sessionTargets';
+
+// Arreglo estable para "sin candidatos": uno nuevo en cada render dispararía los efectos que dependen del ranking.
+const SIN_CANDIDATOS = Object.freeze([]);
+
+// Solo cambia el activo si cambió algún dato; un objeto nuevo con los mismos datos provocaría renders en cadena.
+const mismoActivo = (a, b) => a.symbol === b.symbol && a.tvSymbol === b.tvSymbol && a.companyName === b.companyName && a.spotPrice === b.spotPrice;
 
 const isMockToken = (token) => typeof token !== 'string' || token.length < 50 || token.includes('demo-jwt');
 
@@ -44,7 +56,7 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
   const [coresError, setCoresError] = useState(null);
   const [evaluatingCores, setEvaluatingCores] = useState(false);
   const result = scanResult?.broker === brokerTarget ? scanResult : null; 
-  const candidates = result?.candidates ?? [];
+  const candidates = result?.candidates ?? SIN_CANDIDATOS;
   const criteria = result?.criteria;
   const loading = scanning || (scanResult !== null && result === null);
   const isRankingLoading = loading || evaluatingCores;
@@ -72,7 +84,7 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
     symbol: 'AAPL',
     tvSymbol: 'NASDAQ:AAPL',
     companyName: 'Apple Inc.',
-    spotPrice: 227.5,
+    spotPrice: null, // sin precio hasta que lo informe el broker o el escáner
   });
 
   // Terminal de Órdenes en vivo (Estrategia activa)
@@ -177,7 +189,8 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
           currentPrice: Number(p.currentPrice || p.marketPrice || 0),
         };
       }
-      map[sym].qty += Number(p.qty || 0);
+      // Acciones reales: en Webull qty cuenta contratos o combos (COVERED_STOCK); equityQty son las acciones que informa el backend.
+      map[sym].qty += Number(p.equityQty ?? p.qty ?? 0);
       map[sym].marketValue += Number(p.marketValue || (Number(p.qty || 0) * (p.currentPrice || 0)));
     }
 
@@ -238,54 +251,84 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
     if (top5Holdings.length > 0) {
       const topHolding = top5Holdings[0];
       const matchCand = candidates.find((c) => c.symbol.toUpperCase() === topHolding.symbol.toUpperCase());
-      setSelectedAsset({
+      const siguiente = {
         symbol: topHolding.symbol,
         tvSymbol: matchCand ? matchCand.tradingViewSymbol : (topHolding.symbol === 'SPY' ? 'AMEX:SPY' : `NASDAQ:${topHolding.symbol}`),
         companyName: matchCand ? matchCand.companyName : `${topHolding.symbol}`,
-        spotPrice: topHolding.currentPrice || matchCand?.spotPrice || 200,
-      });
+        spotPrice: topHolding.currentPrice || matchCand?.spotPrice || null,
+      };
+      setSelectedAsset((actual) => (mismoActivo(actual, siguiente) ? actual : siguiente));
       return;
     }
 
     if (sortedCandidates.length > 0) {
       const topRank = sortedCandidates[0];
-      setSelectedAsset({
+      const siguiente = {
         symbol: topRank.symbol,
         tvSymbol: topRank.tradingViewSymbol,
         companyName: topRank.companyName,
         spotPrice: topRank.spotPrice,
-      });
+      };
+      setSelectedAsset((actual) => (mismoActivo(actual, siguiente) ? actual : siguiente));
     }
   }, [top5Holdings, sortedCandidates, candidates]);
 
-  // Candidato actualmente seleccionado para operaciones
+  // Candidato actualmente seleccionado para operaciones. Fuera del ranking no se inventan primas, strikes ni probabilidades.
   const activeCandidate = sortedCandidates.find((c) => c.symbol === selectedAsset.symbol) || {
     symbol: selectedAsset.symbol,
     companyName: selectedAsset.companyName,
-    spotPrice: Number(selectedAsset.spotPrice) || 200.0,
-    referenceSpot: Number(selectedAsset.spotPrice) || 200.0,
-    optimalExpiration: criteria?.targetExpiration || '2026-12-18',
-    putFloor: {
-      strike: Math.round((Number(selectedAsset.spotPrice) || 200.0) * 0.95),
-      marketPremium: 4.5,
-      moneyness: '5% OTM',
-    },
-    callCeiling: {
-      strike: Math.round((Number(selectedAsset.spotPrice) || 200.0) * 1.05),
-      marketPremium: 4.8,
-      moneyness: '5% OTM',
-    },
-    financialMetrics: {
-      netDebitCredit: 0.3,
-      netCreditTotalUSD: 30.0,
-      maxReturnPct: '5.2',
-      maxProfitUSD: 1030,
-    },
-    probabilities: {
-      floorProtectionPct: 92,
-      sweetSpotPct: 78,
-    },
+    spotPrice: Number(selectedAsset.spotPrice) > 0 ? Number(selectedAsset.spotPrice) : null,
+    sinDatosEscaner: true,
   };
+  const spotActivo = Number.isFinite(activeCandidate.spotPrice) ? activeCandidate.spotPrice : null;
+
+  // Vista previa real de las coberturas: collar del Core 004 del ranking o del backend, y Put recomendado.
+  const [vistaCollar, setVistaCollar] = useState({ fase: 'cargando' });
+  const [vistaPut, setVistaPut] = useState({ fase: 'cargando' });
+
+  useEffect(() => {
+    if (activeStrategyTab !== 'collar') return undefined;
+    const delRanking = collarDelRanking(screenerData, selectedAsset.symbol);
+    if (delRanking) {
+      setVistaCollar({ fase: 'lista', vista: delRanking });
+      return undefined;
+    }
+    if (!session?.token) {
+      setVistaCollar({ fase: 'error', causa: 'Inicia sesión para consultar la vista previa del collar.' });
+      return undefined;
+    }
+    let vigente = true;
+    setVistaCollar({ fase: 'cargando' });
+    cargarVistaPreviaCollar({ apiBase, token: session.token, broker: brokerTarget, symbol: selectedAsset.symbol })
+      .then((vista) => vigente && setVistaCollar({ fase: 'lista', vista }))
+      .catch((error) => vigente && setVistaCollar({ fase: 'error', causa: error.message }));
+    return () => { vigente = false; };
+  }, [activeStrategyTab, selectedAsset.symbol, screenerData, brokerTarget, apiBase, session?.token]);
+
+  useEffect(() => {
+    if (activeStrategyTab !== 'protective_put') return undefined;
+    if (!session?.token) {
+      setVistaPut({ fase: 'error', causa: 'Inicia sesión para consultar el Put recomendado.' });
+      return undefined;
+    }
+    let vigente = true;
+    setVistaPut({ fase: 'cargando' });
+    cargarRecomendacionPut({ apiBase, token: session.token, broker: brokerTarget, symbol: selectedAsset.symbol })
+      .then((vista) => vigente && setVistaPut({ fase: 'lista', vista }))
+      .catch((error) => vigente && setVistaPut({ fase: 'error', causa: error.message }));
+    return () => { vigente = false; };
+  }, [activeStrategyTab, selectedAsset.symbol, brokerTarget, apiBase, session?.token]);
+
+  // Candidato para el modal de respuesta, armado con la vista previa (primas observadas, no teóricas).
+  const candidatoDeVista = (vista) => ({
+    symbol: vista.symbol,
+    spotPrice: Number.isFinite(vista.spotPrice) ? vista.spotPrice : spotActivo,
+    optimalExpiration: vista.put?.expirationDate ?? vista.expirationDate,
+    putFloor: vista.put
+      ? { strike: vista.put.strike, observedPremium: vista.put.ask, moneyness: vista.put.contractSymbol }
+      : { strike: vista.strike, observedPremium: vista.ask, moneyness: vista.contractSymbol },
+    callCeiling: vista.call ? { strike: vista.call.strike, observedPremium: vista.call.bid, moneyness: vista.call.contractSymbol } : null,
+  });
 
   // =========================================================================
   // SISTEMA DE 3 SCROLLS SINCRONIZADOS A LA COLUMNA MÁS PEQUEÑA & VIEWPORT
@@ -563,169 +606,104 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
     fetchScanner(updated);
   };
 
-  // 1. ACCIÓN: Ejecutar Auto-Collar (3 patas: Acciones + Put Floor + Call Ceiling)
-  const handleExecuteCollar = async (targetCandidate = activeCandidate) => {
-    if (executingSymbols.includes(targetCandidate.symbol)) return;
-    setExecutingSymbols((pending) => [...pending, targetCandidate.symbol]);
+  // Muestra en el modal el resultado de una emisión (una sola solicitud, sin reintentos que alteren la operación).
+  const mostrarResultadoEmision = (resultado, executionContext, alExito) => {
+    if (resultado.red) {
+      setExecutionMessage(null);
+      setBrokerModalData({ ...executionContext, status: null, ok: false, data: { message: resultado.mensaje }, rawError: resultado.mensaje });
+      setIsBrokerModalOpen(true);
+      return;
+    }
+    if (resultado.status === 401) {
+      const mensaje = 'La sesión venció. Inicia sesión de nuevo; la orden no se reenvió.';
+      setExecutionMessage(null);
+      setBrokerModalData({ ...executionContext, status: 401, ok: false, data: resultado.data, rawError: mensaje });
+      setIsBrokerModalOpen(true);
+      return;
+    }
+    if (resultado.ok) {
+      alExito(resultado.data);
+      setBrokerModalData({ ...executionContext, status: resultado.status, ok: true, data: resultado.data });
+      setIsBrokerModalOpen(true);
+      fetchPortfolioSummary();
+      return;
+    }
     setExecutionMessage(null);
+    setBrokerModalData({
+      ...executionContext,
+      status: resultado.status,
+      ok: false,
+      data: resultado.data,
+      rawError: resultado.data?.message || `La API respondió ${resultado.status}.`,
+    });
+    setIsBrokerModalOpen(true);
+  };
 
-    const collarPayload = {
-      symbol: targetCandidate.symbol,
-      sharesCount: 100,
-      portfolioId: `PORT-${targetCandidate.symbol}`,
-      expirationDate: targetCandidate.optimalExpiration || criteria?.targetExpiration || '2026-12-18',
-      broker: brokerTarget,
-      executeOrders: true,
-      autoPersist: true,
-    };
-
-    const sendCollar = (version, token) =>
-      fetch(`${apiBase}/api/${version}/hedging/auto-collar`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-          'x-database-selection': databaseTarget,
-          'x-broker-selection': brokerTarget,
-        },
-        body: JSON.stringify(collarPayload),
-      });
-
+  // 1. ACCIÓN: Emitir el collar de la vista previa (Core 004 del ranking o del backend)
+  const handleExecuteCollar = async (vista) => {
+    if (!vista || executingSymbols.includes(vista.symbol)) return;
+    setExecutingSymbols((pending) => [...pending, vista.symbol]);
+    setExecutionMessage(null);
+    const collarPayload = payloadAutoCollar(vista, { broker: brokerTarget });
     const executionContext = {
       actionLabel: 'Auto-Collar en vivo',
       broker: brokerTarget,
       database: databaseTarget,
-      databaseTarget: databaseTarget,
+      databaseTarget,
       strategyType: 'ZERO_COST_COLLAR',
-      candidate: targetCandidate,
+      candidate: candidatoDeVista(vista),
       payload: collarPayload,
     };
-
     try {
       let currentToken = session.token;
       if (isMockToken(currentToken)) {
         currentToken = await renewToken();
         if (!currentToken) return;
       }
-      let response = null;
-
-      try {
-        response = await sendCollar('v2', currentToken);
-      } catch (_) {}
-
-      if (!response || response.status === 404 || response.status === 401) {
-        if (response?.status === 401) {
-          currentToken = await renewToken();
-          if (!currentToken) return;
-        }
-        response = await sendCollar('v1', currentToken);
-      }
-
-      if (response && response.ok) {
-        const data = await response.json();
-        const ordersCount = data.brokerExecution?.orders?.length || 3;
-        setExecutionMessage({
-          type: 'success',
-          text: `[AUTO-COLLAR REAL EXITOSO] Se emitieron ${ordersCount} órdenes en vivo a ${brokerTarget} para ${targetCandidate.symbol}: 100 acciones + Put $${targetCandidate.putFloor.strike} + Call $${targetCandidate.callCeiling.strike}. Persistido en ${databaseTarget.toUpperCase()}.`,
-        });
-
-        setBrokerModalData({
-          ...executionContext,
-          status: response.status,
-          ok: true,
-          data,
-        });
-        setIsBrokerModalOpen(true);
-        fetchPortfolioSummary();
-      } else if (response) {
-        const errJson = await response.json().catch(() => ({}));
-        const rawMsg = errJson.message || `El broker devolvió código HTTP ${response.status}.`;
-        setExecutionMessage(null);
-
-        setBrokerModalData({
-          ...executionContext,
-          status: response.status,
-          ok: false,
-          data: errJson,
-          rawError: rawMsg,
-        });
-        setIsBrokerModalOpen(true);
-      } else {
-        const defaultMsg = 'No se pudo contactar al microservicio para emitir órdenes al broker.';
-        setExecutionMessage(null);
-        setBrokerModalData({
-          ...executionContext,
-          status: 500,
-          ok: false,
-          data: { message: defaultMsg },
-          rawError: defaultMsg,
-        });
-        setIsBrokerModalOpen(true);
-      }
-    } catch (err) {
-      setExecutionMessage(null);
-      setBrokerModalData({
-        ...executionContext,
-        status: 500,
-        ok: false,
-        data: { message: err.message },
-        rawError: err.message,
+      const resultado = await enviarUnaVez(`${apiBase}/api/v2/hedging/auto-collar`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${currentToken}`,
+          'x-database-selection': databaseTarget,
+          'x-broker-selection': brokerTarget,
+        },
+        body: JSON.stringify(collarPayload),
       });
-      setIsBrokerModalOpen(true);
+      mostrarResultadoEmision(resultado, executionContext, (data) => {
+        setExecutionMessage({ type: 'success', text: `${avisoExito('COLLAR', data, brokerTarget, vista.symbol)} Persistido en ${databaseTarget.toUpperCase()}.` });
+      });
     } finally {
-      setExecutingSymbols((pending) => pending.filter((symbol) => symbol !== targetCandidate.symbol));
+      setExecutingSymbols((pending) => pending.filter((symbol) => symbol !== vista.symbol));
     }
   };
 
-  // 2. ACCIÓN: Ejecutar Cobertura Protective Put (Suelo seguro con Put)
-  const handleExecuteProtectivePut = async (targetCandidate = activeCandidate) => {
-    if (executingSymbols.includes(targetCandidate.symbol)) return;
-    setExecutingSymbols((pending) => [...pending, targetCandidate.symbol]);
+  // 2. ACCIÓN: Emitir el Protective Put con el Put recomendado (contractSymbol)
+  const handleExecuteProtectivePut = async (put) => {
+    if (!put || executingSymbols.includes(put.symbol)) return;
+    setExecutingSymbols((pending) => [...pending, put.symbol]);
     setExecutionMessage(null);
-
-    const putPayload = {
-      symbol: targetCandidate.symbol,
-      spotPrice: targetCandidate.spotPrice || targetCandidate.referenceSpot,
-      sharesCount: putSharesCount,
-      putStrike: targetCandidate.putFloor?.strike || Math.round((targetCandidate.spotPrice || 200) * 0.95),
-      putPremium: targetCandidate.putFloor?.marketPremium || targetCandidate.putFloor?.premium || 4.5,
-      expirationDate: targetCandidate.optimalExpiration || criteria?.targetExpiration || '2026-12-18T00:00:00.000Z',
-      broker: brokerTarget,
-      executeOrders: true,
-      buyUnderlying: putBuyUnderlying,
-    };
-
+    const putPayload = payloadProtectivePut(put, { broker: brokerTarget, sharesCount: putSharesCount, buyUnderlying: putBuyUnderlying });
     const executionContext = {
       actionLabel: 'Protective Put en vivo',
       broker: brokerTarget,
       database: databaseTarget,
-      databaseTarget: databaseTarget,
+      databaseTarget,
       strategyType: 'PROTECTIVE_PUT',
-      candidate: targetCandidate,
+      candidate: candidatoDeVista(put),
       payload: putPayload,
     };
 
-    // 1. Verificación preventiva de Buying Power disponible en el broker
+    // Verificación preventiva de Buying Power con precios observados (el backend vuelve a validar).
     const buyingPower = Number(portfolioAccount?.buyingPower ?? -1);
-    const estSpot = Number(targetCandidate.spotPrice || targetCandidate.referenceSpot || 200);
-    const requiredStock = putBuyUnderlying ? putSharesCount * estSpot : 0;
-    const putContracts = Math.max(1, Math.ceil(putSharesCount / 100));
-    const putPrem = Number(targetCandidate.putFloor?.marketPremium || targetCandidate.putFloor?.premium || 4.5);
-    const requiredPut = putContracts * putPrem * 100;
-    const totalRequired = requiredStock + requiredPut;
-
-    if (buyingPower >= 0 && totalRequired > buyingPower) {
-      const reasonMsg = `Poder de compra insuficiente en ${brokerTarget}: La cobertura Protective Put requiere aprox. $${totalRequired.toFixed(2)} USD (${putBuyUnderlying ? `${putSharesCount} acciones ($${requiredStock.toFixed(2)}) + ` : ''}${putContracts} Put ($${requiredPut.toFixed(2)})), pero tu cuenta solo dispone de $${buyingPower.toFixed(2)} USD de Buying Power disponible.`;
-      setExecutionMessage(null);
-      setBrokerModalData({
-        ...executionContext,
-        status: 400,
-        ok: false,
-        data: { message: reasonMsg, reason: 'INSUFFICIENT_BUYING_POWER', required: totalRequired, buyingPower },
-        rawError: reasonMsg,
-      });
+    const spot = Number.isFinite(put.spotPrice) ? put.spotPrice : spotActivo;
+    const contratos = Math.max(1, Math.ceil(putSharesCount / 100));
+    const requerido = (putBuyUnderlying && spot ? putSharesCount * spot : 0) + contratos * put.ask * 100;
+    if (buyingPower >= 0 && requerido > buyingPower) {
+      const reasonMsg = `Poder de compra insuficiente en ${brokerTarget}: la cobertura requiere aprox. $${requerido.toFixed(2)} USD y la cuenta dispone de $${buyingPower.toFixed(2)} USD de Buying Power.`;
+      setBrokerModalData({ ...executionContext, status: 400, ok: false, data: { message: reasonMsg, reason: 'INSUFFICIENT_BUYING_POWER', required: requerido, buyingPower }, rawError: reasonMsg });
       setIsBrokerModalOpen(true);
-      setExecutingSymbols((pending) => pending.filter((symbol) => symbol !== targetCandidate.symbol));
+      setExecutingSymbols((pending) => pending.filter((symbol) => symbol !== put.symbol));
       return;
     }
 
@@ -735,8 +713,7 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
         currentToken = await renewToken();
         if (!currentToken) return;
       }
-
-      const response = await fetch(`${apiBase}/api/v1/hedging/protective-put`, {
+      const resultado = await enviarUnaVez(`${apiBase}/api/v1/hedging/protective-put`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -746,65 +723,11 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
         },
         body: JSON.stringify(putPayload),
       });
-
-      if (response && response.ok) {
-        const data = await response.json();
-        const hasExecutionErrors = (data.data?.brokerExecution?.errors?.length || 0) > 0;
-        const executedOrdersCount = data.data?.brokerExecution?.orders?.length || 0;
-
-        if (hasExecutionErrors || executedOrdersCount === 0) {
-          const errorDetails = data.data?.brokerExecution?.errors?.map((e) => `[${e.legRole}]: ${e.error}`).join(' | ') || 'El matching engine rechazó las órdenes de la cobertura.';
-          setExecutionMessage(null);
-          setBrokerModalData({
-            ...executionContext,
-            status: 400,
-            ok: false,
-            data: { message: errorDetails, errors: data.data?.brokerExecution?.errors },
-            rawError: errorDetails,
-          });
-          setIsBrokerModalOpen(true);
-          return;
-        }
-
-        setExecutionMessage({
-          type: 'success',
-          text: `[PROTECTIVE PUT REAL EXITOSO] Cobertura emitida a ${brokerTarget} para ${targetCandidate.symbol}: Put Strike $${putPayload.putStrike} ${putBuyUnderlying ? `+ ${putSharesCount} acciones` : '(cobertura de acciones en cartera)'}. Persistido en ${databaseTarget.toUpperCase()}.`,
-        });
-
-        setBrokerModalData({
-          ...executionContext,
-          status: response.status,
-          ok: true,
-          data,
-        });
-        setIsBrokerModalOpen(true);
-        fetchPortfolioSummary();
-      } else {
-        const errJson = await response.json().catch(() => ({}));
-        const rawMsg = errJson.message || `El broker devolvió código HTTP ${response?.status}.`;
-        setExecutionMessage(null);
-
-        setBrokerModalData({
-          ...executionContext,
-          status: response ? response.status : 500,
-          ok: false,
-          data: errJson,
-          rawError: rawMsg,
-        });
-        setIsBrokerModalOpen(true);
-      }
-    } catch (err) {
-      setExecutionMessage(null);
-      setBrokerModalData({
-        ...executionContext,
-        status: 500,
-        ok: false,
-        data: { message: err.message },
-        rawError: err.message,
+      mostrarResultadoEmision(resultado, executionContext, (data) => {
+        setExecutionMessage({ type: 'success', text: `${avisoExito('PROTECTIVE_PUT', data, brokerTarget, put.symbol)} Persistido en ${databaseTarget.toUpperCase()}.` });
       });
-      setIsBrokerModalOpen(true);
     } finally {
-      setExecutingSymbols((pending) => pending.filter((symbol) => symbol !== targetCandidate.symbol));
+      setExecutingSymbols((pending) => pending.filter((symbol) => symbol !== put.symbol));
     }
   };
 
@@ -864,7 +787,8 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
         const matchingPositions = livePositions.filter(
           (p) => (p.symbol || p.assetId || '').toUpperCase() === symbol.toUpperCase()
         );
-        const ownedQty = matchingPositions.reduce((acc, p) => acc + Number(p.qty || 0), 0);
+        // Solo acciones: los contratos de opciones no cuentan como tenencia (equityQty lo calcula el backend).
+        const ownedQty = matchingPositions.reduce((acc, p) => acc + Number(p.equityQty ?? p.qty ?? 0), 0);
         const requestedQty = Number(orderPayload.qty) || 1;
 
         if (ownedQty <= 0) {
@@ -1121,7 +1045,7 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                     className="ui-field mt-1 w-full px-3 py-2 text-sm font-medium"
                   >
                     <option value="cores">Mayor Puntaje Cores (Multicriterio Institucional)</option>
-                    <option value="probability">Mayor Prob. Piso Seguro · N(d₂)</option>
+                    <option value="probability">Mayor Prob. Piso Seguro · N(d₂) teórica</option>
                     <option value="netCredit">Mayor Crédito de Prima</option>
                     <option value="maxReturn">Mayor Retorno Anualizado</option>
                   </select>
@@ -1227,7 +1151,6 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                 dteHorizon={dteHorizon}
                 extraSymbols={customSymbols}
                 onSignIn={onSignIn}
-                hideAssetList={true}
                 onEvaluatingChange={setEvaluatingCores}
                 onEvaluatingError={setCoresError}
                 onScreenerResults={handleScreenerResults}
@@ -1261,20 +1184,27 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="rounded-lg bg-[var(--ui-soft)] px-3 py-1 text-sm font-bold text-[var(--ui-green)]">
-                    Spot: ${activeCandidate.spotPrice.toFixed(2)} USD
+                    Spot: {spotActivo !== null ? `$${spotActivo.toFixed(2)} USD` : 'sin cotización'}
                   </span>
-                  <span className="rounded-lg bg-red-50 px-3 py-1 text-sm font-bold text-red-800 border border-red-200">
-                    Piso Put: ${activeCandidate.putFloor.strike}
-                  </span>
-                  <span className="rounded-lg bg-emerald-50 px-3 py-1 text-sm font-bold text-emerald-800 border border-emerald-200">
-                    Techo Call: ${activeCandidate.callCeiling.strike}
-                  </span>
+                  {activeCandidate.putFloor && (
+                    <span className="rounded-lg bg-red-50 px-3 py-1 text-sm font-bold text-red-800 border border-red-200">
+                      Piso Put (teórico): ${activeCandidate.putFloor.strike}
+                    </span>
+                  )}
+                  {activeCandidate.callCeiling && (
+                    <span className="rounded-lg bg-emerald-50 px-3 py-1 text-sm font-bold text-emerald-800 border border-emerald-200">
+                      Techo Call (teórico): ${activeCandidate.callCeiling.strike}
+                    </span>
+                  )}
                 </div>
               </div>
 
               <TradingViewWidget
                 symbol={selectedAsset.tvSymbol}
+                ticker={selectedAsset.symbol}
                 companyName={selectedAsset.companyName}
+                apiBase={apiBase}
+                token={session?.token}
               />
             </div>
 
@@ -1408,7 +1338,13 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                     <tbody role="rowgroup">
                       {sortedCandidates.map((c) => {
                         const isSelected = selectedAsset.symbol === c.symbol;
-                        const isPositiveCredit = c.financialMetrics.netDebitCredit >= 0;
+                        const coresApta = screenerData?.candidates?.find(
+                          (item) => item.symbol.toUpperCase() === c.symbol.toUpperCase()
+                        );
+                        const coresExcluida = coresApta ? null : screenerData?.excluded?.find(
+                          (item) => item.symbol.toUpperCase() === c.symbol.toUpperCase()
+                        );
+                        const filaCores = coresApta ?? coresExcluida ?? null;
                         const isCustom = c.isCustom || customSymbols.includes(c.symbol);
 
                         return (
@@ -1472,93 +1408,15 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                               ${c.spotPrice.toFixed(2)}
                             </td>
 
-                            {/* Piso Put */}
-                            <td role="cell" className="px-3 py-3.5">
-                              <div className="text-sm font-bold text-red-800">${c.putFloor.strike} Put</div>
-                              <div className="text-xs text-[var(--ui-muted)]">
-                                ${c.putFloor.marketPremium}
-                              </div>
-                            </td>
-
-                            {/* Techo Call */}
-                            <td role="cell" className="px-3 py-3.5">
-                              <div className="text-sm font-bold text-[var(--ui-green)]">${c.callCeiling.strike} Call</div>
-                              <div className="text-xs text-[var(--ui-muted)]">
-                                ${c.callCeiling.marketPremium}
-                              </div>
-                            </td>
-
-                            {/* Prima Neta */}
-                            <td role="cell" className="px-3 py-3.5">
-                              <span
-                                className={`text-sm font-bold ${
-                                  isPositiveCredit ? 'text-[var(--ui-green)]' : 'text-[var(--ui-ink)]'
-                                }`}
-                              >
-                                {isPositiveCredit ? '+' : ''}${c.financialMetrics.netDebitCredit}/acc
-                              </span>
-                            </td>
-
-                            {/* Probabilidad */}
-                            <td role="cell" className="px-3 py-3.5">
-                              <div className="flex items-center gap-1">
-                                <span className="text-sm font-bold text-[var(--ui-green)]">
-                                  {c.probabilities.floorProtectionPct}%
-                                </span>
-                              </div>
-                              <div className="mt-1 h-2 w-16 overflow-hidden rounded-full bg-[var(--ui-border)]" aria-hidden="true">
-                                <div
-                                  className="h-full rounded-full bg-[var(--ui-focus)]"
-                                  style={{ width: `${c.probabilities.floorProtectionPct}%` }}
-                                ></div>
-                              </div>
-                            </td>
-
-                            {/* Retorno Máx */}
-                            <td role="cell" className="px-3 py-3.5 text-sm font-bold text-[var(--ui-green)]">
-                              +{c.financialMetrics.maxReturnPct}%
-                            </td>
+                            {/* Put, Call, Prima Neta, Probabilidad y Retorno: collar real del Core 004 o teórico del escáner */}
+                            <CeldasCollar collar={collarDeFila(c, filaCores)} />
 
                             {/* Score Cores Unificado */}
-                            <td role="cell" className="px-3 py-3.5">
-                              {(() => {
-                                const sc = screenerData?.candidates?.find(
-                                  (item) => item.symbol.toUpperCase() === c.symbol.toUpperCase()
-                                );
-                                if (sc) {
-                                  return (
-                                    <span
-                                      className="inline-flex items-center gap-1.5 rounded-md bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-900 border border-emerald-300 shadow-sm"
-                                      title={`Viabilidad: ${sc.eligibility || 'VIABLE'} · Análisis Multicriterio Cores`}
-                                    >
-                                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-700 shrink-0" aria-hidden="true" />
-                                      <span>{Number.isFinite(sc.score) ? `${sc.score.toFixed(1)}/100 · Viable` : sc.eligibility || 'Apto'}</span>
-                                    </span>
-                                  );
-                                }
-                                const ex = screenerData?.excluded?.find(
-                                  (item) => item.symbol.toUpperCase() === c.symbol.toUpperCase()
-                                );
-                                if (ex) {
-                                  return (
-                                    <span
-                                      className="inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-900 border border-amber-300"
-                                      title={`Excluido por Cores: ${ex.reason}`}
-                                    >
-                                      <span>Veto Cores</span>
-                                    </span>
-                                  );
-                                }
-                                if (c.symbol === 'SPY' || c.symbol === 'QQQ') {
-                                  return (
-                                    <span className="inline-flex items-center rounded bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-800 border border-blue-200">
-                                      Benchmark ETF
-                                    </span>
-                                  );
-                                }
-                                return <span className="text-xs text-[var(--ui-muted)]">—</span>;
-                              })()}
-                            </td>
+                            <CeldaCores
+                              apta={coresApta}
+                              excluida={coresExcluida}
+                              esEtf={c.symbol === 'SPY' || c.symbol === 'QQQ'}
+                            />
                           </tr>
                         );
                       })}
@@ -1721,7 +1579,7 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                                   symbol: h.symbol,
                                   tvSymbol: matchCand ? matchCand.tradingViewSymbol : (h.symbol === 'SPY' ? 'AMEX:SPY' : `NASDAQ:${h.symbol}`),
                                   companyName: matchCand ? matchCand.companyName : h.symbol,
-                                  spotPrice: h.currentPrice || selectedAsset.spotPrice,
+                                  spotPrice: h.currentPrice || matchCand?.spotPrice || null,
                                 });
                               }}
                               className={`w-full flex items-center justify-between rounded-lg border px-3 py-2 text-left transition-all ${
@@ -1813,7 +1671,7 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                   <div className="text-right">
                     <span className="text-xs uppercase tracking-wider font-semibold text-[var(--ui-muted)]">Precio Spot:</span>
                     <div className="font-black text-lg sm:text-xl text-[var(--ui-green)]">
-                      ${activeCandidate.spotPrice.toFixed(2)} USD
+                      {spotActivo !== null ? `$${spotActivo.toFixed(2)} USD` : 'sin cotización'}
                     </div>
                   </div>
                 </div>
@@ -1867,71 +1725,24 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                 {/* ESTRATEGIA 1: AUTO-COLLAR SPREAD                         */}
                 {/* ======================================================== */}
                 {activeStrategyTab === 'collar' && (
-                  <div className="mt-4 space-y-3.5">
-                    <div className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-page)] p-3.5 text-sm shadow-xs">
-                      <div className="font-bold text-sm text-[var(--ui-ink)]">
-                        <span>Estructura Zero-Cost Collar:</span>
-                      </div>
-                      <ul className="mt-2 space-y-1 text-xs sm:text-sm text-[var(--ui-ink)]">
-                        <li>• <strong>Subyacente:</strong> 100 acciones de {selectedAsset.symbol}</li>
-                        <li>• <strong>Piso Put:</strong> Strike ${activeCandidate.putFloor.strike}</li>
-                        <li>• <strong>Techo Call:</strong> Strike ${activeCandidate.callCeiling.strike}</li>
-                        <li>• <strong>Vencimiento:</strong> {activeCandidate.optimalExpiration}</li>
-                      </ul>
-                    </div>
-
-                    <div className="space-y-2 rounded-xl border border-[var(--ui-border)] p-3.5 text-sm">
-                      <div className="flex justify-between items-center">
-                        <span className="text-[var(--ui-muted)]">Prima Neta Estimada:</span>
-                        <span className="font-bold text-sm sm:text-base text-[var(--ui-green)]">
-                          {activeCandidate.financialMetrics.netDebitCredit >= 0 ? '+' : ''}
-                          ${activeCandidate.financialMetrics.netDebitCredit}/acc
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-[var(--ui-muted)]">Probabilidad de Piso Seguro:</span>
-                        <span className="font-bold text-sm sm:text-base text-[var(--ui-green)]">
-                          {activeCandidate.probabilities.floorProtectionPct}%
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-[var(--ui-muted)]">Retorno Máximo Estimado:</span>
-                        <span className="font-bold text-sm sm:text-base text-[var(--ui-green)]">
-                          +{activeCandidate.financialMetrics.maxReturnPct}%
-                        </span>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      disabled={executingSymbols.includes(selectedAsset.symbol)}
-                      onClick={() => handleExecuteCollar(activeCandidate)}
-                      className="ui-button ui-button--primary w-full justify-center py-3 text-sm sm:text-base font-bold shadow-sm"
-                    >
-                      <Zap className="h-4 w-4" aria-hidden="true" />
-                      <span>
-                        {executingSymbols.includes(selectedAsset.symbol)
-                          ? 'Enviando Órdenes a Bolsa...'
-                          : `Emitir Auto-Collar a ${brokerTarget} (LIVE)`}
-                      </span>
-                    </button>
-                  </div>
+                  <BoletaCollar
+                    estado={vistaCollar}
+                    broker={brokerTarget}
+                    ejecutando={executingSymbols.includes(selectedAsset.symbol)}
+                    onEmitir={handleExecuteCollar}
+                  />
                 )}
 
                 {/* ======================================================== */}
                 {/* ESTRATEGIA 2: PROTECTIVE PUT                             */}
                 {/* ======================================================== */}
                 {activeStrategyTab === 'protective_put' && (
-                  <div className="mt-4 space-y-3.5 text-sm">
-                    <div className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-page)] p-3.5 text-sm shadow-xs">
-                      <div className="font-bold text-sm text-[var(--ui-ink)]">
-                        <span>Cobertura Protective Put:</span>
-                      </div>
-                      <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-[var(--ui-muted)]">
-                        Protege contra caídas extremas asegurando un precio mínimo de venta (${activeCandidate.putFloor.strike} Put), manteniendo potencial alcista ilimitado.
-                      </p>
-                    </div>
-
+                  <BoletaProtectivePut
+                    estado={vistaPut}
+                    broker={brokerTarget}
+                    ejecutando={executingSymbols.includes(selectedAsset.symbol)}
+                    onEmitir={handleExecuteProtectivePut}
+                  >
                     <div className="space-y-2">
                       <label className="ui-label text-sm font-semibold">Modo de Cobertura:</label>
                       <div className="space-y-2">
@@ -1957,38 +1768,7 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                         </label>
                       </div>
                     </div>
-
-                    <div className="space-y-2 rounded-xl border border-[var(--ui-border)] p-3.5 text-sm">
-                      <div className="flex justify-between items-center">
-                        <span className="text-[var(--ui-muted)]">Strike del Put Protector:</span>
-                        <span className="font-bold text-sm sm:text-base text-red-800">${activeCandidate.putFloor.strike} USD</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-[var(--ui-muted)]">Costo de la Prima (Ask):</span>
-                        <span className="font-bold text-sm sm:text-base">${activeCandidate.putFloor.marketPremium} USD/acc</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-[var(--ui-muted)]">Pérdida Máxima Blindada:</span>
-                        <span className="font-bold text-sm sm:text-base text-[var(--ui-ink)]">
-                          ${((activeCandidate.spotPrice - activeCandidate.putFloor.strike) + activeCandidate.putFloor.marketPremium).toFixed(2)}/acc
-                        </span>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      disabled={executingSymbols.includes(selectedAsset.symbol)}
-                      onClick={() => handleExecuteProtectivePut(activeCandidate)}
-                      className="ui-button ui-button--primary w-full justify-center py-3 text-sm sm:text-base font-bold shadow-sm"
-                    >
-                      <Shield className="h-4 w-4" aria-hidden="true" />
-                      <span>
-                        {executingSymbols.includes(selectedAsset.symbol)
-                          ? 'Enviando a Bolsa...'
-                          : `Emitir Protective Put a ${brokerTarget} (LIVE)`}
-                      </span>
-                    </button>
-                  </div>
+                  </BoletaProtectivePut>
                 )}
 
                 {/* ======================================================== */}
@@ -2066,7 +1846,7 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                         <input
                           type="number"
                           step="0.01"
-                          placeholder={activeCandidate.spotPrice.toFixed(2)}
+                          placeholder={spotActivo !== null ? spotActivo.toFixed(2) : ''}
                           value={equityLimitPrice}
                           onChange={(e) => setEquityLimitPrice(e.target.value)}
                           className="ui-field mt-1 w-full px-3 py-2 text-sm font-bold"
@@ -2078,7 +1858,7 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                       <div className="flex justify-between items-center">
                         <span className="text-[var(--ui-muted)]">Valor Estimado:</span>
                         <span className="font-extrabold text-base text-[var(--ui-ink)]">
-                          ${((Number(equityQty) || 1) * (activeCandidate.spotPrice || 0)).toFixed(2)} USD
+                          {spotActivo !== null ? `$${((Number(equityQty) || 1) * spotActivo).toFixed(2)} USD` : 'sin cotización'}
                         </span>
                       </div>
                       <div className="flex justify-between items-center text-xs sm:text-sm">

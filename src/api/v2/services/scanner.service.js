@@ -14,9 +14,6 @@ export const MARKET_BASKET = [
     beta: 1.05,
     dividendYield: 0.52,
     baseVolatility: 0.22,
-    referenceSpot: 227.50,
-    rsi14: 58.4,
-    aboveSma200: true,
   },
   {
     symbol: 'MSFT',
@@ -27,9 +24,6 @@ export const MARKET_BASKET = [
     beta: 1.15,
     dividendYield: 0.72,
     baseVolatility: 0.24,
-    referenceSpot: 420.25,
-    rsi14: 61.2,
-    aboveSma200: true,
   },
   {
     symbol: 'NVDA',
@@ -40,9 +34,6 @@ export const MARKET_BASKET = [
     beta: 1.68,
     dividendYield: 0.08,
     baseVolatility: 0.46,
-    referenceSpot: 141.80,
-    rsi14: 64.8,
-    aboveSma200: true,
   },
   {
     symbol: 'GOOGL',
@@ -53,9 +44,6 @@ export const MARKET_BASKET = [
     beta: 1.08,
     dividendYield: 0.48,
     baseVolatility: 0.26,
-    referenceSpot: 178.60,
-    rsi14: 53.1,
-    aboveSma200: true,
   },
   {
     symbol: 'AMZN',
@@ -66,9 +54,6 @@ export const MARKET_BASKET = [
     beta: 1.22,
     dividendYield: 0.00,
     baseVolatility: 0.29,
-    referenceSpot: 206.40,
-    rsi14: 59.7,
-    aboveSma200: true,
   },
   {
     symbol: 'META',
@@ -79,9 +64,6 @@ export const MARKET_BASKET = [
     beta: 1.32,
     dividendYield: 0.34,
     baseVolatility: 0.33,
-    referenceSpot: 585.10,
-    rsi14: 62.9,
-    aboveSma200: true,
   },
   {
     symbol: 'TSLA',
@@ -92,9 +74,6 @@ export const MARKET_BASKET = [
     beta: 2.12,
     dividendYield: 0.00,
     baseVolatility: 0.54,
-    referenceSpot: 248.90,
-    rsi14: 49.2,
-    aboveSma200: false,
   },
   {
     symbol: 'AMD',
@@ -105,9 +84,6 @@ export const MARKET_BASKET = [
     beta: 1.58,
     dividendYield: 0.00,
     baseVolatility: 0.42,
-    referenceSpot: 147.30,
-    rsi14: 54.8,
-    aboveSma200: true,
   },
   {
     symbol: 'SPY',
@@ -118,9 +94,6 @@ export const MARKET_BASKET = [
     beta: 1.00,
     dividendYield: 1.28,
     baseVolatility: 0.14,
-    referenceSpot: 595.40,
-    rsi14: 56.6,
-    aboveSma200: true,
   },
   {
     symbol: 'QQQ',
@@ -131,9 +104,6 @@ export const MARKET_BASKET = [
     beta: 1.18,
     dividendYield: 0.58,
     baseVolatility: 0.18,
-    referenceSpot: 512.20,
-    rsi14: 58.1,
-    aboveSma200: true,
   },
 ];
 
@@ -166,151 +136,123 @@ export const calculateTargetExpiration = (days = 45, refDate = new Date()) => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
-// Cache en memoria para cotizaciones del scanner con TTL de 60 segundos
-const quoteCache = new Map();
+const TASA_LIBRE_RIESGO = 0.045; // Tasa libre de riesgo de referencia del modelo (4.5 %)
+const VOLATILIDAD_DECLARADA = 0.28;
+const ORIGEN_VOLATILIDAD_CANASTA = 'Volatilidad de referencia de la canasta (MARKET_BASKET.baseVolatility), no observada';
+const ORIGEN_VOLATILIDAD_DECLARADA = 'Valor declarado para tickers añadidos (0.28), no observado';
 
 /**
- * Obtiene el precio spot con timeout de 600ms y caché en memoria para máxima velocidad
+ * Escáner de collars teóricos (Black-Scholes) sobre la canasta. El precio de cada activo viene del broker:
+ * sin cotización válida el activo va a `unavailable`; no hay precios de referencia ni precios fijos.
+ * `cotizar` es inyectable para las pruebas; la caché de 60 s solo guarda cotizaciones válidas.
  */
-export const getCachedOrBrokerSpot = async (symbol, broker, referenceSpot) => {
-  // En modo de pruebas unitarias, responder con el precio de referencia
-  if (process.env.NODE_ENV === 'test') {
-    return referenceSpot;
-  }
+export function crearEscaner({ cotizar = BrokerService.getBrokerQuote, limiteMs = 3000 } = {}) {
+  const cache = new Map();
 
-  const cacheKey = `${symbol}_${broker}`;
-  const cached = quoteCache.get(cacheKey);
-  if (cached && Date.now() - cached.timestamp < 60000) {
-    return cached.price;
-  }
-
-  try {
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Broker quote timeout')), 600)
-    );
-    const quotePromise = BrokerService.getBrokerQuote(symbol, broker);
-    const quote = await Promise.race([quotePromise, timeoutPromise]);
-    if (quote && quote.lastPrice && Number(quote.lastPrice) > 0) {
-      const price = Number(quote.lastPrice);
-      quoteCache.set(cacheKey, { price, timestamp: Date.now() });
-      return price;
-    }
-  } catch (_) {
-    // Si el broker está desconectado o excede 600ms, utilizar referencia calibrada de forma transparente
-  }
-
-  return referenceSpot;
-};
-
-/**
- * Escanea la canasta institucional y genera el ranking cuantitativo
- */
-export const scanTopCollars = async (options = {}) => {
-  const {
-    limit = 5,
-    sortBy = 'probability',
-    dteHorizon = 45,
-    broker = config.DEFAULT_BROKER || 'WEBULL',
-    extraSymbols = '',
-  } = options;
-
-  const validLimits = Number(limit);
-  if (isNaN(validLimits) || validLimits < 1 || validLimits > 25) {
-    throw boom.badRequest("El parámetro 'limit' debe ser un número entero entre 1 y 25.");
-  }
-
-  const validSorts = ['probability', 'netCredit', 'maxReturn', 'cores'];
-  if (!validSorts.includes(sortBy)) {
-    throw boom.badRequest(`El parámetro 'sortBy' debe ser uno de: ${validSorts.join(', ')}.`);
-  }
-
-  const validDte = Number(dteHorizon);
-  if (![30, 45, 60].includes(validDte)) {
-    throw boom.badRequest("El parámetro 'dteHorizon' debe ser un horizonte estándar en días: 30, 45 o 60.");
-  }
-
-  const targetExpiration = calculateTargetExpiration(validDte);
-  const timeToExpirationYears = Number((validDte / 365).toFixed(4));
-  const r = 0.045; // Tasa libre de riesgo federal de referencia (4.5%)
-
-  // Parsear y consultar cotización real para símbolos adicionales añadidos por el usuario
-  const extraList = typeof extraSymbols === 'string'
-    ? extraSymbols.split(',').map((s) => s.trim().toUpperCase()).filter(Boolean)
-    : Array.isArray(extraSymbols) ? extraSymbols : [];
-
-  const existingSymbols = new Set(MARKET_BASKET.map((a) => a.symbol.toUpperCase()));
-  const newExtraSymbols = extraList.filter((s) => !existingSymbols.has(s));
-
-  const extraAssets = await Promise.all(
-    newExtraSymbols.map(async (sym) => {
-      let quote = null;
-      try {
-        quote = await BrokerService.getBrokerQuote(sym, broker);
-      } catch (e) {
-        quote = { lastPrice: 100.0, companyName: `${sym} Inc.`, volatility: 0.28 };
-      }
-      const spot = Number(quote?.lastPrice || quote?.price || 100.0);
-      return {
-        symbol: sym,
-        companyName: quote?.companyName || `${sym} Inc.`,
-        exchange: 'NASDAQ',
-        tvSymbol: `NASDAQ:${sym}`,
-        sector: 'Renta Variable Adicional',
-        beta: 1.15,
-        dividendYield: 0.0,
-        baseVolatility: Number(quote?.volatility) || 0.28,
-        referenceSpot: spot,
-        rsi14: 53.0,
-        aboveSma200: true,
-        isCustom: true,
+  async function cotizacionValida(simbolo, broker) {
+    const clave = `${simbolo}_${broker}`;
+    const guardada = cache.get(clave);
+    if (guardada && Date.now() - guardada.momento < 60_000) return guardada.cotizacion;
+    let temporizador;
+    const limite = new Promise((_, rechazar) => {
+      temporizador = setTimeout(() => rechazar(new Error(`El broker no cotizó ${simbolo} en ${limiteMs} ms`)), limiteMs);
+    });
+    try {
+      const quote = await Promise.race([cotizar(simbolo, broker), limite]);
+      const precio = Number(quote?.lastPrice);
+      if (!(precio > 0)) throw new Error(`El broker no entregó un precio válido para ${simbolo}`);
+      const cotizacion = {
+        price: precio,
+        companyName: quote.companyName ?? null,
+        observedAt: quote.timestamp ?? null,
+        source: quote.source ?? null,
       };
-    })
-  );
+      cache.set(clave, { cotizacion, momento: Date.now() });
+      return cotizacion;
+    } finally {
+      clearTimeout(temporizador);
+    }
+  }
 
-  const fullBasket = [...MARKET_BASKET, ...extraAssets];
+  return async function scanTopCollars(options = {}) {
+    const {
+      limit = 5,
+      sortBy = 'probability',
+      dteHorizon = 45,
+      broker = config.DEFAULT_BROKER || 'WEBULL',
+      extraSymbols = '',
+    } = options;
 
-  const evaluatedCandidates = await Promise.all(
-    fullBasket.map(async (asset) => {
-      const S = await getCachedOrBrokerSpot(asset.symbol, broker, asset.referenceSpot);
+    const validLimits = Number(limit);
+    if (!Number.isInteger(validLimits) || validLimits < 1 || validLimits > 25) {
+      throw boom.badRequest("El parámetro 'limit' debe ser un número entero entre 1 y 25.");
+    }
+
+    const validSorts = ['probability', 'netCredit', 'maxReturn', 'cores'];
+    if (!validSorts.includes(sortBy)) {
+      throw boom.badRequest(`El parámetro 'sortBy' debe ser uno de: ${validSorts.join(', ')}.`);
+    }
+
+    const validDte = Number(dteHorizon);
+    if (![30, 45, 60].includes(validDte)) {
+      throw boom.badRequest("El parámetro 'dteHorizon' debe ser un horizonte estándar en días: 30, 45 o 60.");
+    }
+
+    const targetExpiration = calculateTargetExpiration(validDte);
+    const timeToExpirationYears = Number((validDte / 365).toFixed(4));
+    const r = TASA_LIBRE_RIESGO;
+    const corredor = String(broker).toUpperCase();
+
+    const extraList = typeof extraSymbols === 'string'
+      ? extraSymbols.split(',').map((s) => s.trim().toUpperCase()).filter(Boolean)
+      : Array.isArray(extraSymbols) ? extraSymbols.map((s) => String(s).toUpperCase()) : [];
+    const existingSymbols = new Set(MARKET_BASKET.map((a) => a.symbol.toUpperCase()));
+    const newExtraSymbols = [...new Set(extraList.filter((s) => !existingSymbols.has(s)))];
+
+    const fullBasket = [
+      ...MARKET_BASKET.map((asset) => ({ ...asset, volatilitySource: ORIGEN_VOLATILIDAD_CANASTA })),
+      ...newExtraSymbols.map((sym) => ({
+        symbol: sym, companyName: null, exchange: null, tvSymbol: `NASDAQ:${sym}`, sector: null,
+        beta: null, dividendYield: null, baseVolatility: VOLATILIDAD_DECLARADA, volatilitySource: ORIGEN_VOLATILIDAD_DECLARADA,
+        isCustom: true,
+      })),
+    ];
+
+    const unavailable = [];
+    const cotizados = await Promise.all(fullBasket.map(async (asset) => {
+      try {
+        return { asset, cotizacion: await cotizacionValida(asset.symbol, corredor) };
+      } catch (error) {
+        unavailable.push({ symbol: asset.symbol, reason: error.message });
+        return null;
+      }
+    }));
+    const conPrecio = cotizados.filter(Boolean);
+    if (!conPrecio.length) {
+      throw boom.serverUnavailable(`${corredor} no entregó la cotización de ningún activo; no se usan precios de referencia. Ejemplo: ${unavailable[0]?.reason ?? 'sin detalle'}.`);
+    }
+
+    const evaluatedCandidates = conPrecio.map(({ asset, cotizacion }) => {
+      const S = cotizacion.price;
       const vol = asset.baseVolatility;
 
-      // 1. Calibración de Strikes OTM para Collar Spread
-      // Put Protector (Piso): ~5% por debajo del spot
+      // 1. Strikes teóricos para Collar Spread: ~5 % por debajo y por encima del precio observado.
       const rawPutStrike = S * 0.95;
       const putStrike = S > 200 ? Math.round(rawPutStrike / 5) * 5 : Math.round(rawPutStrike);
-
-      // Call de Financiamiento (Techo): ~5% por encima del spot
       const rawCallStrike = S * 1.05;
       const callStrike = S > 200 ? Math.round(rawCallStrike / 5) * 5 : Math.round(rawCallStrike);
 
-      // 2. Valuación teórica con Black-Scholes
-      const putBS = calculateBlackScholes({
-        spotPrice: S,
-        strikePrice: putStrike,
-        timeToExpirationYears,
-        volatility: vol,
-        riskFreeRate: r,
-        optionType: 'PUT',
-      });
+      // 2. Valuación teórica con Black-Scholes (no son cotizaciones de mercado ni precios de órdenes).
+      const putBS = calculateBlackScholes({ spotPrice: S, strikePrice: putStrike, timeToExpirationYears, volatility: vol, riskFreeRate: r, optionType: 'PUT' });
+      const callBS = calculateBlackScholes({ spotPrice: S, strikePrice: callStrike, timeToExpirationYears, volatility: vol, riskFreeRate: r, optionType: 'CALL' });
+      const putTheoretical = Number(putBS.theoreticalPrice.toFixed(2));
+      const callTheoretical = Number(callBS.theoreticalPrice.toFixed(2));
 
-      const callBS = calculateBlackScholes({
-        spotPrice: S,
-        strikePrice: callStrike,
-        timeToExpirationYears,
-        volatility: vol,
-        riskFreeRate: r,
-        optionType: 'CALL',
-      });
-
-      // Primas de mercado estimadas con spread realista
-      const putMarketPremium = Number((putBS.theoreticalPrice * 1.02).toFixed(2));
-      const callMarketPremium = Number((callBS.theoreticalPrice * 0.98).toFixed(2));
-
-      // Flujo neto de primas por acción (Venta de Call - Compra de Put)
-      const netDebitCredit = Number((callMarketPremium - putMarketPremium).toFixed(2));
+      // Flujo neto teórico por acción (Call − Put): positivo es crédito.
+      const netDebitCredit = Number((callTheoretical - putTheoretical).toFixed(2));
       const netCreditUSD = Number((netDebitCredit * 100).toFixed(2));
 
-      // 3. Métricas Financieras del Collar
+      // 3. Métricas teóricas del collar
       const maxLossPerShare = Number((S - putStrike - netDebitCredit).toFixed(2));
       const maxLossTotalUSD = Number((maxLossPerShare * 100).toFixed(2));
       const maxProfitPerShare = Number((callStrike - S + netDebitCredit).toFixed(2));
@@ -318,67 +260,46 @@ export const scanTopCollars = async (options = {}) => {
       const maxReturnPct = Number(((maxProfitUSD / (S * 100)) * 100).toFixed(2));
       const breakevenPrice = Number((S - netDebitCredit).toFixed(2));
 
-      // 4. Estimación de Probabilidades Estocásticas (Black-Scholes d2)
-      // d2(K) = [ln(S/K) + (r - 0.5*sigma^2)*T] / (sigma * sqrt(T))
-      const d1Put = (Math.log(S / putStrike) + (r + 0.5 * vol * vol) * timeToExpirationYears) / (vol * Math.sqrt(timeToExpirationYears));
-      const d2Put = d1Put - vol * Math.sqrt(timeToExpirationYears);
-
-      const d1Call = (Math.log(S / callStrike) + (r + 0.5 * vol * vol) * timeToExpirationYears) / (vol * Math.sqrt(timeToExpirationYears));
-      const d2Call = d1Call - vol * Math.sqrt(timeToExpirationYears);
-
-      // Probabilidad de que el precio termine por encima del strike del Put (No tocar el piso de pérdida máxima)
-      const floorProtectionPct = Number((standardNormalCDF(d2Put) * 100).toFixed(1));
-
-      // Probabilidad de ser asignado en la Call (precio termina por encima del strike Call)
-      const assignmentRiskPct = Number((standardNormalCDF(d2Call) * 100).toFixed(1));
-
-      // Probabilidad de expirar en el rango dulce (entre piso y techo, conservando acciones y primas)
-      const sweetSpotPct = Number(Math.max(0, standardNormalCDF(d2Put) - standardNormalCDF(d2Call)) * 100).toFixed(1);
-
-      // Probabilidad de ganar dinero (precio termina arriba del Breakeven)
-      const d1Be = (Math.log(S / breakevenPrice) + (r + 0.5 * vol * vol) * timeToExpirationYears) / (vol * Math.sqrt(timeToExpirationYears));
-      const d2Be = d1Be - vol * Math.sqrt(timeToExpirationYears);
-      const winRatePct = Number((standardNormalCDF(d2Be) * 100).toFixed(1));
-
-      // 5. Diagnóstico de Tendencia Técnica
-      let technicalOutlook = 'NEUTRAL';
-      let technicalSummary = 'Consolidación lateral con baja volatilidad direccional.';
-      if (asset.aboveSma200 && asset.rsi14 >= 55) {
-        technicalOutlook = 'BULLISH';
-        technicalSummary = `Tendencia alcista estructural confirmada por encima de SMA 200 y momentum saludable (RSI 14 = ${asset.rsi14}).`;
-      } else if (asset.aboveSma200 && asset.rsi14 >= 48) {
-        technicalOutlook = 'NEUTRAL_BULLISH';
-        technicalSummary = `Soporte técnico respetado en SMA 200 con consolidación previa a nuevo impulso (RSI 14 = ${asset.rsi14}).`;
-      }
+      // 4. Probabilidades teóricas (Black-Scholes d2) con la volatilidad supuesta.
+      const d2 = (K) => (Math.log(S / K) + (r - 0.5 * vol * vol) * timeToExpirationYears) / (vol * Math.sqrt(timeToExpirationYears));
+      const floorProtectionPct = Number((standardNormalCDF(d2(putStrike)) * 100).toFixed(1));
+      const assignmentRiskPct = Number((standardNormalCDF(d2(callStrike)) * 100).toFixed(1));
+      const sweetSpotPct = Number((Math.max(0, standardNormalCDF(d2(putStrike)) - standardNormalCDF(d2(callStrike))) * 100).toFixed(1));
+      const winRatePct = Number((standardNormalCDF(d2(breakevenPrice)) * 100).toFixed(1));
 
       return {
         symbol: asset.symbol,
-        companyName: asset.companyName,
+        companyName: asset.companyName ?? cotizacion.companyName ?? null,
         exchange: asset.exchange,
         sector: asset.sector,
         spotPrice: S,
+        spotObservedAt: cotizacion.observedAt,
+        spotSource: cotizacion.source,
         tradingViewSymbol: asset.tvSymbol,
-        technicalOutlook,
-        technicalSummary,
-        rsi14: asset.rsi14,
-        aboveSma200: asset.aboveSma200,
         beta: asset.beta,
         dividendYield: asset.dividendYield,
         volatility: vol,
+        isCustom: Boolean(asset.isCustom),
         optimalExpiration: targetExpiration,
         dteDays: validDte,
+        pricing: {
+          model: 'BLACK_SCHOLES',
+          theoretical: true,
+          volatility: vol,
+          volatilitySource: asset.volatilitySource,
+          riskFreeRate: r,
+          note: 'Primas, métricas y probabilidades teóricas; no son cotizaciones de mercado ni precios de órdenes.',
+        },
         putFloor: {
           strike: putStrike,
-          marketPremium: putMarketPremium,
-          theoreticalPriceBS: putBS.theoreticalPrice,
+          theoreticalPremium: putTheoretical,
           delta: putBS.greeks.delta,
           moneyness: `${(((S - putStrike) / S) * 100).toFixed(1)}% OTM`,
           role: 'Póliza de Seguro Protector (Floor)',
         },
         callCeiling: {
           strike: callStrike,
-          marketPremium: callMarketPremium,
-          theoreticalPriceBS: callBS.theoreticalPrice,
+          theoreticalPremium: callTheoretical,
           delta: callBS.greeks.delta,
           moneyness: `${(((callStrike - S) / S) * 100).toFixed(1)}% OTM`,
           role: 'Techo de Ganancia y Financiamiento (Ceiling)',
@@ -386,51 +307,50 @@ export const scanTopCollars = async (options = {}) => {
         financialMetrics: {
           netDebitCredit,
           netCreditTotalUSD: netCreditUSD,
-          cashFlowType: netDebitCredit >= 0 ? 'CRÉDITO NETO (Pagan al Inversionista)' : 'DÉBITO MÍNIMO (Costo Casi Cero)',
+          cashFlowType: netDebitCredit >= 0 ? 'CRÉDITO NETO TEÓRICO' : 'DÉBITO NETO TEÓRICO',
           breakevenPrice,
           maxLossTotalUSD,
           maxProfitUSD,
           maxReturnPct,
         },
         probabilities: {
-          floorProtectionPct: Number(floorProtectionPct),
-          sweetSpotPct: Number(sweetSpotPct),
-          assignmentRiskPct: Number(assignmentRiskPct),
-          winRatePct: Number(winRatePct),
+          floorProtectionPct,
+          sweetSpotPct,
+          assignmentRiskPct,
+          winRatePct,
         },
       };
-    })
-  );
+    });
 
-  // 6. Ordenamiento multi-criterio según requerimiento
-  if (sortBy === 'probability' || sortBy === 'cores') {
-    evaluatedCandidates.sort((a, b) => b.probabilities.floorProtectionPct - a.probabilities.floorProtectionPct);
-  } else if (sortBy === 'netCredit') {
-    evaluatedCandidates.sort((a, b) => b.financialMetrics.netDebitCredit - a.financialMetrics.netDebitCredit);
-  } else if (sortBy === 'maxReturn') {
-    evaluatedCandidates.sort((a, b) => b.financialMetrics.maxReturnPct - a.financialMetrics.maxReturnPct);
-  }
+    // 5. Ordenamiento según el criterio solicitado (cores ordena igual que probability; el panel aplica después los cores).
+    if (sortBy === 'probability' || sortBy === 'cores') {
+      evaluatedCandidates.sort((a, b) => b.probabilities.floorProtectionPct - a.probabilities.floorProtectionPct);
+    } else if (sortBy === 'netCredit') {
+      evaluatedCandidates.sort((a, b) => b.financialMetrics.netDebitCredit - a.financialMetrics.netDebitCredit);
+    } else if (sortBy === 'maxReturn') {
+      evaluatedCandidates.sort((a, b) => b.financialMetrics.maxReturnPct - a.financialMetrics.maxReturnPct);
+    }
 
-  // 7. Asignar Ranking correlativo y limitar al tamaño solicitado (o incluir todos los evaluados si hay símbolos extra)
-  const effectiveLimit = Math.max(validLimits, newExtraSymbols.length > 0 ? validLimits + newExtraSymbols.length : validLimits);
-  const rankedCandidates = evaluatedCandidates.slice(0, effectiveLimit).map((item, idx) => ({
-    rank: idx + 1,
-    ...item,
-  }));
+    const effectiveLimit = validLimits + newExtraSymbols.length;
+    const rankedCandidates = evaluatedCandidates.slice(0, effectiveLimit).map((item, idx) => ({ rank: idx + 1, ...item }));
 
-  return {
-    timestamp: new Date().toISOString(),
-    criteria: {
-      limit: validLimits,
-      sortBy,
-      dteHorizon: validDte,
-      targetExpiration,
-      broker: broker.toUpperCase(),
-      totalScanned: fullBasket.length,
-    },
-    candidates: rankedCandidates,
+    return {
+      timestamp: new Date().toISOString(),
+      criteria: {
+        limit: validLimits,
+        sortBy,
+        dteHorizon: validDte,
+        targetExpiration,
+        broker: corredor,
+        totalScanned: fullBasket.length,
+      },
+      candidates: rankedCandidates,
+      unavailable: unavailable.sort((a, b) => a.symbol.localeCompare(b.symbol)),
+    };
   };
-};
+}
+
+export const scanTopCollars = crearEscaner();
 
 /**
  * Retorna los Criterios Cuantitativos y Técnicos oficiales para seleccionar una empresa

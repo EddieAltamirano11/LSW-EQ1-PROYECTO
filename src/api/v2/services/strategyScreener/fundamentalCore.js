@@ -7,8 +7,14 @@ const addDebt = year => [year.shortDebt, year.currentDebt, year.longDebt].some(N
   ? [year.shortDebt, year.currentDebt, year.longDebt].reduce((sum, value) => sum + (value ?? 0), 0) : null;
 const diff = (a, b) => Number.isFinite(a) && Number.isFinite(b) ? a - b : null;
 
+// Sin fecha de resultados el riesgo queda UNVERIFIED, con la causa y la fuente consultada, y sin evidencia del calendario.
+export function riesgoSinVerificar(causa, fuente) {
+  return partial({ risk: 'UNVERIFIED', reason: causa, source: fuente ?? null, days: null, start: null, end: null, estimated: null },
+    `Earnings sin verificar: ${causa}`, []);
+}
+
 export function eventRisk(event, asOf) {
-  if (!event) return unavailable('Fecha de resultados sin verificar.');
+  if (!event) return riesgoSinVerificar('No hay una fecha de resultados verificable.');
   const days = Math.ceil((time(event.start) - asOf) / DAY);
   const risk = days <= 7 ? 'HIGH' : days <= 30 ? 'MEDIUM' : 'LOW';
   return available({ risk, days, start: event.start, end: event.end, estimated: event.estimated }, [event.evidence]);
@@ -91,5 +97,9 @@ export function fundamentalCore(statements, spot, events) {
   result.qualityFlags = [classification !== 'VIABLE' ? classification : null, year.interest === null ? 'INTEREST_COVERAGE_UNAVAILABLE' : null,
     netDebtToOperating !== null && netDebtToOperating > 3 ? 'HIGH_LEVERAGE' : null].filter(Boolean);
   const signals = { score, direction: 0, confidence: round(0.7 + health.evaluated * 0.018) };
-  return events?.result ? available(result, evidence, signals) : partial(result, 'Fecha de resultados sin verificar.', evidence);
+  // El puntaje no depende de los eventos: con el riesgo sin verificar se conserva y el core queda parcial.
+  if (!events?.result || events.result.risk === 'UNVERIFIED') {
+    return partial(result, `Earnings sin verificar: ${events?.result?.reason ?? 'sin fecha de resultados'}`, evidence, signals);
+  }
+  return available(result, evidence, signals);
 }

@@ -3,7 +3,7 @@ import * as ScannerService from '../services/scanner.service.js';
 /**
  * Escanea el mercado bursátil y genera el ranking Top 5 o Top 10 para Collar Spreads
  */
-export const getTopCollars = async (req, res, next) => {
+export const crearGetTopCollars = (escanear = ScannerService.scanTopCollars) => async (req, res, next) => {
   try {
     const {
       limit = 5,
@@ -13,7 +13,7 @@ export const getTopCollars = async (req, res, next) => {
       extraSymbols,
     } = req.query;
 
-    const result = await ScannerService.scanTopCollars({
+    const result = await escanear({
       limit,
       sortBy,
       dteHorizon,
@@ -26,6 +26,8 @@ export const getTopCollars = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getTopCollars = crearGetTopCollars();
 
 /**
  * Consulta los criterios técnicos y cuantitativos oficiales para seleccionar empresas

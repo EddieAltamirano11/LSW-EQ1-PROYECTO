@@ -3,8 +3,9 @@ import { MARKET_BASKET } from './scanner.service.js';
 import { iso, mapConcurrent, unavailable, fromFailure, SourceError } from './strategyScreener/observations.js';
 import * as market from './strategyScreener/marketData.js';
 import * as sec from './strategyScreener/edgar.js';
-import { technicalCore, directSignalsCore } from './strategyScreener/technicalCore.js';
-import { eventRisk, fundamentalCore } from './strategyScreener/fundamentalCore.js';
+import { technicalCore, directSignalsCore, round } from './strategyScreener/technicalCore.js';
+import { fecha, mediasMoviles, PARAMETROS, toleranciaNiveles } from './strategyScreener/historialTecnico.js';
+import { eventRisk, fundamentalCore, riesgoSinVerificar } from './strategyScreener/fundamentalCore.js';
 import { institutionalCore, strategyCore } from './strategyScreener/optionsCores.js';
 import { calcularCoreConfluencia, calcularCoreNoticias, CORES_SELECCIONABLES } from './strategyScreener/confluenceCores.js';
 
@@ -34,6 +35,24 @@ async function capture(task) {
 
 function selected(diagnostic, active) {
   return { ...diagnostic, active };
+}
+
+// Participación de cada core: si entró a la confluencia (con su peso normalizado), si solo filtró,
+// si se calculó porque otro core lo necesita, si sintetiza a los demás o si no se calculó.
+function withRoles(cores, activeCores, strategyEvaluated) {
+  const weights = new Map((cores['007'].result?.drivers ?? []).map(driver => [driver.id, driver.weight]));
+  const role = id => {
+    if (id === '007') return 'SYNTHESIS';
+    if (id === '004') return strategyEvaluated ? 'GATE' : 'NOT_COMPUTED';
+    if (activeCores.includes(id)) return 'CONFLUENCE';
+    if (id === '002') return 'GATE';
+    return cores[id].status === 'NOT_SELECTED' ? 'NOT_COMPUTED' : 'DEPENDENCY';
+  };
+  return Object.fromEntries(Object.entries(cores).map(([id, core]) => {
+    const participation = role(id);
+    const weight = participation === 'CONFLUENCE' && weights.has(id) ? { effectiveWeight: Number(weights.get(id).toFixed(4)) } : {};
+    return [id, { ...core, role: participation, ...weight }];
+  }));
 }
 
 export function createStrategyScreener({ marketData = market, edgar = sec, universe = DEFAULT_UNIVERSE, now = Date.now } = {}) {
@@ -89,7 +108,7 @@ export function createStrategyScreener({ marketData = market, edgar = sec, unive
         includes('001') || includes('003') ? use(`history:${symbol}`, () => marketData.obtenerHistorialVelas(symbol, clock.value, signal)) : {},
         includes('006') ? use(`news:${symbol}`, () => marketData.obtenerNoticiasAccion(symbol, asOf, signal)) : {},
       ]);
-      const events = event.error ?? eventRisk(event.value, asOf);
+      const events = event.error ? riesgoSinVerificar(event.error.reason, event.error.evidence?.[0]?.source) : eventRisk(event.value, asOf);
       const fundamental = spot.error ?? facts.error ?? fundamentalCore(facts.value, spot.value, events);
       const eligibility = fundamental.result?.classification ?? 'UNKNOWN';
       const technical = history.error ?? (history.value ? technicalCore(history.value) : NOT_SELECTED);
@@ -115,28 +134,95 @@ export function createStrategyScreener({ marketData = market, edgar = sec, unive
       };
       const confluence = calcularCoreConfluencia(criteria.activeCores, cores, asOf);
       cores['007'] = confluence;
-      const row = { symbol, companyName, eligibility, cores };
-      if (knownVeto) return { ...row, reason: `Veto de viabilidad ${eligibility}.` };
+      const row = { symbol, companyName, eligibility, cores: withRoles(cores, criteria.activeCores, Boolean(chain.value || chain.error)) };
+      if (knownVeto) return { ...row, reason: `Veto de viabilidad ${eligibility}.`, exclusionType: 'VIABILITY_VETO' };
       if (eligibility !== 'VIABLE' || !events.result || !strategy.result) {
-        return { ...row, reason: fundamental.reason ?? strategy.reason ?? events.reason ?? 'Datos de viabilidad insuficientes.', incomplete: true };
+        return { ...row, reason: fundamental.reason ?? strategy.reason ?? events.reason ?? 'Datos de viabilidad insuficientes.',
+          exclusionType: 'INSUFFICIENT_DATA', incomplete: true };
       }
-      if (!strategy.result.eligible) return { ...row, reason: strategy.result.reason };
+      if (!strategy.result.eligible) return { ...row, reason: strategy.result.reason, exclusionType: 'NO_COLLAR' };
       if (!Number.isFinite(confluence.score)) {
         const missing = criteria.activeCores.filter(id => !Number.isFinite(cores[id].score));
-        return { ...row, reason: `Datos insuficientes para ${missing.join(', ')}.`, incomplete: true };
+        return { ...row, reason: `Datos insuficientes para ${missing.join(', ')}.`, exclusionType: 'INSUFFICIENT_DATA', incomplete: true };
       }
       return { ...row, score: confluence.score,
-        incomplete: criteria.activeCores.some(id => cores[id].status === 'PARTIAL') };
+        incomplete: events.result.risk === 'UNVERIFIED' || criteria.activeCores.some(id => cores[id].status === 'PARTIAL') };
     });
     if (rows.every(row => row.incomplete && row.reason)) {
       const reasons = [...new Set(rows.map(row => row.reason))].slice(0, 3);
       throw boom.serverUnavailable(`Datos reales insuficientes. ${reasons.join(' ')}`);
     }
     const candidates = rows.filter(row => !row.reason).sort((a, b) => b.score - a.score || a.symbol.localeCompare(b.symbol))
-      .slice(0, criteria.limit).map(({ incomplete, ...row }, index) => ({ ...row, rank: index + 1 }));
+      .slice(0, criteria.limit).map(({ incomplete, ...row }, index) => ({ ...row, partial: Boolean(incomplete), rank: index + 1 }));
     const excluded = rows.filter(row => row.reason).map(({ incomplete, ...row }) => row);
     return { asOf: iso(asOf), criteria, status: rows.some(row => row.incomplete) ? 'PARTIAL' : 'COMPLETE', candidates, excluded };
   };
 }
 
 export const runStrategyScreener = createStrategyScreener();
+
+const TECHNICAL_SYMBOL = /^[A-Z]{1,5}(?:[.-][A-Z]{1,2})?$/;
+
+export function parseTechnicalSymbol(value) {
+  const symbol = typeof value === 'string' ? value.trim().toUpperCase() : '';
+  if (!TECHNICAL_SYMBOL.test(symbol)) throw boom.badRequest('El símbolo debe tener de 1 a 5 letras, con una clase opcional como BRK.B.');
+  return symbol;
+}
+
+function sourceFailure(error) {
+  if (error instanceof SourceError) return boom.serverUnavailable(`Datos reales insuficientes. ${error.reason}`);
+  if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
+    return boom.serverUnavailable('Datos reales insuficientes. La fuente de velas no respondió a tiempo.');
+  }
+  return error;
+}
+
+// Serie diaria del Core 001 para la gráfica técnica: mismas velas y mismos cálculos que el ranking, sin la serie intradía.
+function technicalSeries(symbol, clock, history, asOf) {
+  const core = technicalCore(history);
+  if (!core.result) throw boom.serverUnavailable(`Datos reales insuficientes. ${core.reason}`);
+  const daily = history.series['1Day'];
+  const times = daily.map(bar => fecha(bar.at));
+  const averages = mediasMoviles(daily.map(bar => bar.close));
+  const line = values => values.flatMap((value, index) => (value === null ? [] : [{ time: times[index], value: round(value, 4) }]));
+  const tolerance = toleranciaNiveles(core.result.timeframes.daily.atr, daily.at(-1).close);
+  const band = level => ({ ...level, lower: round(level.price - tolerance, 4), upper: round(level.price + tolerance, 4) });
+  const { support, resistance, scales, segments, projections, limitation } = core.result;
+  return {
+    symbol, asOf: iso(asOf), cutoff: iso(clock.cutoff), lastSession: clock.lastClosed.date, source: market.FUENTE_ALPACA,
+    candles: daily.map(({ open, high, low, close, volume }, index) => ({ time: times[index], open, high, low, close, volume })),
+    movingAverages: { sma200: line(averages.sma200), ema50: line(averages.ema50), ema20: line(averages.ema20) },
+    support: support.map(band), resistance: resistance.map(band), scales, segments, projections,
+    upcoming: (history.calendar ?? []).slice(0, PARAMETROS.horizonte), limitation, evidence: history.evidence,
+  };
+}
+
+export function createTechnicalSeries({ marketData = market, now = Date.now } = {}) {
+  let snapshot;
+  return async function series(symbol) {
+    const time = now();
+    if (!snapshot || time < snapshot.asOf || time - snapshot.asOf >= 90_000) snapshot = { asOf: time, values: new Map() };
+    const { asOf, values } = snapshot;
+    const signal = AbortSignal.timeout(45_000);
+    // Igual que el screener: lo exitoso se reutiliza 90 s y lo fallido se descarta para el siguiente intento.
+    const use = (key, load) => {
+      if (!values.has(key)) {
+        const pending = Promise.resolve().then(load);
+        values.set(key, pending);
+        pending.catch(() => { if (values.get(key) === pending) values.delete(key); });
+      }
+      return values.get(key);
+    };
+    try {
+      return await use(`series:${symbol}`, async () => {
+        const clock = await use('clock', () => marketData.obtenerSesionBursatil(asOf, signal));
+        const history = await marketData.obtenerHistorialVelas(symbol, clock, signal);
+        return technicalSeries(symbol, clock, history, asOf);
+      });
+    } catch (error) {
+      throw sourceFailure(error);
+    }
+  };
+}
+
+export const runTechnicalSeries = createTechnicalSeries();
