@@ -14,9 +14,9 @@ export const CORES_INFO = {
     nombre: 'Fundamental',
     fuentes: ['SEC EDGAR (estados 10-K o 20-F en XBRL)', 'Webull (ventana de próximos resultados)'],
     ventanas: 'Los dos últimos ejercicios fiscales consecutivos.',
-    calculo: 'Altman Z según el tipo de empresa, Piotroski F-Score (mínimo 6 pruebas evaluables), calidad, solvencia, crecimiento y valuación. Clasifica la empresa como VIABLE, MARGINAL o NO_VIABLE y mide el riesgo de evento por la cercanía de resultados.',
-    peso: 'Peso base 20.',
-    participa: 'Siempre se calcula como filtro de viabilidad: MARGINAL o NO_VIABLE quedan vetadas. Solo entra a la confluencia si está seleccionado.',
+    calculo: 'Altman Z mide la salud financiera y Piotroski la calidad contable (9 pruebas, mínimo 6 válidas, 20 % del puntaje). Clasifica VIABLE / MARGINAL / NO_VIABLE / UNKNOWN y reporta el riesgo por resultados sin cambiar el puntaje. La vista visual del modal detalla umbrales y pruebas.',
+    peso: '20 pts base (25 % efectivo con los 5 cores activos). Solo entra a la confluencia si el checkbox está marcado.',
+    participa: 'Siempre se calcula como filtro GATE: veta MARGINAL y NO_VIABLE aunque esté desmarcado y oculta su Collar; no suma puntaje.',
   },
   '003': {
     nombre: 'Señales directas',

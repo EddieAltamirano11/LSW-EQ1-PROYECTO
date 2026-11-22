@@ -37,4 +37,3 @@ router.put('/:id/financial-metrics/recalculate', HedgingController.recalculateMe
 router.get('/:id/payoff-matrix', HedgingController.getPayoffMatrix);
 
 export default router;
-

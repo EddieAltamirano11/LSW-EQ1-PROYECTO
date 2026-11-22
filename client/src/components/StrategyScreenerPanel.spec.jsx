@@ -79,7 +79,7 @@ describe('consulta de resultados por core', () => {
     expect(document.activeElement).toBe(ojo('Técnico'));
 
     fireEvent.click(ojo('Fundamental'));
-    expect(within(screen.getByRole('dialog')).getAllByText(/Filtro de viabilidad/).length).toBe(2);
+    expect(within(screen.getByRole('dialog')).getAllByText('Sin ponderación').length).toBe(2);
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
     fireEvent.click(ojo('Estrategia de opciones'));
     const collar = within(screen.getByRole('dialog'));

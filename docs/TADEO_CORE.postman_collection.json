@@ -1,0 +1,469 @@
+{
+  "info": {
+    "name": "TADEO · Ciclo de Vida, Legs, Métricas & Payoff",
+    "description": "Colección ejecutable para el vertical slice de José Tadeo Núñez Carvajal.\n\nOrden recomendado:\n00.1 Health → 00.3 Listar estrategias → 01.1 Listar patas → 01.2 Pata individual → 01.3 Crear pata → 02.1 Métricas → 02.2 Recalcular → 02.3 Payoff → 01.5 Eliminar pata.\n\nVariables clave:\n- databaseTarget: mongodb | supabase (debe coincidir con el frontend)\n- strategyId: se captura automáticamente en 00.3\n- legId: se captura automáticamente en 01.1 o 01.3\n\nSi trabajas en Supabase, strategyId debe ser un UUID. En MongoDB puede ser un id tipo STRAT-COLLAR-... o el portfolioId.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://lsw-eq1-proyecto.onrender.com"
+    },
+    {
+      "key": "databaseTarget",
+      "value": "supabase"
+    },
+    {
+      "key": "strategyId",
+      "value": "f6d71647-d41b-45a6-983b-e140034d0407"
+    },
+    {
+      "key": "legId",
+      "value": "LEG-AMZN-STOCK"
+    },
+    {
+      "key": "bearerToken",
+      "value": ""
+    },
+    {
+      "key": "currentSpotPrice",
+      "value": "350"
+    },
+    {
+      "key": "steps",
+      "value": "25"
+    },
+    {
+      "key": "rangePct",
+      "value": "0.20"
+    }
+  ],
+  "item": [
+    {
+      "name": "00 · Preparación",
+      "item": [
+        {
+          "name": "00.1 Health v2",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v2/health",
+            "description": "Verifica que Render esté despierto antes de la demo."
+          },
+          "response": []
+        },
+        {
+          "name": "00.2 Login (opcional, guarda JWT)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "try {",
+                  "  const res = pm.response.json();",
+                  "  if (res.token) pm.collectionVariables.set('bearerToken', res.token);",
+                  "} catch (e) {}",
+                  "pm.test('Login 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"demo.trader\",\n  \"password\": \"demo1234\",\n  \"databaseTarget\": \"{{databaseTarget}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "description": "Opcional. La autenticación es declarativa: los endpoints de legs funcionan sin token. Si ejecutas este request, el token queda en la variable bearerToken."
+          },
+          "response": []
+        },
+        {
+          "name": "00.3 Listar estrategias (guarda strategyId)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "try {",
+                  "  const res = pm.response.json();",
+                  "  const list = Array.isArray(res) ? res : (res.data || []);",
+                  "  if (list.length > 0) {",
+                  "    const first = list[0];",
+                  "    pm.collectionVariables.set('strategyId', first.id || first._id);",
+                  "  }",
+                  "} catch (e) {}",
+                  "pm.test('Listado 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-database-selection",
+                "value": "{{databaseTarget}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/hedging-strategies",
+            "description": "Toma la primera estrategia y guarda su id en la variable strategyId. Si no hay datos, cambia de BD o crea una estrategia."
+          },
+          "response": []
+        },
+        {
+          "name": "00.4 Ver estrategia completa",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-database-selection",
+                "value": "{{databaseTarget}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/hedging-strategies/{{strategyId}}",
+            "description": "Muestra el documento completo: underlying, legs[] y financialMetrics."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "01 · Patas (CRUD)",
+      "item": [
+        {
+          "name": "01.1 Listar patas (5.3)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "try {",
+                  "  const res = pm.response.json();",
+                  "  const legs = Array.isArray(res) ? res : [];",
+                  "  if (legs.length > 0) {",
+                  "    const current = pm.collectionVariables.get('legId');",
+                  "    const found = legs.some(l => l.legId === current);",
+                  "    if (!found) pm.collectionVariables.set('legId', legs[0].legId);",
+                  "  }",
+                  "} catch (e) {}",
+                  "pm.test('Legs 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-database-selection",
+                "value": "{{databaseTarget}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/hedging-strategies/{{strategyId}}/legs",
+            "description": "Devuelve el arreglo embebido legs. Si el legId actual no existe, lo corrige al primero."
+          },
+          "response": []
+        },
+        {
+          "name": "01.2 Pata individual (5.4)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-database-selection",
+                "value": "{{databaseTarget}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/hedging-strategies/{{strategyId}}/legs/{{legId}}",
+            "description": "Consulta una pata por legId. Si da 404, ejecuta 01.1 para refrescar la variable."
+          },
+          "response": []
+        },
+        {
+          "name": "01.3 Crear pata (5.5)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "try {",
+                  "  const res = pm.response.json();",
+                  "  if (res.leg && res.leg.legId) pm.collectionVariables.set('legId', res.leg.legId);",
+                  "} catch (e) {}",
+                  "pm.test('Pata creada 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-database-selection",
+                "value": "{{databaseTarget}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"legRole\": \"FINANCE_CEILING\",\n  \"assetType\": \"OPTION\",\n  \"contractSymbol\": \"AAPL261016C00380000\",\n  \"optionType\": \"CALL\",\n  \"strike\": 380,\n  \"expirationDate\": \"2026-10-16T00:00:00.000Z\",\n  \"quantity\": 1,\n  \"entryPrice\": 2.68,\n  \"delta\": 0.22\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/v1/hedging-strategies/{{strategyId}}/legs",
+            "description": "No envía legId: el servidor lo genera y el script lo captura en la variable legId. Ideal para demostrar la normalización."
+          },
+          "response": []
+        },
+        {
+          "name": "01.4 Actualizar pata (5.6)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-database-selection",
+                "value": "{{databaseTarget}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"strike\": 382,\n  \"entryPrice\": 2.75,\n  \"delta\": 0.24\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/v1/hedging-strategies/{{strategyId}}/legs/{{legId}}",
+            "description": "Actualiza strike, prima y delta de la pata creada en 01.3."
+          },
+          "response": []
+        },
+        {
+          "name": "01.5 Eliminar pata (5.7)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-database-selection",
+                "value": "{{databaseTarget}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/hedging-strategies/{{strategyId}}/legs/{{legId}}",
+            "description": "Devuelve deletedLegId y remainingCount. Úsalo al final para limpiar la pata de prueba."
+          },
+          "response": []
+        },
+        {
+          "name": "01.6 Crear lote (extra)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-database-selection",
+                "value": "{{databaseTarget}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"legRole\": \"HEDGE_FLOOR\",\n    \"assetType\": \"OPTION\",\n    \"optionType\": \"PUT\",\n    \"strike\": 300,\n    \"quantity\": 1,\n    \"entryPrice\": 1.5\n  },\n  {\n    \"legRole\": \"FINANCE_CEILING\",\n    \"assetType\": \"OPTION\",\n    \"optionType\": \"CALL\",\n    \"strike\": 400,\n    \"quantity\": 1,\n    \"entryPrice\": 1.7\n  }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/v1/hedging-strategies/{{strategyId}}/legs/batch",
+            "description": "Body = arreglo crudo bajo /hedging. NO uses {legs: []} en esta ruta; solo /strategies lo acepta."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 · Métricas & Payoff",
+      "item": [
+        {
+          "name": "02.1 Métricas financieras (5.8)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-database-selection",
+                "value": "{{databaseTarget}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/hedging-strategies/{{strategyId}}/financial-metrics",
+            "description": "Devuelve netDebitCredit, breakevenPrice, floorProtectionPrice, maxLossTotalUSD y netDelta."
+          },
+          "response": []
+        },
+        {
+          "name": "02.2 Recalcular métricas (5.9)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-database-selection",
+                "value": "{{databaseTarget}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentSpotPrice\": {{currentSpotPrice}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/v1/hedging-strategies/{{strategyId}}/financial-metrics/recalculate",
+            "description": "Recalcula crédito neto, piso y delta desde las patas persistidas. IMPORTANTE: currentSpotPrice se acepta, pero el código actual no reprecía con Black-Scholes; no lo vendas como reprecio."
+          },
+          "response": []
+        },
+        {
+          "name": "02.3 Matriz de Payoff (5.10)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "try {",
+                  "  const res = pm.response.json();",
+                  "  console.log('stepsCount:', res.stepsCount);",
+                  "} catch (e) {}",
+                  "pm.test('Payoff 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-database-selection",
+                "value": "{{databaseTarget}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/hedging-strategies/{{strategyId}}/payoff-matrix?steps={{steps}}&rangePct={{rangePct}}",
+            "description": "steps=25 produce 26 puntos (25 intervalos, extremos inclusivos). rangePct=0.20 significa ±20 % del spot de entrada."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03 · Extras",
+      "item": [
+        {
+          "name": "03.1 Ver subdocumento underlying",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-database-selection",
+                "value": "{{databaseTarget}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/hedging-strategies/{{strategyId}}/underlying",
+            "description": "Demuestra que underlying también es un subdocumento embebido."
+          },
+          "response": []
+        },
+        {
+          "name": "03.2 Actualizar underlying",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-database-selection",
+                "value": "{{databaseTarget}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"spotPriceAtEntry\": 346.5,\n  \"sharesCount\": 100\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/v1/hedging-strategies/{{strategyId}}/underlying",
+            "description": "Opcional. Cambia el spot de entrada y la cantidad de acciones."
+          },
+          "response": []
+        },
+        {
+          "name": "03.3 Cambiar estado de la estrategia",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-database-selection",
+                "value": "{{databaseTarget}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACTIVE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/v1/hedging-strategies/{{strategyId}}/status",
+            "description": "Valores válidos en Mongoose: ACTIVE, CLOSED, EXPIRED. No existe PENDING."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

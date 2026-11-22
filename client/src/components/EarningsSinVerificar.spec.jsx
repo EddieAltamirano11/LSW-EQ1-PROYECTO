@@ -21,11 +21,12 @@ describe('earnings sin verificar en la consulta por core', () => {
 
   it('Fundamental muestra «Earnings sin verificar» con la causa y sin fecha de resultados', () => {
     render(<CoreResultsModal coreId="002" data={sinFecha} onClose={() => {}} />);
-    const [fila] = within(screen.getByRole('table')).getAllByRole('row').slice(1);
-    expect(within(fila).getByText(/Earnings sin verificar/)).toBeTruthy();
+    const fila = within(screen.getByRole('table')).getAllByRole('row')
+      .find(row => within(row).queryByRole('button', { name: /Ver evidencia de AAPL/ }));
+    expect(within(fila).getByText(/Earnings N\/V/)).toBeTruthy();
     fireEvent.click(within(fila).getByRole('button', { name: /Ver evidencia de AAPL/ }));
     const dialogo = screen.getByRole('dialog');
-    expect(within(dialogo).getAllByText(/Earnings sin verificar/).length).toBeGreaterThan(1);
+    expect(within(dialogo).getByText(/Earnings sin verificar/)).toBeTruthy();
     expect(within(dialogo).getByText(causa)).toBeTruthy();
     expect(within(dialogo).queryByText(/2027-01-28/)).toBeNull();
   });

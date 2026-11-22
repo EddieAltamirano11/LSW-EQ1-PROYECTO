@@ -1,7 +1,9 @@
 import React, { Fragment, Suspense, lazy, useEffect, useId, useRef, useState } from 'react';
-import { ChevronDown, ChevronRight, Eye, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, CircleHelp, Eye, X } from 'lucide-react';
 import { CORES_INFO, datosClave, empresasEvaluadas, estadoCore, participacion } from '../services/coresInfo';
 import { CoreDetail, formatNumber } from './coresResultados';
+import ExplicacionCore002 from './ExplicacionCore002';
+import TablaCore002 from './TablaCore002';
 import VistaCoreTecnico from './VistaCoreTecnico';
 
 // Las gráficas se descargan solo al abrir su pestaña.
@@ -10,6 +12,62 @@ const GraficaContribucion = lazy(() => import('./GraficaContribucion'));
 const CON_GRAFICA = ['001', '004', '007'];
 
 const ENFOCABLES = 'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
+const AYUDA_002 = [
+  { titulo: 'Seleccionado', texto: 'El Core 002 se calcula y, además de filtrar, entra a la confluencia con su puntaje y peso base 20 (25 % efectivo con los cinco cores activos). Sus empresas VIABLES pueden seguir al ranking si cumplen el resto de filtros, con puntaje propio.' },
+  { titulo: 'No seleccionado', texto: 'El Core 002 se calcula igual y sigue actuando como filtro de viabilidad (GATE): MARGINAL o NO_VIABLE quedan vetadas y no se les busca collar. Solo cambia que su puntaje no suma a la confluencia: la empresa puede entrar al ranking por los otros cores, siempre que cumpla el resto de filtros, pero sin el aporte del 20 %.' },
+];
+
+function AyudaSeleccion002() {
+  const [abierto, setAbierto] = useState(false);
+  const botonRef = useRef(null);
+  const panelRef = useRef(null);
+  const panelId = useId();
+
+  useEffect(() => {
+    if (abierto) panelRef.current?.focus();
+  }, [abierto]);
+
+  function alPresionarTecla(evento) {
+    if (!abierto || evento.key !== 'Escape') return;
+    evento.stopPropagation();
+    setAbierto(false);
+    botonRef.current?.focus();
+  }
+
+  return (
+    <div className="relative" onKeyDown={alPresionarTecla}>
+      <button
+        ref={botonRef}
+        type="button"
+        aria-label="Qué significa seleccionar el Core 002"
+        aria-expanded={abierto}
+        aria-controls={panelId}
+        onClick={() => setAbierto(valor => !valor)}
+        className="ui-button ui-icon-button"
+      >
+        <CircleHelp className="h-5 w-5" aria-hidden="true" />
+      </button>
+      {abierto && (
+        <div
+          ref={panelRef}
+          id={panelId}
+          role="note"
+          aria-label="Qué significa seleccionar el Core 002"
+          tabIndex={-1}
+          className="absolute left-0 z-10 mt-2 w-[min(24rem,calc(100vw-3rem))] space-y-3 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-panel)] p-3 text-sm shadow-lg"
+        >
+          {AYUDA_002.map(({ titulo, texto }) => (
+            <div key={titulo}>
+              <p className="text-xs font-semibold text-[var(--ui-green)]">{titulo}</p>
+              <p className="mt-1 leading-relaxed text-[var(--ui-ink)]">{texto}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function TablaDeEmpresas({ coreId, data }) {
   const [abierta, setAbierta] = useState(null);
@@ -168,6 +226,7 @@ export default function CoreResultsModal({ coreId, loading, error, data, apiBase
   const tituloId = `${base}-titulo`;
   const conGrafica = CON_GRAFICA.includes(coreId) && Boolean(data) && !loading && !error;
   const visible = !evaluado ? 'calculo' : pestana === 'grafica' && !conGrafica ? 'tabla' : pestana;
+  const es002 = coreId === '002';
 
   useEffect(() => {
     cerrarRef.current?.focus();
@@ -202,7 +261,9 @@ export default function CoreResultsModal({ coreId, loading, error, data, apiBase
     <div className="ui-overlay max-sm:p-0" onMouseDown={evento => evento.target === evento.currentTarget && onClose()}>
       <div
         ref={dialogoRef}
-        className="ui-dialog max-w-4xl max-sm:h-[100dvh] max-sm:max-h-none max-sm:rounded-none"
+        className={`ui-dialog flex flex-col ${es002
+          ? 'w-[95vw] max-w-6xl !max-h-[90vh] max-sm:h-[100dvh] max-sm:!max-h-none max-sm:rounded-none'
+          : 'max-w-4xl max-sm:h-[100dvh] max-sm:max-h-none max-sm:rounded-none'}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={tituloId}
@@ -222,8 +283,8 @@ export default function CoreResultsModal({ coreId, loading, error, data, apiBase
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </header>
-        <div className="ui-dialog-body space-y-3">
-          <div role="tablist" aria-label={`Consulta de ${info.nombre}`} className="ui-segments w-full max-w-sm" style={{ gridTemplateColumns: `repeat(${pestanas.length}, minmax(0, 1fr))` }}>
+        <div className="flex flex-none items-center gap-2 px-3 pb-2 pt-1 sm:px-5">
+          <div role="tablist" aria-label={`Consulta de ${info.nombre}`} className={`ui-segments w-full max-w-sm ${es002 ? '!p-0.5' : ''}`} style={{ gridTemplateColumns: `repeat(${pestanas.length}, minmax(0, 1fr))` }}>
             {pestanas.map(({ id, etiqueta }) => (
               <button
                 key={id}
@@ -233,25 +294,30 @@ export default function CoreResultsModal({ coreId, loading, error, data, apiBase
                 aria-selected={visible === id}
                 aria-controls={`${base}-panel-${id}`}
                 onClick={() => setPestana(id)}
-                className="ui-option py-1.5 text-sm font-semibold"
+                className={`ui-option font-semibold ${es002 ? '!min-h-8 py-1 text-xs' : 'py-1.5 text-sm'}`}
               >
                 {etiqueta}
               </button>
             ))}
           </div>
-          <div role="tabpanel" id={`${base}-panel-${visible}`} aria-labelledby={`${base}-pestana-${visible}`}>
-            {visible === 'calculo' ? (
-              <ComoSeCalcula info={info} evaluado={evaluado} />
-            ) : visible === 'grafica' ? (
-              <GraficaDelCore coreId={coreId} data={data} apiBase={apiBase} token={token} />
-            ) : loading ? (
-              <p role="status" className="text-sm text-[var(--ui-muted)]">Evaluando los cores en vivo…</p>
-            ) : error ? (
-              <p role="alert" className="break-words text-sm text-red-800">{error}</p>
-            ) : (
-              <TablaDeEmpresas coreId={coreId} data={data} />
-            )}
-          </div>
+          {es002 && <AyudaSeleccion002 />}
+        </div>
+        <div role="tabpanel" id={`${base}-panel-${visible}`} aria-labelledby={`${base}-pestana-${visible}`} className="ui-dialog-body min-h-0 flex-1">
+          {visible === 'calculo' ? (
+            coreId === '002'
+              ? <ExplicacionCore002 evaluado={evaluado} />
+              : <ComoSeCalcula info={info} evaluado={evaluado} />
+          ) : visible === 'grafica' ? (
+            <GraficaDelCore coreId={coreId} data={data} apiBase={apiBase} token={token} />
+          ) : loading ? (
+            <p role="status" className="text-sm text-[var(--ui-muted)]">Evaluando los cores en vivo…</p>
+          ) : error ? (
+            <p role="alert" className="break-words text-sm text-red-800">{error}</p>
+          ) : coreId === '002' ? (
+            <TablaCore002 data={data} />
+          ) : (
+            <TablaDeEmpresas coreId={coreId} data={data} />
+          )}
         </div>
       </div>
     </div>

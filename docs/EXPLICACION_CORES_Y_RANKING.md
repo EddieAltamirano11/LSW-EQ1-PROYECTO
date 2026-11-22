@@ -166,10 +166,11 @@ Una vez agregadas las zonas del activo:
   - **Webull Financial Alerts:** Ventana de próximos reportes de ganancias (*earnings*). Si la alerta no responde o no trae una fecha utilizable, **no se estima ninguna fecha**: el riesgo de eventos queda `UNVERIFIED` con la causa y sin evidencia del calendario.
 - **Modelos financieros aplicados:**
   1. **Altman Z-Score:**
-     - Empresas manufactureras públicas (SIC `2000–3999`): $Z = 1.2 X_1 + 1.4 X_2 + 3.3 X_3 + 0.6 X_4 + X_5$ (umbrales `1.81` y `2.99`).
-     - Empresas no manufactureras: $Z'' = 6.56 X_1 + 3.26 X_2 + 6.72 X_3 + 1.05 X_4$ (umbrales `1.10` y `2.60`).
-     - Empresas financieras (SIC `6000–6999`): no aplica Altman Z.
-  2. **Piotroski F-Score:** Evalúa hasta **9 pruebas binarias** de salud contable (ROA positivo, flujo operativo positivo, mejora de ROA, calidad de flujo de caja, reducción de deuda a largo plazo, mejora de liquidez corriente, no dilución de acciones, mejora de margen bruto y mejora de rotación de activos). Requiere al menos 6 pruebas evaluables.
+     - Manufactura (SIC `2000–3999`): $Z = 1.2 X_1 + 1.4 X_2 + 3.3 X_3 + 0.6 X_4 + X_5$ (umbrales `1.81` y `2.99`). La etiqueta de la API «Z · manufactura pública» no distingue emisores públicos de privados: solo aplica el rango SIC.
+     - No manufactura: $Z'' = 6.56 X_1 + 3.26 X_2 + 6.72 X_3 + 1.05 X_4$ (umbrales `1.10` y `2.60`).
+     - Financieras (SIC `6000–6999`): no aplica Altman Z y quedan como `UNKNOWN`.
+     - $X_1$ es capital de trabajo sobre activos, $X_2$ utilidades retenidas sobre activos y $X_3$ utilidad operativa sobre activos. Si falta alguno de estos coeficientes o un denominador no es positivo, no hay Z y la viabilidad es `UNKNOWN`.
+  2. **Piotroski F-Score:** Evalúa hasta **9 pruebas binarias** sobre dos ejercicios consecutivos (ROA positivo, flujo operativo positivo, mejora del ROA, efectivo sobre utilidad, reducción de deuda larga, mejora de razón corriente, no dilución, mejora de margen bruto y mejora de rotación de activos). Requiere al menos 6 pruebas evaluables; cada aprobada suma 1 y el conjunto aporta hasta 20 puntos mediante `aprobadas/evaluables`. No existe un bandeo 0–3 / 4–6 / 7–9 en el código.
 - **Regla de Veto Duro (Elegibilidad):**
   - `NO_VIABLE`: si $Z < Z_{\text{lower}}$.
   - `MARGINAL`: si $Z \le Z_{\text{upper}}$ o `cashFlow <= 0` o `operatingIncome <= 0`.
@@ -181,7 +182,8 @@ Una vez agregadas las zonas del activo:
   - *Solvencia:* $\text{clamp}(45 + (Z - Z_{\text{lower}}) \times 18)$
   - *Crecimiento:* $\text{clamp}(50 + \text{crecimientoIngresos} \times 140)$
   - *Valuación:* $\text{clamp}(100 - 1.6 \cdot \text{P/E} - 2 \cdot \text{P/S})$ (o `20` si no hay utilidades positivas)
-- **Riesgo de Earnings (`eventRisk`):** `HIGH` si faltan $\le 7$ días, `MEDIUM` si faltan $\le 30$ días, `LOW` si faltan $> 30$ días.
+- **Peso y participación:** el peso base es **20**. Si el core está seleccionado, su puntaje entra a la confluencia; con los cinco cores seleccionables activos ese peso equivale al **25 % efectivo**. Si no está seleccionado, no pondera, pero se calcula igual y sigue actuando como filtro de viabilidad (`GATE`): veta a `MARGINAL`/`NO_VIABLE` sin consultar su collar, y la empresa puede entrar al ranking por los otros cores solo si cumple el resto de filtros.
+- **Riesgo de Earnings (`eventRisk`):** `HIGH` si faltan $\le 7$ días, `MEDIUM` si faltan $\le 30$ días, `LOW` si faltan $> 30$ días y `UNVERIFIED` si no hay fecha verificable. Este riesgo **no modifica el puntaje** del Core 002; solo se reporta y afecta al Core 003. Los datos del 002 son estados financieros anuales y la fecha de `earnings`, no velas OHLC (estas pertenecen al Core 001).
 - **Earnings sin verificar (`UNVERIFIED`):** sin fecha de resultados, el Core 002 conserva su puntaje (que no depende de los eventos) con estado `PARTIAL`; el Core 003 se abstiene; la empresa conserva su posición y se marca como parcial (`partial: true`, respuesta `PARTIAL`). La consulta por core lo muestra como «Earnings sin verificar» con la causa.
 
 ---
