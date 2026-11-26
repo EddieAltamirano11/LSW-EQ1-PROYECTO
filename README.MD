@@ -106,6 +106,35 @@ Para probar el panel localmente, inicia la API con `npm run dev` y el cliente co
 
 La consulta de solo lectura usa `POST /api/v2/strategy-screener/run` con el token de la sesión. En Postman está en **Escáner por cores (API v2)** y usa las variables `baseUrlScreener` y `tokenScreener`.
 
+## Instalar Los Eddies como aplicación web
+
+Abre la URL HTTPS del cliente React en Cloudflare Pages o la ruta `/dashboard/` de una instancia de Express que sirva el build. El navegador también permite comprobar la instalación en `localhost`. Las consultas y las órdenes al broker requieren conexión. Si la aplicación instalada abre sin una sesión válida, inicia sesión desde su formulario habitual.
+
+- **Chrome en escritorio.** Abre **Más → Enviar, guardar y compartir → Instalar página como aplicación** y confirma la instalación. [Ayuda de Chrome](https://support.google.com/chrome/answer/9658361?co=GENIE.Platform%3DDesktop&hl=es)
+- **Edge en escritorio.** Abre **Configuración y más → Más herramientas → Aplicaciones → Instala este sitio como una aplicación** y confirma. [Soporte de Microsoft](https://support.microsoft.com/es-es/edge/install-manage-or-uninstall-apps-in-microsoft-edge)
+- **Chrome en Android.** Abre **Más → Instalar y crear acceso directo → Instalar** y sigue las indicaciones. [Ayuda de Chrome para Android](https://support.google.com/chrome/answer/9658361?co=GENIE.Platform%3DAndroid&hl=es)
+- **Safari en iPhone.** Abre **Compartir → Agregar a Inicio**, activa **Abrir como app web** si aparece la opción y toca **Agregar**. [Soporte de Apple](https://support.apple.com/es-mx/guide/iphone/iphea86e5236/ios)
+
+Abre **Los Eddies** desde el icono que aparece en el dispositivo.
+
+### Probar la instalación localmente
+
+Desde la raíz del repositorio, compila el cliente y abre la vista previa:
+
+```bash
+npm --prefix client run build
+npm --prefix client run preview
+```
+
+Abre `http://localhost:4173/` o la URL que imprima Vite. Para probar el mismo build servido por Express, abre `http://localhost:3050/dashboard/` con el servidor del proyecto en ejecución. La barra final forma parte de la URL de entrada.
+
+Puedes comprobar que ambas entradas sirven el manifiesto como JSON:
+
+```powershell
+curl.exe -I http://localhost:4173/manifest.webmanifest
+curl.exe -I http://localhost:3050/dashboard/manifest.webmanifest
+```
+
 ## Mejora de Black-Scholes con OpenSpec
 
 La validación de `POST /api/v1/quant/black-scholes` se desarrolla mediante el cambio
