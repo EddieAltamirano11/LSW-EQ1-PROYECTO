@@ -149,7 +149,7 @@ function GraficaDelCore({ coreId, data, apiBase, token }) {
 
   let contenido;
   if (coreId === '001') {
-    contenido = <VistaCoreTecnico key={simbolo} ticker={simbolo} apiBase={apiBase} token={token} />;
+    contenido = <VistaCoreTecnico key={simbolo} ticker={simbolo} apiBase={apiBase} token={token} cores={empresa?.cores} />;
   } else if (coreId === '004' && core?.result?.eligible) {
     contenido = <GraficaPayoff collar={core.result} symbol={simbolo} />;
   } else if (coreId === '007' && core?.result?.drivers?.length) {

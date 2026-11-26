@@ -29,6 +29,7 @@ import {
 import TradingViewWidget from './TradingViewWidget';
 import { CeldaCores, CeldasCollar } from './RankingCeldas';
 import { collarDeFila } from '../services/rankingCollar';
+import { empresasEvaluadas } from '../services/coresInfo';
 import CriteriaModal from './CriteriaModal';
 import BrokerExecutionModal from './BrokerExecutionModal';
 import { BoletaCollar, BoletaProtectivePut } from './BoletaCoberturas';
@@ -281,6 +282,8 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
     sinDatosEscaner: true,
   };
   const spotActivo = Number.isFinite(activeCandidate.spotPrice) ? activeCandidate.spotPrice : null;
+  const coresDelActivo = empresasEvaluadas(screenerData)
+    .find(empresa => empresa.symbol?.toUpperCase() === selectedAsset.symbol.toUpperCase())?.cores;
 
   // Vista previa real de las coberturas: collar del Core 004 del ranking o del backend, y Put recomendado.
   const [vistaCollar, setVistaCollar] = useState({ fase: 'cargando' });
@@ -333,7 +336,7 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
   // =========================================================================
   // SISTEMA DE 3 SCROLLS SINCRONIZADOS A LA COLUMNA MÁS PEQUEÑA & VIEWPORT
   // =========================================================================
-  const mainContainerRef = useRef(null);
+  const columnGridRef = useRef(null);
   const col1InnerRef = useRef(null);
   const col2InnerRef = useRef(null);
   const col3InnerRef = useRef(null);
@@ -377,17 +380,16 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
       // Esperar a que las 3 columnas hayan pintado su estructura base (mínimo 200px)
       if (h1 < 200 || h2 < 200 || h3 < 200) return;
 
-      // Medir la altura vertical disponible en pantalla dentro de main dejando margen para el fondo gris inferior
-      const availableHeight = mainContainerRef.current
-        ? Math.floor(mainContainerRef.current.clientHeight - 32)
-        : (window.innerHeight - 100);
+      // La cuadrícula ya queda dentro del padding de main.
+      const availableHeight = columnGridRef.current?.clientHeight;
+      if (!availableHeight) return;
 
       // La altura visible de las 3 columnas se adapta a la más pequeña, sin rebasar el espacio visible en pantalla
       const smallest = Math.min(h1, h2, h3);
-      const target = Math.max(Math.min(smallest, availableHeight), 350);
+      const target = Math.min(Math.max(smallest, 350), availableHeight);
 
       // Actualizar solo si hay cambio apreciable (>2px) para evitar micro-saltos
-      if (prevHeightRef.current === null || Math.abs(prevHeightRef.current - target) > 2) {
+      if (prevHeightRef.current === null || prevHeightRef.current > availableHeight || Math.abs(prevHeightRef.current - target) > 2) {
         prevHeightRef.current = target;
         setSyncedColumnHeight(target);
       }
@@ -404,7 +406,7 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
         scheduleUpdate();
       });
 
-      if (mainContainerRef.current) resizeObserver.observe(mainContainerRef.current);
+      if (columnGridRef.current) resizeObserver.observe(columnGridRef.current);
       if (col1InnerRef.current) resizeObserver.observe(col1InnerRef.current);
       if (col2InnerRef.current) resizeObserver.observe(col2InnerRef.current);
       if (col3InnerRef.current) resizeObserver.observe(col3InnerRef.current);
@@ -919,8 +921,9 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
       )}
 
       {/* CONTENEDOR PRINCIPAL: ARQUITECTURA SANTO GRIAL (3 COLUMNAS - FLUIDA EN ESCRITORIO Y SCROLL VERTICAL NATURAL EN CELULARES) */}
-      <main ref={mainContainerRef} className="flex-1 min-h-0 w-full p-2.5 sm:p-3.5 lg:p-5 flex flex-col overflow-y-auto lg:overflow-hidden">
+      <main className="flex-1 min-h-0 w-full p-2.5 sm:p-3.5 lg:p-5 flex flex-col overflow-y-auto lg:overflow-hidden">
         <div
+          ref={columnGridRef}
           className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,19fr)_minmax(0,42fr)_minmax(0,19fr)] flex-1 min-h-0 w-full"
           style={{
             gridTemplateColumns: isMultiColumn
@@ -1205,6 +1208,8 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                 companyName={selectedAsset.companyName}
                 apiBase={apiBase}
                 token={session?.token}
+                spot={spotActivo}
+                cores={coresDelActivo}
               />
             </div>
 

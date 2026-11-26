@@ -16,11 +16,12 @@ function vistaGuardada() {
   }
 }
 
-export default function TradingViewWidget({ symbol = 'NASDAQ:AAPL', ticker, companyName = 'Apple Inc.', apiBase = '', token }) {
+export default function TradingViewWidget({ symbol = 'NASDAQ:AAPL', ticker, companyName = 'Apple Inc.', apiBase = '', token, spot, cores }) {
   // TradingView es la vista por defecto; la elección se conserva mientras dure la sesión del navegador.
   const [vista, setVista] = useState(vistaGuardada);
   const [isDiagnosticOpen, setIsDiagnosticOpen] = useState(false);
   const [isChartActive, setIsChartActive] = useState(false);
+  const [contenedorControles, setContenedorControles] = useState(null);
   const techContainerRef = useRef(null);
   const chartWrapperRef = useRef(null);
 
@@ -102,43 +103,51 @@ export default function TradingViewWidget({ symbol = 'NASDAQ:AAPL', ticker, comp
 
   return (
     <div className="min-w-0 p-4 sm:p-5" aria-labelledby="tradingview-title">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex min-w-0 flex-1 basis-72 items-center gap-3">
-          <span className="ui-section-icon"><LineChart className="h-5 w-5" aria-hidden="true" /></span>
-          <div className="min-w-0">
-            <h2 id="tradingview-title" className="text-lg font-bold tracking-tight sm:text-xl">
-              Trading View
-            </h2>
-          </div>
+      <div className="mb-2 flex items-center gap-3">
+        <span className="ui-section-icon"><LineChart className="h-5 w-5" aria-hidden="true" /></span>
+        <h2 id="tradingview-title" className="text-lg font-bold tracking-tight sm:text-xl">
+          Trading View
+        </h2>
+      </div>
+      <div className="ui-chart-toolbar mb-2" role="group" aria-label="Controles de la gráfica">
+        <div className="ui-segments shrink-0 grid-cols-2" role="group" aria-label="Vista de la gráfica">
+          {VISTAS.map(({ id, etiqueta }) => (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={vista === id}
+              onClick={() => elegirVista(id)}
+              className="ui-option"
+            >
+              {etiqueta}
+            </button>
+          ))}
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="ui-segments grid-cols-2 w-56" role="group" aria-label="Vista de la gráfica">
-            {VISTAS.map(({ id, etiqueta }) => (
-              <button
-                key={id}
-                type="button"
-                aria-pressed={vista === id}
-                onClick={() => elegirVista(id)}
-                className="ui-option py-1.5 text-sm font-semibold"
-              >
-                {etiqueta}
-              </button>
-            ))}
-          </div>
-          <a
-            href={`https://www.tradingview.com/symbols/${cleanSymbol.replace(':', '-')}/`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="ui-button text-sm font-semibold"
-          >
-            <span>Abrir en TradingView</span>
-            <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />
-          </a>
-        </div>
+        <a
+          href={`https://www.tradingview.com/symbols/${cleanSymbol.replace(':', '-')}/`}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Abrir en TradingView"
+          title="Abrir en TradingView"
+          className={`ui-button shrink-0 whitespace-nowrap ${vista === 'tecnico' ? 'ui-icon-button' : ''}`}
+        >
+          {vista === 'tradingview' && <span>Abrir en TradingView</span>}
+          <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />
+        </a>
+        <div ref={setContenedorControles} className="contents" />
       </div>
 
       {vista === 'tecnico' ? (
-        <VistaCoreTecnico ticker={tickerTecnico} apiBase={apiBase} token={token} onVolver={() => elegirVista('tradingview')} />
+        <VistaCoreTecnico
+          key={tickerTecnico}
+          ticker={tickerTecnico}
+          apiBase={apiBase}
+          token={token}
+          spot={spot}
+          cores={cores}
+          contenedorControles={contenedorControles}
+          onVolver={() => elegirVista('tradingview')}
+        />
       ) : (
       /* Gráfico TradingView Principal a 100% de Ancho */
       <div className="space-y-4">
@@ -152,7 +161,7 @@ export default function TradingViewWidget({ symbol = 'NASDAQ:AAPL', ticker, comp
             key={cleanSymbol}
             src={chartEmbedUrl}
             title={`Gráfico Interactivo TradingView - ${cleanSymbol}`}
-            className={`w-full rounded-lg border-none h-[400px] sm:h-[500px] lg:h-[700px] ${
+            className={`ui-technical-chart rounded-lg border-none ${
               isChartActive ? 'pointer-events-auto' : 'pointer-events-none'
             }`}
             allow="clipboard-write; fullscreen; unload"

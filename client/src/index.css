@@ -68,6 +68,13 @@ body::-webkit-scrollbar,
   font-family: 'Segoe UI', system-ui, sans-serif;
 }
 
+@media (min-width: 1024px) {
+  html:has(#vista-dashboard) {
+    overflow: hidden;
+    overscroll-behavior-y: none;
+  }
+}
+
 .app-shell ::selection {
   background: var(--ui-accent);
   color: var(--ui-forest);
@@ -109,6 +116,28 @@ body::-webkit-scrollbar,
   border-radius: 1rem;
   background: var(--ui-surface);
   box-shadow: 0 5px 20px #233a2908;
+}
+
+.ui-technical-chart {
+  width: 100%;
+  aspect-ratio: 16 / 11;
+  min-height: 320px;
+  max-height: 460px;
+}
+
+.ui-chart-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-width: 0;
+  overflow-x: auto;
+  padding: 0.3125rem;
+  scrollbar-width: thin;
+}
+
+.ui-chart-toolbar .ui-option {
+  padding-inline: 0.5rem;
+  white-space: nowrap;
 }
 
 .ui-label {

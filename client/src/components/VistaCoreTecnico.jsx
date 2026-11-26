@@ -7,13 +7,13 @@ const GraficaTecnica = lazy(() => import('./GraficaTecnica'));
 
 function Cargando({ texto }) {
   return (
-    <div role="status" className="flex h-[360px] items-center justify-center rounded-lg bg-[var(--ui-page)] text-sm text-[var(--ui-muted)] sm:h-[460px] lg:h-[600px]">
+    <div role="status" className="ui-technical-chart flex items-center justify-center rounded-lg bg-[var(--ui-page)] text-sm text-[var(--ui-muted)]">
       {texto}
     </div>
   );
 }
 
-export default function VistaCoreTecnico({ ticker, apiBase, token, onVolver }) {
+export default function VistaCoreTecnico({ ticker, apiBase, token, spot, cores, onVolver, contenedorControles }) {
   const [estado, setEstado] = useState({ fase: 'cargando' });
   const resumenId = useId();
 
@@ -57,7 +57,13 @@ export default function VistaCoreTecnico({ ticker, apiBase, token, onVolver }) {
   return (
     <div className="space-y-3">
       <Suspense fallback={<Cargando texto="Cargando la gráfica…" />}>
-        <GraficaTecnica serie={serie} descripcionId={resumenId} />
+        <GraficaTecnica
+          serie={serie}
+          descripcionId={resumenId}
+          spot={spot}
+          cores={cores}
+          contenedorControles={contenedorControles}
+        />
       </Suspense>
       <div id={resumenId} className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-page)] p-3 sm:p-4">
         <p className="mb-1.5 text-sm font-bold text-[var(--ui-green)]">Resumen del Core 001</p>
