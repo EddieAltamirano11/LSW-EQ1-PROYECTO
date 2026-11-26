@@ -25,3 +25,7 @@ El cliente pasó 85 pruebas y compiló correctamente. Se validaron OpenSpec en m
 Codex actualizó el prompt, la validación y el panel para presentar las mejores candidatas con motivos breves y riesgos respaldados cuando correspondan. Con un transporte controlado se verificó el orden de las sugerencias, la lista de riesgos vacía, las citas y la igualdad del ranking antes y después de la consulta. El cliente comprobó que el apartado de riesgos solo aparece en las tarjetas que lo necesitan.
 
 Pasaron 146 pruebas de Node.js, 86 de React, el build y las validaciones de OpenSpec y OpenAPI. La redacción generada por Gemini en vivo queda fuera de esa verificación.
+
+## Primera sugerencia y explicación de riesgos
+
+Codex añadió «La que mejor califica» a la primera candidata y «Por qué podría no convenir» a las tarjetas con riesgos. Pasaron las pruebas dirigidas de ambos proveedores y las nueve pruebas del panel. Una consulta en vivo a Gemini 3.1 Flash-Lite con una empresa ficticia devolvió un motivo de espera en lenguaje cotidiano y citó la evidencia suministrada.

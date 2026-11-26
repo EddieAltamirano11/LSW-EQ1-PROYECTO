@@ -135,7 +135,7 @@ describe('consulta de resultados por core', () => {
     expect(request).toHaveBeenCalledTimes(2);
   });
 
-  it('muestra las mejores candidatas en el orden recibido y solo presenta los riesgos informados', async () => {
+  it('destaca a la primera candidata y explica por qué una opción podría no convenir cuando hay un riesgo', async () => {
     const recommendations = [
       { symbol: 'MSFT', verdict: 'CONSIDER', reasons: [{ text: 'La protección cuesta poco.' }], risks: [], evidence: [] },
       { symbol: 'AAPL', verdict: 'CONSIDER', reasons: [{ text: 'El collar ofrece un buen margen de protección.' }],
@@ -147,11 +147,11 @@ describe('consulta de resultados por core', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Sugerir empresas' }));
     expect(await screen.findByText('Mejores candidatas')).toBeTruthy();
     const [first, second] = within(screen.getByRole('region', { name: 'Core de IA' })).getAllByRole('article');
-    expect(within(first).getByRole('heading').textContent).toBe('MSFT');
+    expect(within(first).getByRole('heading').textContent).toBe('MSFT · La que mejor califica');
     expect(within(first).getByText('La protección cuesta poco.')).toBeTruthy();
-    expect(within(first).queryByText('Riesgos a considerar')).toBeNull();
+    expect(within(first).queryByText('Por qué podría no convenir')).toBeNull();
     expect(within(second).getByRole('heading').textContent).toBe('AAPL');
-    expect(within(second).getByText('Riesgos a considerar')).toBeTruthy();
+    expect(within(second).getByText('Por qué podría no convenir')).toBeTruthy();
     expect(within(second).getByText('El próximo reporte podría mover el precio.')).toBeTruthy();
   });
 

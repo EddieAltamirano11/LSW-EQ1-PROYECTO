@@ -204,7 +204,10 @@ test('Gemini es el proveedor predeterminado y su cuota no activa llamadas a Open
         assert.equal(url, 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent');
         assert.equal(options.headers['x-goog-api-key'], 'clave-gemini-de-pruebas');
         const body = JSON.parse(options.body);
-        assert.ok(body.systemInstruction.parts[0].text.includes('Collar Spread'));
+        const instructions = body.systemInstruction.parts[0].text;
+        assert.match(instructions, /Collar Spread/);
+        assert.match(instructions, /podría no convenir/);
+        assert.match(instructions, /frase corta y cotidiana/);
         assert.deepEqual(JSON.parse(body.contents[0].parts[0].text), input);
         assert.equal(body.generationConfig.responseMimeType, 'application/json');
         assert.deepEqual(body.generationConfig.responseJsonSchema.required, ['recommendations']);

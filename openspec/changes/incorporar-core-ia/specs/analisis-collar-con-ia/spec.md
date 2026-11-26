@@ -24,6 +24,11 @@ La consulta SHALL devolver el instante de corte y el horizonte analizado. El ver
 
 Las sugerencias SHALL presentar las candidatas elegidas de mejor a menor ajuste al Collar Spread para el horizonte solicitado. Cada empresa SHALL tener uno o dos motivos breves en español, con palabras cotidianas y los términos técnicos indispensables, y hasta dos riesgos relevantes respaldados por la evidencia. El panel SHALL omitir el apartado de riesgos cuando la lista esté vacía.
 
+#### Scenario: Identificar la primera sugerencia y explicar sus riesgos
+- **WHEN** el Core de IA presenta sugerencias
+- **THEN** el panel identifica a la primera como «La que mejor califica» para la estrategia analizada
+- **AND** cuando hay riesgos, aparecen bajo «Por qué podría no convenir» y explican en lenguaje cotidiano qué podría pasar y cómo afecta la decisión
+
 #### Scenario: Resumen sin un riesgo relevante respaldado
 - **WHEN** el modelo recomienda una empresa, explica su elección y devuelve una lista vacía de riesgos
 - **THEN** la API acepta el resultado y el panel muestra los motivos de la recomendación

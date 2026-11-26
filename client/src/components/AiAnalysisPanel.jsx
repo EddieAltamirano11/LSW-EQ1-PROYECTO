@@ -111,11 +111,15 @@ export default function AiAnalysisPanel({ apiBase, token, symbol, activeCores, d
           </p>
           {data.message && <p>{data.message}</p>}
           {isSuggestion && data.recommendations.length > 0 && <p className="font-bold">Mejores candidatas</p>}
-          {data.recommendations.map(({ symbol: ticker, verdict, reasons, risks, evidence }) => (
+          {data.recommendations.map(({ symbol: ticker, verdict, reasons, risks, evidence }, index) => (
             <article key={ticker} className="space-y-2 rounded-md border border-[var(--ui-border)] p-2.5">
-              <h4 className="font-bold text-[var(--ui-green)]">{ticker}{!isSuggestion && ` · ${verdicts[verdict]}`}</h4>
+              <h4 className="font-bold text-[var(--ui-green)]">
+                {ticker}
+                {isSuggestion && index === 0 && ' · La que mejor califica'}
+                {!isSuggestion && ` · ${verdicts[verdict]}`}
+              </h4>
               <Puntos title="Por qué" points={reasons} evidence={evidence} />
-              <Puntos title="Riesgos a considerar" points={risks} evidence={evidence} />
+              <Puntos title="Por qué podría no convenir" points={risks} evidence={evidence} />
             </article>
           ))}
         </div>
