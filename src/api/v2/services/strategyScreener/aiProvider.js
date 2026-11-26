@@ -1,4 +1,5 @@
 import boom from '@hapi/boom';
+import { setTimeout as wait } from 'node:timers/promises';
 
 const point = {
   type: 'object',
@@ -59,30 +60,41 @@ function createStructuredProvider({ name, keyName, modelName, defaultModel, buil
   now = Date.now,
 } = {}) {
   let recentRequests = [];
+  function reserveRequest() {
+    const timestamp = now();
+    recentRequests = recentRequests.filter(time => timestamp - time < 60_000);
+    if (recentRequests.length >= 12) return false;
+    recentRequests.push(timestamp);
+    return true;
+  }
+
   return function prepare() {
     const key = apiKey();
     if (!key) throw boom.serverUnavailable(`Core de IA no configurado. Define ${keyName} en el servidor.`);
 
     return async function complete(input, signal) {
       signal?.throwIfAborted();
-      const timestamp = now();
-      recentRequests = recentRequests.filter(time => timestamp - time < 60_000);
-      if (recentRequests.length >= 12) throw boom.tooManyRequests('El Core de IA alcanzó su límite temporal. Inténtalo en un minuto.');
-      recentRequests.push(timestamp);
+      if (!reserveRequest()) throw boom.tooManyRequests('El Core de IA alcanzó su límite temporal. Inténtalo en un minuto.');
 
       const selectedModel = model();
-      const payload = buildRequest(key, selectedModel, JSON.stringify(input));
-      const timeout = AbortSignal.timeout(30_000);
+      const payload = buildRequest(key, selectedModel, input);
+      const timeout = AbortSignal.timeout(payload.timeoutMs ?? 30_000);
       const requestSignal = signal ? AbortSignal.any([signal, timeout]) : timeout;
+      const requestOptions = {
+        method: 'POST',
+        signal: requestSignal,
+        headers: { ...payload.headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload.body),
+      };
       let response;
       let body;
       try {
-        response = await request(payload.url, {
-          method: 'POST',
-          signal: requestSignal,
-          headers: { ...payload.headers, 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload.body),
-        });
+        response = await request(payload.url, requestOptions);
+        if (payload.retryUnavailable && response.status === 503) {
+          await response.body?.cancel();
+          await wait(1000, undefined, { signal: requestSignal });
+          if (reserveRequest()) response = await request(payload.url, requestOptions);
+        }
         if (response.ok) body = await response.json();
       } catch (error) {
         signal?.throwIfAborted();
@@ -92,6 +104,9 @@ function createStructuredProvider({ name, keyName, modelName, defaultModel, buil
       }
       if (response.status === 429) {
         throw boom.tooManyRequests(`${name} alcanzó su límite de uso. Consulta la cuota de tu proyecto.`);
+      }
+      if (payload.retryUnavailable && response.status === 503) {
+        throw boom.serverUnavailable('Gemini no está disponible en este momento. Inténtalo más tarde.');
       }
       if (!response.ok) throw boom.serverUnavailable(`${name} rechazó la consulta (HTTP ${response.status}).`);
 
@@ -121,7 +136,7 @@ export function createOpenAiProvider(options) {
           model,
           store: false,
           instructions,
-          input,
+          input: JSON.stringify(input),
           max_output_tokens: 3000,
           text: { format: { type: 'json_schema', name: 'collar_analysis', strict: true, schema } },
         },
@@ -146,12 +161,15 @@ export function createGeminiProvider(options) {
     modelName: 'GEMINI_AI_MODEL',
     defaultModel: 'gemini-3.1-flash-lite',
     buildRequest(key, model, input) {
+      const comparingCandidates = input.scope === 'CANDIDATES';
       return {
         url: `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+        timeoutMs: comparingCandidates ? 60_000 : 30_000,
+        retryUnavailable: comparingCandidates,
         headers: { 'x-goog-api-key': key },
         body: {
           systemInstruction: { parts: [{ text: instructions }] },
-          contents: [{ role: 'user', parts: [{ text: input }] }],
+          contents: [{ role: 'user', parts: [{ text: JSON.stringify(input) }] }],
           generationConfig: {
             responseMimeType: 'application/json',
             responseJsonSchema: schema,

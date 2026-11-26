@@ -24,3 +24,7 @@
 - [x] 5.1 Pedir candidatas ordenadas de mejor a menor ajuste, con motivos sencillos y riesgos cuando correspondan. Alinear la validación y el panel.
 - [x] 5.2 Verificar recomendaciones con y sin riesgos, citas y regresiones del ranking.
 - [x] 5.3 Permitir contexto general en motivos y riesgos, mostrar su origen en el panel y probar que las citas se validan.
+
+## 6. Tiempo de espera de sugerencias
+
+- [x] 6.1 Ampliar el tiempo de espera de Gemini al sugerir empresas y verificar una respuesta tardía, la cancelación al vencer el plazo y la recuperación ante un 503 transitorio.

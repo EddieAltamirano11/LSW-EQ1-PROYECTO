@@ -17,7 +17,7 @@ El análisis interpreta los diagnósticos del escáner para un Collar Spread con
 
 ## Risks / Trade-offs
 
-- El nivel gratuito de Gemini tiene cuotas. El servidor devuelve la causa si el proveedor rechaza la solicitud o alcanza su cuota y usa un límite temporal por proceso y un tiempo máximo por consulta.
+- El nivel gratuito de Gemini tiene cuotas. Después de reunir la evidencia, la consulta de sugerencias con Gemini admite hasta 60 segundos. Si Google devuelve `503`, el backend intenta la misma consulta una vez más dentro del mismo plazo. El análisis individual admite hasta 30 segundos.
 - Un modelo puede interpretar una métrica de manera imperfecta. La respuesta identifica el alcance de la evaluación y adjunta la evidencia del servidor para que el usuario pueda contrastarla.
 
 ## Migration Plan

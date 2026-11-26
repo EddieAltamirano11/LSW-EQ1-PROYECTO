@@ -248,6 +248,73 @@ test('Gemini es el proveedor predeterminado y su cuota no activa llamadas a Open
   assert.equal(geminiCalls, 3);
 });
 
+test('Gemini admite una sugerencia tardía y cancela al vencer el plazo de cada consulta', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  t.mock.method(AbortSignal, 'timeout', duration => {
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), duration);
+    return controller.signal;
+  });
+
+  let responseDelay = 35_000;
+  const prepare = createGeminiProvider({
+    apiKey: () => 'clave-gemini-de-pruebas',
+    model: () => 'gemini-3.1-flash-lite',
+    request: (_url, { signal }) => new Promise((resolve, reject) => {
+      const timer = setTimeout(() => resolve(Response.json({
+        candidates: [{ finishReason: 'STOP', content: { parts: [{ text: '{"recommendations":[]}' }] } }],
+      })), responseDelay);
+      signal.addEventListener('abort', () => {
+        clearTimeout(timer);
+        reject(signal.reason);
+      }, { once: true });
+    }),
+  });
+  const complete = prepare();
+  const isTimeout = error => error.output?.statusCode === 503 && error.message === 'Gemini no respondió a tiempo.';
+
+  const suggestions = complete({ scope: 'CANDIDATES' });
+  t.mock.timers.tick(35_000);
+  assert.deepEqual((await suggestions).result, { recommendations: [] });
+
+  const individual = assert.rejects(complete({ scope: 'SYMBOL' }), isTimeout);
+  t.mock.timers.tick(30_000);
+  await individual;
+
+  responseDelay = 65_000;
+  const lateSuggestions = assert.rejects(complete({ scope: 'CANDIDATES' }), isTimeout);
+  t.mock.timers.tick(60_000);
+  await lateSuggestions;
+});
+
+test('Gemini reintenta una vez el 503 de sugerencias con la misma solicitud y el mismo plazo', async () => {
+  const statuses = [503, 200, 503, 503, 503];
+  const requests = [];
+  const prepare = createGeminiProvider({
+    apiKey: () => 'clave-gemini-de-pruebas',
+    model: () => 'gemini-3.1-flash-lite',
+    request: async (_url, options) => {
+      requests.push(options);
+      const status = statuses.shift();
+      return Response.json({ candidates: [
+        { finishReason: 'STOP', content: { parts: [{ text: '{"recommendations":[]}' }] } },
+      ] }, { status });
+    },
+  });
+  const complete = prepare();
+  const input = { scope: 'CANDIDATES' };
+  assert.deepEqual((await complete(input)).result, { recommendations: [] });
+  assert.equal(requests.length, 2);
+  assert.equal(requests[0].body, requests[1].body);
+  assert.equal(requests[0].signal, requests[1].signal);
+
+  await assert.rejects(complete(input), error =>
+    error.output?.statusCode === 503 && error.message.includes('Gemini no está disponible'));
+  assert.equal(requests.length, 4);
+  await assert.rejects(complete({ scope: 'SYMBOL' }), error => error.output?.statusCode === 503);
+  assert.equal(requests.length, 5);
+});
+
 test('001 combina temporalidades, requiere volumen en ruptura y expone la cobertura', () => {
   const trend = technicalCore(history());
   assert.equal(trend.result.trend, 'UP');

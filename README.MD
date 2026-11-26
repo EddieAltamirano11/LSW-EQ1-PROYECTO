@@ -112,6 +112,8 @@ El proveedor predeterminado es Gemini 3.1 Flash-Lite. Para probar con la cuota g
 
 En **Cores & Fuentes Cuantitativas**, pulsa **Sugerir empresas** o selecciona una fila y pulsa **Analizar** con su ticker. El panel usa el horizonte y los cores seleccionados para mostrar motivos, riesgos y evidencia fechada. Cuando el modelo genera el análisis, su nombre aparece junto al corte. Si se agota la cuota de Gemini, el panel muestra el error.
 
+Después de reunir los datos del escáner, el servidor espera hasta 60 segundos a Gemini para **Sugerir empresas**. Si Google responde con un `503`, el servidor puede reintentar una vez dentro de ese mismo plazo. Para analizar un ticker espera hasta 30 segundos.
+
 Puedes elegir otro modelo de Gemini con salidas estructuradas mediante `GEMINI_AI_MODEL`. Para usar OpenAI, configura `AI_PROVIDER=openai` y `OPENAI_API_KEY`. Ese proveedor se cobra por uso y usa GPT-6 Luna de forma predeterminada.
 
 La ruta autenticada `POST /api/v2/strategy-screener/ai-analysis` ofrece ambas consultas como solicitudes separadas en la carpeta de Postman **Escáner por cores (API v2)**.

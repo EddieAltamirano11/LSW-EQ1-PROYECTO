@@ -64,6 +64,16 @@ El Core de IA SHALL usar Gemini 3.1 Flash-Lite por defecto y permitir selecciona
 - **WHEN** Gemini responde `429`
 - **THEN** la consulta informa la cuota agotada con `429` y termina sin llamar a otro proveedor
 
+#### Scenario: Gemini tarda más en comparar candidatas
+- **WHEN** Gemini recibe una consulta de sugerencias y responde después de 30 segundos pero dentro de 60
+- **THEN** el servidor procesa la respuesta y devuelve las sugerencias
+- **AND** si se agotan los 60 segundos, responde `503` con el motivo del tiempo de espera
+
+#### Scenario: Gemini responde 503 al comparar candidatas
+- **WHEN** Google responde `503` mientras procesa una consulta de sugerencias
+- **THEN** el servidor puede repetir la misma solicitud una vez dentro del mismo plazo y del límite de solicitudes al modelo
+- **AND** si Gemini continúa indisponible, el panel informa el problema
+
 ### Requirement: Consulta de IA en el panel de cores
 
 El panel SHALL ofrecer «Sugerir empresas» y «Analizar» con el ticker seleccionado. Las solicitudes SHALL iniciarse por acción explícita del usuario y reflejar los filtros actuales, el símbolo, el corte y la estrategia. El panel SHALL mostrar resultados, motivos, riesgos, fuentes y mensajes de carga o error. Si cambia el ticker o los filtros, SHALL retirar cualquier resultado que corresponda al contexto anterior.

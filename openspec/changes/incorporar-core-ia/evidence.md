@@ -33,3 +33,9 @@ Codex añadió «La que mejor califica» a la primera candidata y «Por qué pod
 ## Contexto general del modelo
 
 Codex ajustó el prompt para que el modelo pueda complementar los datos del escáner. Pasaron 146 pruebas de Node.js y 86 de React. Se verificaron la etiqueta de contexto, la validación de citas y la regresión del ranking. Gemini 3.1 Flash-Lite aceptó el esquema actualizado y devolvió un punto sin cita en una consulta en vivo con una empresa ficticia.
+
+## Tiempo de espera de sugerencias
+
+Codex amplió de 30 a 60 segundos el plazo para comparar candidatas con Gemini y añadió un reintento dentro del mismo plazo ante un `503` de Google. Se reprodujeron en vivo el tiempo de espera y un `503` de Google antes del ajuste final. La prueba posterior devolvió tres sugerencias válidas de diez empresas ficticias en 1.9 segundos.
+
+Pasaron 148 pruebas de Node.js, incluidas una respuesta a los 35 segundos, la cancelación al vencer el plazo y la recuperación tras un `503` controlado. La verificación en Render queda pendiente de un despliegue.
