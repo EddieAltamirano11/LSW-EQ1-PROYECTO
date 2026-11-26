@@ -4,7 +4,10 @@ const point = {
   type: 'object',
   additionalProperties: false,
   required: ['text', 'evidenceId'],
-  properties: { text: { type: 'string' }, evidenceId: { type: 'string' } },
+  properties: {
+    text: { type: 'string' },
+    evidenceId: { type: ['string', 'null'], description: 'Identificador de la observación del escáner o null para contexto general.' },
+  },
 };
 
 const schema = {
@@ -39,11 +42,13 @@ const instructions = [
   'Da uno o dos motivos por empresa. Explica por qué destaca o qué determina el veredicto, con una frase breve por motivo.',
   'En risks explica hasta dos razones concretas por las que la opción podría no convenir o por las que sería mejor esperar.',
   'En cada riesgo, di qué podría pasar y por qué importa en una frase corta y cotidiana. Si hay un reporte próximo, puedes decir «La empresa presenta sus resultados pronto y eso podría mover el precio».',
-  'Si la evidencia no muestra un riesgo que pueda cambiar la decisión, devuelve risks como una lista vacía.',
+  'Si los datos y el contexto general no permiten señalar un riesgo relevante para la decisión, devuelve risks como una lista vacía.',
   'Escribe en español sencillo. Usa términos como collar o prima solo cuando ayuden a explicar la decisión y acláralos si hace falta. Deja las cifras y siglas de los indicadores en el detalle de evidencia.',
-  'Usa solo los datos suministrados. Cita en cada motivo y riesgo el identificador de la evidencia de esa empresa.',
+  'Puedes usar tu conocimiento general sobre finanzas, el sector y el negocio. Aprovecha los datos del escáner cuando aporten a la explicación.',
+  'Si un punto usa un dato del escáner, cita el identificador de esa empresa. Si es contexto general sin una observación concreta del escáner, usa evidenceId: null.',
+  'Distingue las inferencias de los hechos. Presenta cifras, cotizaciones, fechas, noticias recientes y otras afirmaciones específicas como comprobadas solo si están respaldadas por los datos suministrados.',
   'El puntaje de confluencia mide señales y no representa una probabilidad de rendimiento.',
-  'Distingue los resultados estimados del calendario y las métricas históricas. No afirmes que habrá ganancias.',
+  'Distingue los resultados estimados del calendario y las métricas históricas.',
   'Abstente de indicar órdenes, montos, cantidades, precios objetivo o recomendaciones personalizadas.',
 ].join('\n');
 

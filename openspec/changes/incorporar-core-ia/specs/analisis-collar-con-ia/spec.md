@@ -20,16 +20,22 @@ Ofrecer una evaluación informativa de empresas para Collar Spread con pronuncia
 
 ### Requirement: Veredicto con motivos, riesgos y fuentes
 
-La consulta SHALL devolver el instante de corte y el horizonte analizado. El veredicto por empresa SHALL indicar `CONSIDER`, `AVOID`, `WAIT` o `INSUFFICIENT_DATA`. Las conclusiones generadas SHALL referenciar evidencia de mercado o diagnósticos del servidor de la empresa correspondiente. La evidencia SHALL incluir fuente e instante de observación. La falta de datos esenciales y los vetos de viabilidad o de liquidez SHALL conservar su significado. El modelo SHALL recibir únicamente diagnósticos y contexto de mercado necesario para la consulta.
+La consulta SHALL devolver el instante de corte y el horizonte analizado. El veredicto por empresa SHALL indicar `CONSIDER`, `AVOID`, `WAIT` o `INSUFFICIENT_DATA`. Los motivos y riesgos que usen datos del escáner SHALL referenciar la evidencia correspondiente, con su fuente e instante de observación. El modelo SHALL recibir únicamente los diagnósticos y el contexto de mercado necesarios para la consulta.
 
-Las sugerencias SHALL presentar las candidatas elegidas de mejor a menor ajuste al Collar Spread para el horizonte solicitado. Cada empresa SHALL tener uno o dos motivos breves en español, con palabras cotidianas y los términos técnicos indispensables, y hasta dos riesgos relevantes respaldados por la evidencia. El panel SHALL omitir el apartado de riesgos cuando la lista esté vacía.
+El modelo puede complementar el análisis con conocimiento general de finanzas, del negocio y del sector. Los puntos de contexto general SHALL devolver `evidenceId: null` y aparecer como «Contexto general». Los hechos específicos de la empresa presentados como comprobados SHALL estar respaldados por la evidencia suministrada. La falta de datos esenciales y los vetos de viabilidad o de liquidez SHALL conservar su significado.
+
+Las sugerencias SHALL presentar las candidatas elegidas de mejor a menor ajuste al Collar Spread para el horizonte solicitado. Cada empresa SHALL tener uno o dos motivos breves en español, con palabras cotidianas y los términos técnicos indispensables, y hasta dos riesgos relevantes. El panel SHALL omitir el apartado de riesgos cuando la lista esté vacía.
+
+#### Scenario: Contexto general junto a un dato del escáner
+- **WHEN** el modelo devuelve un motivo que cita un dato del escáner y un riesgo que describe un efecto general
+- **THEN** el panel muestra la fuente del motivo y presenta el riesgo como contexto general
 
 #### Scenario: Identificar la primera sugerencia y explicar sus riesgos
 - **WHEN** el Core de IA presenta sugerencias
 - **THEN** el panel identifica a la primera como «La que mejor califica» para la estrategia analizada
 - **AND** cuando hay riesgos, aparecen bajo «Por qué podría no convenir» y explican en lenguaje cotidiano qué podría pasar y cómo afecta la decisión
 
-#### Scenario: Resumen sin un riesgo relevante respaldado
+#### Scenario: Resumen sin un riesgo relevante
 - **WHEN** el modelo recomienda una empresa, explica su elección y devuelve una lista vacía de riesgos
 - **THEN** la API acepta el resultado y el panel muestra los motivos de la recomendación
 
@@ -52,7 +58,7 @@ El Core de IA SHALL usar Gemini 3.1 Flash-Lite por defecto y permitir selecciona
 
 #### Scenario: Probar con Gemini
 - **WHEN** el servidor tiene una clave de Gemini y se solicita un análisis con evidencia suficiente
-- **THEN** el servidor llama a Gemini, devuelve el modelo usado y verifica los motivos y riesgos contra la evidencia del escáner
+- **THEN** el servidor llama a Gemini, devuelve el modelo usado y verifica que las citas correspondan a la evidencia del escáner
 
 #### Scenario: Cuota de Gemini agotada
 - **WHEN** Gemini responde `429`
