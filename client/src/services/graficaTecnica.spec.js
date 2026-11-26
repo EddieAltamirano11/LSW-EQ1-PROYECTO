@@ -90,6 +90,15 @@ describe('capas del activo seleccionado', () => {
     expect(sinVerificar.resultados.desde).toBeNull();
     expect(sinVerificar.ventanaResultados).toBeNull();
   });
+
+  it('dibuja el evento sobre su sesión de reacción y conserva la fecha de publicación', () => {
+    const evento = { headline: 'Noticia tras el cierre', publishedAt: '2026-11-19T22:30:00Z',
+      reaction: { session: '2026-11-20', status: 'AVAILABLE' } };
+    const cores = { '006': { result: { events: [evento], headlines: [] } } };
+    const { noticias, diasNoticias } = prepararEventosDelActivo(serieTecnica, cores);
+    expect(noticias).toEqual([{ ...evento, fecha: '2026-11-19' }]);
+    expect(diasNoticias).toEqual(['2026-11-20']);
+  });
 });
 
 describe('resumenTecnico', () => {

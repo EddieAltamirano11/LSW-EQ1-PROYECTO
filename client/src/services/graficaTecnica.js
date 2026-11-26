@@ -53,7 +53,8 @@ export function prepararNivelesDelActivo(spot, collar) {
 export function prepararEventosDelActivo(serie, cores) {
   const sesiones = [...serie.candles.map(vela => vela.time), ...(serie.upcoming ?? [])];
   const sesionesDisponibles = new Set(sesiones);
-  const titulos = cores?.['006']?.result?.headlines ?? [];
+  const coreNoticias = cores?.['006']?.result;
+  const titulos = coreNoticias?.events ?? coreNoticias?.headlines ?? [];
   const noticias = titulos.flatMap(noticia => {
     const instante = Date.parse(noticia.publishedAt);
     if (!noticia.headline || !Number.isFinite(instante)) return [];
@@ -71,7 +72,7 @@ export function prepararEventosDelActivo(serie, cores) {
       ? { desde, hasta, estimado: evento.estimated === true }
       : { desde: null, hasta: null };
   }
-  const diasNoticias = [...new Set(noticias.map(noticia => noticia.fecha))]
+  const diasNoticias = [...new Set(noticias.map(noticia => noticia.reaction?.session ?? noticia.fecha))]
     .filter(dia => sesionesDisponibles.has(dia));
   const diasResultados = resultados?.desde ? sesiones.filter(dia => dia >= resultados.desde && dia <= resultados.hasta) : [];
   return {

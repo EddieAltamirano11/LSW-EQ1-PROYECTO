@@ -216,12 +216,14 @@ Una vez agregadas las zonas del activo:
 
 ---
 
-### Core 006 — Noticias y Sentimiento (`newsCore` en `confluenceCores.js`)
-- **Fuente:** **Alpaca News** (`/v1beta1/news`) en ventana de los últimos **7 días**.
-- **Limpieza:** Deduplica artículos por ID de fuente, URL sin query params y titular normalizado.
+### Core 006 — Noticias y Sentimiento (`calcularCoreNoticias` en `confluenceCores.js`)
+- **Fuentes:** Alpaca News y reportes **8-K de SEC EDGAR** (ítem 5.02 para cambios de CEO e ítem 2.02 para resultados). Usa **7 días** para el puntaje y **15 días** para el contexto.
+- **Limpieza:** Deduplica por ID de fuente y titular normalizado. Las URL de artículos se comparan junto con el titular y conservan los parámetros de identidad. Las fichas genéricas del activo pueden publicar noticias sobre hechos distintos.
 - **Clasificación y puntaje por artículo:**
-  - Detecta categoría de evento (`EARNINGS`, `M&A`, `REGULATORY`, `MACRO`, u `OTHER` que pondera `0.6`).
+  - Detecta categoría de evento (`EARNINGS`, `LEADERSHIP`, `M&A`, `REGULATORY`, `MACRO`, `ANALYST` u `OTHER`). Las dos últimas ponderan `0.6`.
   - Evalúa reglas de lenguaje financiero en inglés (`beats estimates`, `raises guidance`, `upgrades` vs `misses`, `cuts guidance`, `downgrades`, `antitrust`, `recall`), dando peso `1.0` al titular y `0.5` al resumen, acotado a $[-1, 1]$.
+  - La versión 3 reconoce cambios directivos, investigaciones, comparecencias, controles de exportación y revisiones de analistas junto con contratos, caídas de servicio y fallos judiciales. Los 8-K confirman el hecho y aportan su hora de aceptación. La cobertura del mismo hecho se vincula al evento confirmado.
+  - En la gráfica y en el detalle del core se muestra la primera sesión regular elegible tras conocerse el hecho. El cierre se compara con el cierre anterior, el volumen se compara con la mediana de las 20 velas anteriores y el rendimiento se compara con SMH para NVDA y AMD, QQQ para las demás emisoras de Nasdaq o SPY en los otros casos. El salto de apertura se muestra para noticias conocidas antes de que abra esa sesión. Estas observaciones son informativas y el puntaje se calcula con la evidencia de las noticias.
   - **Relevancia:** $1 / \sqrt{\text{número de símbolos mencionados en la noticia}}$ (una noticia dedicada exclusivamente a la empresa pesa más que una mención en un listado de 10 empresas).
   - **Frescura:** Decaimiento exponencial $e^{-\Delta t / 3\text{ días}}$ (las noticias recientes pesan mucho más que las de hace una semana).
   - **Impacto del artículo:** $\text{sentimiento} \times \text{relevancia} \times \text{frescura} \times \text{factorEvento}$.

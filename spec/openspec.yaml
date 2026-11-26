@@ -1458,7 +1458,14 @@ components:
           type: object
           nullable: true
           additionalProperties: true
-          description: Indicadores, reglas y resultado específico del core. El resultado del Core 001 sigue TechnicalCoreResult.
+          description: >-
+            Indicadores y resultado específico del core. El Core 001 sigue TechnicalCoreResult.
+            El Core 006 incluye headlines para el puntaje de 7 días, contextObserved para el conteo de titulares
+            en hasta 15 días y events con los hechos de contexto. Cada evento puede incluir event.type, event.action,
+            event.state, contextOnly, timeSource, related y reaction. reaction usa la primera sesión regular elegible,
+            con status AVAILABLE, PENDING o UNAVAILABLE. Cuando está disponible incluye sessionChange, openingGap
+            si la publicación precede a la apertura, relativeVolume y benchmark con la diferencia en puntos porcentuales.
+            La reacción es evidencia informativa y el puntaje procede de las publicaciones.
         evidence:
           type: array
           items:

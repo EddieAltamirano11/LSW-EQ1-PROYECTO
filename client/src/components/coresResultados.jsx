@@ -7,6 +7,50 @@ export const LABELS = {
 };
 const currency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'USD' });
 const decimal = new Intl.NumberFormat('es-MX', { maximumFractionDigits: 2 });
+const conSigno = new Intl.NumberFormat('es-MX', { maximumFractionDigits: 2, signDisplay: 'exceptZero' });
+const fechaNoticia = new Intl.DateTimeFormat('es-MX', { timeZone: 'America/New_York', dateStyle: 'medium', timeStyle: 'short' });
+const ESTADO_NOTICIA = { CONFIRMED: 'Confirmado', REPORTED: 'Reportado', OPEN: 'Riesgo abierto', SCHEDULED: 'Programado' };
+
+export function NoticiaDelCore({ noticia }) {
+  const instante = Date.parse(noticia.publishedAt);
+  const reaccion = noticia.reaction;
+  const metricas = reaccion?.status === 'AVAILABLE' ? [
+    Number.isFinite(reaccion.openingGap) && `Apertura ${conSigno.format(reaccion.openingGap)} %`,
+    Number.isFinite(reaccion.sessionChange) && `Cierre de sesión ${conSigno.format(reaccion.sessionChange)} %`,
+    Number.isFinite(reaccion.relativeVolume) && `Volumen ${decimal.format(reaccion.relativeVolume)}×`,
+    reaccion.benchmark && `Frente a ${reaccion.benchmark.symbol} ${conSigno.format(reaccion.benchmark.excess)} pp`,
+  ].filter(Boolean) : [];
+  const datosEvento = [
+    noticia.event?.label ?? noticia.type, ESTADO_NOTICIA[noticia.event?.state],
+    noticia.contextOnly ? 'Contexto' : Number.isFinite(noticia.impact) && `Impacto ${conSigno.format(noticia.impact)}`,
+    noticia.timeSource === 'SEC_ACCEPTANCE' ? 'Aceptación en EDGAR' : noticia.source,
+  ].filter(Boolean);
+
+  return (
+    <>
+      {/^https:\/\//i.test(noticia.url ?? '') ? (
+        <a href={noticia.url} target="_blank" rel="noreferrer" className="underline">{noticia.headline}</a>
+      ) : noticia.headline}
+      {Number.isFinite(instante) && <time dateTime={noticia.publishedAt} className="ml-2 text-[var(--ui-muted)]">{fechaNoticia.format(instante)} ET</time>}
+      {datosEvento.length > 0 && <p className="text-[var(--ui-muted)]">{datosEvento.join(' · ')}</p>}
+      {metricas.length > 0 && (
+        <p className="text-[var(--ui-muted)]">{reaccion.session} · {metricas.join(' · ')} · {reaccion.source}</p>
+      )}
+      {reaccion?.status === 'PENDING' && <p className="text-[var(--ui-muted)]">Reacción pendiente al cierre del {reaccion.session}.</p>}
+      {reaccion?.status === 'UNAVAILABLE' && <p className="text-[var(--ui-muted)]">Reacción sin velas verificables.</p>}
+      {noticia.related?.length > 0 && (
+        <details className="text-[var(--ui-muted)]">
+          <summary className="cursor-pointer">Cobertura relacionada ({noticia.related.length})</summary>
+          <ul className="ml-3">
+            {noticia.related.map(item => <li key={item.id ?? item.headline}>
+              {item.headline}{Number.isFinite(Date.parse(item.publishedAt)) && ` · ${fechaNoticia.format(Date.parse(item.publishedAt))} ET`}
+            </li>)}
+          </ul>
+        </details>
+      )}
+    </>
+  );
+}
 // UNVERIFIED: Webull no entregó una fecha de resultados y no se estima ninguna.
 export const riesgoDeEvento = riesgo => (riesgo === 'UNVERIFIED' ? 'Earnings sin verificar' : riesgo);
 
@@ -63,11 +107,11 @@ export function CoreResult({ id, result }) {
     <div className="space-y-2">
       <Metrics entries={[
         ['Sentimiento', result.sentiment], ['Impacto estimado', result.impact], ['Titulares analizados', result.observed],
+        ...(Number.isFinite(result.contextObserved) ? [['Titulares en contexto', result.contextObserved]] : []),
       ]} />
-      <ul className="space-y-1 text-xs">
-        {result.headlines.map(item => <li key={item.id ?? item.headline} className="break-words">
-          {item.url ? <a href={item.url} target="_blank" rel="noreferrer" className="underline">{item.headline}</a> : item.headline}
-          <span className="text-[var(--ui-muted)]"> · {item.type} · relevancia {item.relevance}</span>
+      <ul className="space-y-2 text-xs">
+        {(result.events ?? result.headlines).map(item => <li key={`${item.source}:${item.id ?? item.headline}`} className="break-words">
+          <NoticiaDelCore noticia={item} />
         </li>)}
       </ul>
     </div>

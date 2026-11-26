@@ -44,9 +44,9 @@ export const CORES_INFO = {
   },
   '006': {
     nombre: 'Noticias',
-    fuentes: ['Alpaca News'],
-    ventanas: 'Los últimos 7 días.',
-    calculo: 'Clasifica cada titular con reglas de lenguaje financiero, lo pondera por relevancia (1/√símbolos) y frescura (vida media de 3 días) y toma los 8 de mayor impacto. Puntaje = 66 + 0.28 × impacto.',
+    fuentes: ['Alpaca News', 'SEC EDGAR (8-K, ítems 5.02 y 2.02)', 'Velas de Alpaca IEX para la reacción de mercado'],
+    ventanas: '7 días para el puntaje y hasta 15 días de contexto.',
+    calculo: 'Reconoce cambios directivos, investigaciones y otras señales financieras. Pondera por relevancia y antigüedad, y toma las 8 señales recientes de mayor impacto absoluto. Puntaje = 66 + 0.28 × impacto. La reacción de mercado se muestra en el detalle del evento.',
     peso: 'Peso base 15.',
     participa: 'Entra a la confluencia cuando está seleccionado; si no, no se calcula.',
   },

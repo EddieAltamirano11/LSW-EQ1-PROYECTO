@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { CandlestickSeries, ColorType, CrosshairMode, HistogramSeries, LineSeries, LineStyle, createChart } from 'lightweight-charts';
 import { ChevronDown, Layers } from 'lucide-react';
 import { prepararEventosDelActivo, prepararGraficaTecnica, prepararNivelesDelActivo } from '../services/graficaTecnica';
+import { NoticiaDelCore } from './coresResultados';
 
 // Gráfica del Core 001: velas diarias, medias, bandas de soporte y resistencia, tramos de tendencia
 // y ventana proyectada. Se carga de forma diferida para no crecer el bundle inicial.
@@ -242,13 +243,10 @@ function EventosDelActivo({ resultados, noticias, diasNoticias }) {
   return (
     <details className="rounded-md bg-[var(--ui-page)] px-3 py-2 text-xs text-[var(--ui-muted)]">
       <summary className="cursor-pointer font-semibold text-[var(--ui-ink)]">{[textoResultados, tituloNoticias].filter(Boolean).join(' / ')}</summary>
-      <ul className="mt-2 space-y-1">
+      <ul className="mt-2 space-y-2">
         {noticias.map(noticia => (
-          <li key={`${noticia.fecha}:${noticia.headline}`} className="break-words">
-            <time dateTime={noticia.publishedAt}>{noticia.fecha}</time>{' · '}
-            {/^https:\/\//i.test(noticia.url ?? '') ? (
-              <a href={noticia.url} target="_blank" rel="noreferrer" className="underline">{noticia.headline}</a>
-            ) : noticia.headline}
+          <li key={`${noticia.source}:${noticia.id ?? noticia.headline}`} className="break-words">
+            <NoticiaDelCore noticia={noticia} />
           </li>
         ))}
       </ul>

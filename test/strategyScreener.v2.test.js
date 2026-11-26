@@ -97,6 +97,62 @@ test('005 respeta el lado observado y 006 distingue ventanas vacías de fallas',
   assert.equal(calcularCoreNoticias(null, asOf).status, 'UNAVAILABLE');
 });
 
+test('006 reconoce contratos, caídas de servicio y fallos atribuibles al activo', () => {
+  const microsoft = { symbol: 'MSFT', companyName: 'Microsoft Corporation' };
+  const amazon = { symbol: 'AMZN', companyName: 'Amazon.com Inc.' };
+  const cases = [
+    [microsoft, 'Microsoft Secures 51MW Geothermal Energy Contract in New Zealand', '', 1],
+    [microsoft, 'Microsoft is awarded a cloud contract', '', 1],
+    [microsoft, 'Microsoft is negotiating a cloud contract', '', 0],
+    [microsoft, 'Microsoft secures no cloud contract', '', 0],
+    [microsoft, 'Microsoft signs a preliminary cloud contract', '', 0],
+    [microsoft, 'Microsoft awarded a contract to Contoso', '', 0],
+    [microsoft, 'Microsoft Declares “Code Red” Following Historic Outage', '', -1],
+    [microsoft, 'Microsoft service disruption affects customers', '', -1],
+    [microsoft, 'Microsoft reports disruption in contract negotiations', '', 0],
+    [microsoft, 'Microsoft restores service after an outage', 'Microsoft suffered a major outage earlier today.', 0],
+    [microsoft, 'Microsoft suffers a major outage', 'Microsoft services have been fully restored.', 0],
+    [microsoft, 'Contoso suffers a major outage; Microsoft is monitoring it', '', 0],
+    [amazon, 'Court Rules Against Amazon in Consumer Product Safety Act Litigation', '', -1],
+    [amazon, 'Court rules against Amazon’s competitor', '', 0],
+    [amazon, 'Court rules against Contoso in a case followed by Amazon', '', 0],
+  ];
+  for (const [activo, headline, summary, expectedDirection] of cases) {
+    const articles = [{ headline, summary, symbols: [activo.symbol, 'CONTOSO'], created_at: observed.observedAt }];
+    const { result } = calcularCoreNoticias({ evidence: observed, articles }, asOf, activo);
+    assert.equal(Math.sign(result.headlines[0].impact), expectedDirection, headline);
+  }
+});
+
+test('006 interpreta el cambio de precio objetivo con dirección explícita o dos importes', () => {
+  const tesla = { symbol: 'TSLA', companyName: 'Tesla Inc.' };
+  const amd = { symbol: 'AMD', companyName: 'Advanced Micro Devices, Inc.' };
+  const cases = [
+    [tesla, 'UBS Raises Price Target on Tesla to $430', '', 1],
+    [tesla, 'UBS Cuts Price Target on Tesla to $430', '', -1],
+    [tesla, 'UBS does not raise price target on Tesla', '', 0],
+    [tesla, 'UBS may cut price target on Tesla', '', 0],
+    [tesla, 'UBS may revise its price target for Tesla from $425 to $430', '', 0],
+    [tesla, 'Tesla price target lowered to $430', '', -1],
+    [tesla, 'UBS updates TSLA’s price target from $410.50 to $430.25', '', 1],
+    [tesla, 'UBS Adjusts Price Target on Tesla to $430', 'UBS updated its price target for Tesla, increasing it from $425 to $430.', 1],
+    [amd, 'BNP Paribas Adjusts Price Target for AMD', 'It revised its price target for Advanced Micro Devices, Inc. (AMD) to $650, down from its previous target of $960.', -1],
+    [tesla, 'UBS Adjusts Price Target on Tesla to $430', '', 0],
+    [tesla, 'UBS Adjusts Price Target on Tesla', 'It adjusted its price target for Tesla after revenue grew from $100 to $200.', 0],
+    [tesla, 'UBS Adjusts Price Target on Tesla from $430 to $430', '', 0],
+    [tesla, 'UBS Adjusts Price Target on Tesla from €410 to $430', '', 0],
+    [tesla, 'UBS maintained its Buy rating and price target for Tesla', '', 0],
+    [tesla, 'UBS raises its price target for MSFT and adjusts the price target for Tesla', '', 0],
+  ];
+  for (const [activo, headline, summary, expectedDirection] of cases) {
+    const articles = [{ headline, summary, symbols: [activo.symbol], created_at: asOf }];
+    const { result } = calcularCoreNoticias({ evidence: observed, articles }, asOf, activo);
+    const { impact } = result.headlines[0];
+    assert.equal(Math.sign(impact), expectedDirection, headline);
+    if (summary && expectedDirection) assert.equal(Math.abs(impact), 0.3, headline);
+  }
+});
+
 test('007 combina pesos sin tratar 001 y 003 como confirmaciones independientes', () => {
   const cores = Object.fromEntries(CORES_SELECCIONABLES.map(id => [id, available({}, [observed], { score: 80, confidence: 1, direction: 1 })]));
   for (const id of CORES_SELECCIONABLES) {
@@ -116,7 +172,7 @@ test('007 combina pesos sin tratar 001 y 003 como confirmaciones independientes'
 });
 
 test('ruta autenticada entrega resultados completos y parciales, veta, valida y reporta 503', async t => {
-  const universe = ['CCC', 'AAA', 'BBB'].map(symbol => ({ symbol, companyName: symbol }));
+  const universe = ['CCC', 'AAA', 'BBB'].map(symbol => ({ symbol, companyName: `${symbol} Technologies Inc.` }));
   const successful = () => chain();
   let phase = 'PARTIAL';
   let calls = 0;
@@ -129,7 +185,9 @@ test('ruta autenticada entrega resultados completos y parciales, veta, valida y 
       } },
     marketData: { obtenerSesionBursatil: async () => { calls++; return {}; }, obtenerPrecioSubyacente: async () => stock,
       obtenerHistorialVelas: async () => history(), obtenerFechaResultados: async () => earnings, obtenerCadenaOpciones: async () => successful(),
-      obtenerNoticiasAccion: async () => ({ articles: [], evidence: observed }), obtenerFlujoOpciones: async () => [{ contract: chain().contracts[0],
+      obtenerNoticiasAccion: async symbol => ({ evidence: observed,
+        articles: [{ headline: `${symbol} Technologies secures a cloud contract`, symbols: [symbol], created_at: observed.observedAt }] }),
+      obtenerFlujoOpciones: async () => [{ contract: chain().contracts[0],
         trades: [{ price: 2, size: 2, side: null }], evidence: observed }] },
   });
   const app = express();
@@ -157,6 +215,8 @@ test('ruta autenticada entrega resultados completos y parciales, veta, valida y 
   assert.deepEqual(result.candidates.map(row => row.symbol), ['AAA']);
   assert.ok(result.excluded.some(row => row.symbol === 'BBB' && row.reason.includes('Veto')));
   assert.equal(Object.keys(result.candidates[0].cores).length, 7);
+  assert.equal(result.candidates[0].cores['006'].result.sentiment, 'POSITIVE');
+  assert.equal(result.candidates[0].cores['006'].result.classifier, 'Reglas de lenguaje financiero EN v3');
   const individual = await (await post({ ...criteria, activeCores: ['001'] })).json();
   assert.ok(individual.excluded.some(row => row.symbol === 'BBB' && row.reason.includes('Veto')));
   assert.equal(individual.candidates[0].cores['002'].active, false);

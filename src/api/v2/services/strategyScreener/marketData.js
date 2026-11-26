@@ -1,4 +1,5 @@
 import { DAY, MINUTE, SourceError, iso, mapConcurrent, number, observation, pages, request, time, within } from './observations.js';
+import { DIAS_CONTEXTO_NOTICIAS, DIAS_PUNTAJE_NOTICIAS } from './newsEvents.js';
 import {
   FUENTE_ALPACA, FUENTE_WEBULL, consultarAlpaca, consultarVelas, consultarWebull, convertirHoraSesion, formatoFechaEste,
   obtenerCadenaOpciones, obtenerPrecioSubyacente, obtenerSesionBursatil,
@@ -57,17 +58,33 @@ export async function obtenerFechaResultados(simbolo, fechaCorte, senalCancelaci
 }
 
 export async function obtenerNoticiasAccion(simbolo, fechaCorte, senalCancelacion) {
-  const inicioVentana = fechaCorte - 7 * DAY;
   const fuente = 'Alpaca News';
-  const articulos = await pages(fuente, async cursorPagina => {
-    const respuesta = await consultarAlpaca(fuente, '/v1beta1/news', {
-      symbols: simbolo, start: iso(inicioVentana), end: iso(fechaCorte), limit: 50, page_token: cursorPagina,
-    }, senalCancelacion);
-    return { items: respuesta.news, cursor: respuesta.next_page_token };
-  });
-  return { articles: articulos.filter(articulo => within(articulo.created_at, inicioVentana, fechaCorte)
-      && (!articulo.updated_at || time(articulo.updated_at) <= fechaCorte) && articulo.symbols?.includes(simbolo) && articulo.headline),
-    evidence: observation(fuente, iso(fechaCorte), `${simbolo} · noticias desde ${iso(inicioVentana)}`) };
+  const consultarVentana = async (inicio, fin) => {
+    const articulos = await pages(fuente, async cursorPagina => {
+      const respuesta = await consultarAlpaca(fuente, '/v1beta1/news', {
+        symbols: simbolo, start: iso(inicio), end: iso(fin), limit: 50, page_token: cursorPagina,
+      }, senalCancelacion);
+      return { items: respuesta?.news, cursor: respuesta?.next_page_token };
+    });
+    return articulos.filter(articulo => within(articulo.created_at, inicio, fin)
+      && (!articulo.updated_at || time(articulo.updated_at) <= fechaCorte) && articulo.symbols?.includes(simbolo) && articulo.headline);
+  };
+  const inicioContexto = fechaCorte - DIAS_CONTEXTO_NOTICIAS * DAY;
+  const inicioPuntaje = fechaCorte - DIAS_PUNTAJE_NOTICIAS * DAY;
+  const [recientes, contexto] = await Promise.allSettled([
+    consultarVentana(inicioPuntaje, fechaCorte), consultarVentana(inicioContexto, inicioPuntaje - 1),
+  ]);
+  if (recientes.status === 'rejected') throw recientes.reason;
+  return {
+    articles: [...recientes.value, ...(contexto.value ?? [])],
+    evidence: observation(fuente, iso(fechaCorte), `${simbolo} · noticias desde ${iso(contexto.value ? inicioContexto : inicioPuntaje)}`),
+    ...(contexto.status === 'rejected' && { contextReason: contexto.reason.reason ?? 'No se pudo verificar el contexto de noticias.' }),
+  };
+}
+
+export async function obtenerVelasEventos(simbolo, sesionMercado, senalCancelacion) {
+  const velas = await consultarVelas(simbolo, '1Day', sesionMercado.quoteCut - 55 * DAY, sesionMercado.quoteCut, senalCancelacion);
+  return velas.filter(vela => formatoFechaEste.format(vela.at) <= sesionMercado.lastClosed.date);
 }
 
 export async function obtenerFlujoOpciones(cadena, sesionMercado, senalCancelacion) {

@@ -1,4 +1,5 @@
-import { DAY, SourceError, iso, number, observation, request, time } from './observations.js';
+import { DAY, SourceError, iso, mapConcurrent, number, observation, request, time, within } from './observations.js';
+import { DIAS_CONTEXTO_NOTICIAS, eventosEjecutivosDel8K, resultadosPublicados } from './newsEvents.js';
 
 const SEC = 'SEC EDGAR';
 const DATA = 'https://data.sec.gov';
@@ -64,12 +65,46 @@ function factsFor(facts, concept, names, asOf, filings) {
   }));
 }
 
-export async function statements(symbol, index, asOf, signal) {
+export async function companySubmissions(symbol, index, signal) {
+  const cik = index.get(symbol);
+  if (!cik) throw new SourceError(SEC, `No hay CIK de la emisora ${symbol}.`);
+  const submissions = await edgar(`/submissions/CIK${cik}.json`, DATA, signal);
+  if (Number(submissions?.cik) !== Number(cik)) throw new SourceError(SEC, `Documentos sin identificación verificable para ${symbol}.`);
+  return submissions;
+}
+
+export async function filingsNews(symbol, submissions, asOf, signal) {
+  const recent = submissions?.filings?.recent;
+  if (!Array.isArray(recent?.form)) throw new SourceError(SEC, `El historial de documentos de ${symbol} no está disponible.`);
+  const source = 'SEC EDGAR · 8-K';
+  const start = asOf - DIAS_CONTEXTO_NOTICIAS * DAY;
+  const reports = recent.form.flatMap((form, i) => {
+    const accession = recent.accessionNumber?.[i];
+    const file = recent.primaryDocument?.[i];
+    const accepted = recent.acceptanceDateTime?.[i];
+    const items = String(recent.items?.[i] ?? '').split(/[\s,]+/);
+    if (form !== '8-K' || !items.some(item => item === '5.02' || item === '2.02') || !within(accepted, start, asOf)
+      || !/^\d{10}-\d{2}-\d{6}$/.test(accession) || !/^[\w.-]+\.html?$/i.test(file)) return [];
+    return [{ accession, file, accepted, items, occurredOn: recent.reportDate?.[i] ?? null }];
+  });
+  const events = await mapConcurrent(reports, 2, async ({ accession, file, accepted, items, occurredOn }) => {
+    const path = `/Archives/edgar/data/${Number(submissions.cik)}/${accession.replaceAll('-', '')}/${file}`;
+    const ejecutivos = items.includes('5.02') ? eventosEjecutivosDel8K(await edgar(path, ARCHIVES, signal, 'text')) : [];
+    const resultados = items.includes('2.02') ? [{ ...resultadosPublicados, state: 'CONFIRMED' }] : [];
+    return [...ejecutivos, ...resultados].map(event => ({
+      id: `${accession}:${event.action}`, headline: `${symbol} · ${event.label}`, source, url: new URL(path, ARCHIVES).href,
+      created_at: accepted, symbols: [symbol], occurredOn, timeSource: 'SEC_ACCEPTANCE', event,
+    }));
+  });
+  return { articles: events.flat(), evidence: observation(source, iso(asOf), `${symbol} · ítems 5.02 y 2.02 desde ${iso(start)}`) };
+}
+
+export async function statements(symbol, index, asOf, signal, companyFilings) {
   const cik = index.get(symbol);
   if (!cik) throw new SourceError(SEC, `No hay CIK de la emisora ${symbol}.`);
   const [company, submissions] = await Promise.all([
     edgar(`/api/xbrl/companyfacts/CIK${cik}.json`, DATA, signal),
-    edgar(`/submissions/CIK${cik}.json`, DATA, signal),
+    companyFilings ?? companySubmissions(symbol, index, signal),
   ]);
   const facts = company.facts?.['us-gaap'];
   if (!facts || Number(company.cik) !== Number(cik) || Number(submissions.cik) !== Number(cik)) {

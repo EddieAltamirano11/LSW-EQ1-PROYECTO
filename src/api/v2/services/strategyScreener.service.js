@@ -8,6 +8,7 @@ import { fecha, mediasMoviles, PARAMETROS, toleranciaNiveles } from './strategyS
 import { eventRisk, fundamentalCore, riesgoSinVerificar } from './strategyScreener/fundamentalCore.js';
 import { institutionalCore, strategyCore } from './strategyScreener/optionsCores.js';
 import { calcularCoreConfluencia, calcularCoreNoticias, CORES_SELECCIONABLES } from './strategyScreener/confluenceCores.js';
+import { anexarReaccionMercado, referenciaDeMercado } from './strategyScreener/newsReaction.js';
 
 const ETFS = new Set(['SPY', 'QQQ']);
 const DEFAULT_UNIVERSE = MARKET_BASKET.filter(asset => !ETFS.has(asset.symbol));
@@ -101,13 +102,31 @@ export function createStrategyScreener({ marketData = market, edgar = sec, unive
 
     const rows = await mapConcurrent(activeUniverse, 3, async asset => {
       const { symbol, companyName } = asset;
-      const [spot, facts, event, history, news] = await Promise.all([
+      const documentos = edgar.companySubmissions
+        ? use(`submissions:${symbol}`, () => edgar.companySubmissions(symbol, issuerIndex.value, signal))
+        : Promise.resolve({});
+      const [spot, facts, event, history, news, reportes] = await Promise.all([
         use(`spot:${symbol}`, () => marketData.obtenerPrecioSubyacente(symbol, clock.value, signal)),
-        use(`facts:${symbol}`, () => edgar.statements(symbol, issuerIndex.value, asOf, signal)),
+        documentos.then(filings => filings.error ? filings
+          : use(`facts:${symbol}`, () => edgar.statements(symbol, issuerIndex.value, asOf, signal, filings.value))),
         use(`earnings:${symbol}`, () => marketData.obtenerFechaResultados(symbol, asOf, signal)),
         includes('001') || includes('003') ? use(`history:${symbol}`, () => marketData.obtenerHistorialVelas(symbol, clock.value, signal)) : {},
         includes('006') ? use(`news:${symbol}`, () => marketData.obtenerNoticiasAccion(symbol, asOf, signal)) : {},
+        includes('006') && edgar.filingsNews
+          ? documentos.then(filings => filings.error ? filings
+            : use(`filingsNews:${symbol}`, () => edgar.filingsNews(symbol, filings.value, asOf, signal)))
+          : {},
       ]);
+      const newsCore = includes('006') ? calcularCoreNoticias(news.value, asOf, asset, reportes, news.error) : NOT_SELECTED;
+      if (newsCore.result?.events.length && marketData.obtenerVelasEventos) {
+        const referencia = referenciaDeMercado(asset);
+        const barras = ticker => use(`eventBars:${ticker}`, () => marketData.obtenerVelasEventos(ticker, clock.value, signal));
+        const [activo, comparacion] = await Promise.all([
+          history.value?.series?.['1Day'] ? { value: history.value.series['1Day'] } : barras(symbol),
+          barras(referencia),
+        ]);
+        newsCore.result.events = anexarReaccionMercado(newsCore.result.events, clock.value, activo.value, referencia, comparacion.value);
+      }
       const events = event.error ? riesgoSinVerificar(event.error.reason, event.error.evidence?.[0]?.source) : eventRisk(event.value, asOf);
       const fundamental = spot.error ?? facts.error ?? fundamentalCore(facts.value, spot.value, events);
       const eligibility = fundamental.result?.classification ?? 'UNKNOWN';
@@ -130,7 +149,7 @@ export function createStrategyScreener({ marketData = market, edgar = sec, unive
         '003': selected(includes('003') ? directSignalsCore(technical, events) : NOT_SELECTED, includes('003')),
         '004': strategy,
         '005': selected(institutional, includes('005')),
-        '006': selected(includes('006') ? (news.error ?? calcularCoreNoticias(news.value, asOf)) : NOT_SELECTED, includes('006')),
+        '006': selected(newsCore, includes('006')),
       };
       const confluence = calcularCoreConfluencia(criteria.activeCores, cores, asOf);
       cores['007'] = confluence;

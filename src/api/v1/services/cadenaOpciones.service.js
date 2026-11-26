@@ -59,7 +59,7 @@ export async function obtenerSesionBursatil(fechaCorte, senalCancelacion) {
   const corteMercado = fechaCorte - 15 * MINUTE;
   // El calendario se pide también hacia adelante para fechar en sesiones reales las ventanas proyectadas del Core 001.
   const dias = await consultarAlpaca('Calendario Alpaca', '/v2/calendar', {
-    start: formatoFechaEste.format(fechaCorte - 10 * DAY), end: formatoFechaEste.format(fechaCorte + 130 * DAY),
+    start: formatoFechaEste.format(fechaCorte - 21 * DAY), end: formatoFechaEste.format(fechaCorte + 130 * DAY),
   }, senalCancelacion, 'https://paper-api.alpaca.markets');
   if (!Array.isArray(dias)) throw new SourceError(FUENTE_ALPACA, 'Calendario bursátil incompleto.');
   const sesiones = dias.map(dia => ({
@@ -71,7 +71,7 @@ export async function obtenerSesionBursatil(fechaCorte, senalCancelacion) {
   const corteCotizacion = Math.min(corteMercado, sesion.close);
   return { asOf: fechaCorte, cutoff: corteMercado, session: sesion, lastClosed: ultimaSesionCerrada,
     quoteCut: corteCotizacion, quoteStart: Math.max(sesion.open, corteCotizacion - 60 * MINUTE),
-    upcoming: sesiones.filter(dia => dia.date > ultimaSesionCerrada.date).map(dia => dia.date) };
+    sessions: sesiones, upcoming: sesiones.filter(dia => dia.date > ultimaSesionCerrada.date).map(dia => dia.date) };
 }
 
 export async function consultarVelas(simbolo, temporalidad, inicio, fin, senalCancelacion) {
