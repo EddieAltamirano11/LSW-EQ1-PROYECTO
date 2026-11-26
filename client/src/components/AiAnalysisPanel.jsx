@@ -13,7 +13,7 @@ function Fecha({ value }) {
   return <time dateTime={value}>{label}</time>;
 }
 
-function Puntos({ title, points, evidence }) {
+function Puntos({ title, points, evidence, fromModel }) {
   if (!points.length) return null;
   return (
     <div>
@@ -24,6 +24,7 @@ function Puntos({ title, points, evidence }) {
           return (
             <li key={index} className="break-words">
               <p>{text}</p>
+              {fromModel && evidenceId === null && <p className="text-xs text-[var(--ui-muted)]">Contexto general</p>}
               {fact && (
                 <details className="mt-0.5 text-xs text-[var(--ui-muted)]">
                   <summary className="cursor-pointer font-semibold">{fact.label}</summary>
@@ -118,8 +119,8 @@ export default function AiAnalysisPanel({ apiBase, token, symbol, activeCores, d
                 {isSuggestion && index === 0 && ' · La que mejor califica'}
                 {!isSuggestion && ` · ${verdicts[verdict]}`}
               </h4>
-              <Puntos title="Por qué" points={reasons} evidence={evidence} />
-              <Puntos title="Por qué podría no convenir" points={risks} evidence={evidence} />
+              <Puntos title="Por qué" points={reasons} evidence={evidence} fromModel={Boolean(data.model)} />
+              <Puntos title="Por qué podría no convenir" points={risks} evidence={evidence} fromModel={Boolean(data.model)} />
             </article>
           ))}
         </div>

@@ -1,202 +1,232 @@
 import boom from '@hapi/boom';
-import { parseScreenerInput, parseTechnicalSymbol, runStrategyScreener } from '../strategyScreener.service.js';
-import { createAiProvider } from './aiProvider.js';
+import {
+  parseScreenerInput as validarCriteriosEscaner,
+  parseTechnicalSymbol as validarSimbolo,
+  runStrategyScreener as ejecutarEscanerEstrategias,
+} from '../strategyScreener.service.js';
+import { createAiProvider as crearProveedorIA } from './aiProvider.js';
 
-const FIELDS = ['scope', 'symbol', 'activeCores', 'dteHorizon', 'extraSymbols'];
-const VERDICTS = ['CONSIDER', 'AVOID', 'WAIT'];
+const CAMPOS_PERMITIDOS = ['scope', 'symbol', 'activeCores', 'dteHorizon', 'extraSymbols'];
+const VEREDICTOS = ['CONSIDER', 'AVOID', 'WAIT'];
 
-export function parseAiAnalysisInput(body) {
-  if (!body || typeof body !== 'object' || Array.isArray(body) || Object.keys(body).some(key => !FIELDS.includes(key))) {
+function validarEntradaAnalisisIA(cuerpo) {
+  if (!cuerpo || typeof cuerpo !== 'object' || Array.isArray(cuerpo)
+      || Object.keys(cuerpo).some(campo => !CAMPOS_PERMITIDOS.includes(campo))) {
     throw boom.badRequest('Envía solo el alcance y los criterios del análisis.');
   }
-  const { scope, symbol, activeCores, dteHorizon, extraSymbols = [] } = body;
-  if (!['CANDIDATES', 'SYMBOL'].includes(scope)) throw boom.badRequest('El alcance debe ser CANDIDATES o SYMBOL.');
-  if (scope === 'CANDIDATES' ? Object.hasOwn(body, 'symbol') : Object.hasOwn(body, 'extraSymbols')) {
+  const { scope: alcance, symbol: simbolo, activeCores: coresActivos,
+    dteHorizon: horizonteDias, extraSymbols: simbolosAdicionales = [] } = cuerpo;
+  if (!['CANDIDATES', 'SYMBOL'].includes(alcance)) throw boom.badRequest('El alcance debe ser CANDIDATES o SYMBOL.');
+  if (alcance === 'CANDIDATES' ? Object.hasOwn(cuerpo, 'symbol') : Object.hasOwn(cuerpo, 'extraSymbols')) {
     throw boom.badRequest('Usa symbol para SYMBOL y extraSymbols para CANDIDATES.');
   }
-  if (!Array.isArray(extraSymbols) || extraSymbols.length > 25) {
+  if (!Array.isArray(simbolosAdicionales) || simbolosAdicionales.length > 25) {
     throw boom.badRequest('Envía hasta 25 símbolos adicionales en una lista.');
   }
   return {
-    scope,
-    symbol: scope === 'SYMBOL' ? parseTechnicalSymbol(symbol) : undefined,
-    criteria: parseScreenerInput({
-      mode: 'BY_STRATEGY', strategy: 'COLLAR_SPREAD', activeCores, dteHorizon, limit: 25,
-      extraSymbols: [...new Set(extraSymbols.map(parseTechnicalSymbol))],
+    scope: alcance,
+    symbol: alcance === 'SYMBOL' ? validarSimbolo(simbolo) : undefined,
+    criteria: validarCriteriosEscaner({
+      mode: 'BY_STRATEGY', strategy: 'COLLAR_SPREAD', activeCores: coresActivos, dteHorizon: horizonteDias, limit: 25,
+      extraSymbols: [...new Set(simbolosAdicionales.map(validarSimbolo))],
     }),
   };
 }
 
-function sourcesOf(evidence) {
-  const sources = new Map();
-  for (const entry of evidence) {
-    if (typeof entry?.source !== 'string' || !Number.isFinite(Date.parse(entry.observedAt))) continue;
-    const { source, observedAt, reference } = entry;
-    const name = typeof reference === 'string' ? reference : null;
-    sources.set(JSON.stringify([source, observedAt, name]), { source, observedAt, reference: name });
+function obtenerFuentes(observaciones) {
+  const fuentes = new Map();
+  for (const observacion of observaciones) {
+    if (typeof observacion?.source !== 'string' || !Number.isFinite(Date.parse(observacion.observedAt))) continue;
+    const { source: fuente, observedAt: fechaObservacion, reference: referencia } = observacion;
+    const referenciaValida = typeof referencia === 'string' ? referencia : null;
+    fuentes.set(JSON.stringify([fuente, fechaObservacion, referenciaValida]), {
+      source: fuente, observedAt: fechaObservacion, reference: referenciaValida,
+    });
   }
-  return [...sources.values()].slice(0, 4);
+  return [...fuentes.values()].slice(0, 4);
 }
 
-function evidenceFor(row) {
-  const evidence = [];
-  const add = (id, label, detail, observations = [], status = 'AVAILABLE') => {
-    const sources = sourcesOf(observations);
-    if (sources.length) evidence.push({ id: `${row.symbol}/${id}`, label, detail, status, sources });
+function construirEvidencia(fila) {
+  const evidencia = [];
+  const agregar = (id, etiqueta, detalle, observaciones = [], estado = 'AVAILABLE') => {
+    const fuentes = obtenerFuentes(observaciones);
+    if (fuentes.length) {
+      evidencia.push({ id: `${fila.symbol}/${id}`, label: etiqueta, detail: detalle, status: estado, sources: fuentes });
+    }
   };
-  const metric = (label, value, unit = '') => Number.isFinite(value) ? `${label} ${value}${unit}` : null;
-  const detail = (...values) => values.filter(Boolean).join(' · ');
+  const formatearMetrica = (etiqueta, valor, unidad = '') => Number.isFinite(valor) ? `${etiqueta} ${valor}${unidad}` : null;
+  const unirDetalles = (...valores) => valores.filter(Boolean).join(' · ');
   const {
-    '001': technical, '002': fundamental, '003': direct, '004': collar,
-    '005': institutional, '006': news, '007': confluence,
-  } = row.cores;
+    '001': tecnico, '002': fundamental, '003': senalesDirectas, '004': collar,
+    '005': institucional, '006': noticias, '007': confluencia,
+  } = fila.cores;
 
-  if (technical?.result) {
-    const { trend, indicators } = technical.result;
-    add('technical', 'Análisis técnico', detail(`Tendencia ${trend}`, metric('RSI', indicators?.rsi?.value),
-      metric('ADX', indicators?.adx?.value)), technical.evidence, technical.status);
+  if (tecnico?.result) {
+    const { trend: tendencia, indicators: indicadores } = tecnico.result;
+    agregar('technical', 'Análisis técnico', unirDetalles(`Tendencia ${tendencia}`,
+      formatearMetrica('RSI', indicadores?.rsi?.value), formatearMetrica('ADX', indicadores?.adx?.value)),
+    tecnico.evidence, tecnico.status);
   }
   if (fundamental?.result) {
-    const { classification, event, altman, valuation, indicators } = fundamental.result;
-    const verified = ['HIGH', 'MEDIUM', 'LOW'].includes(event?.risk);
-    const observations = fundamental.evidence ?? [];
-    const financial = verified ? observations.slice(0, -1) : observations;
-    add('fundamental', 'Viabilidad y valoración', detail(classification, metric('Altman', altman?.value),
-      altman && `Umbrales Altman ${altman.lower} y ${altman.upper}`, valuation, metric('P/E', indicators?.pe),
-      metric('Flujo de caja operativo', indicators?.operatingCashFlow, ' USD'), metric('Margen operativo',
-        Number.isFinite(indicators?.operatingMargin) ? Number((indicators.operatingMargin * 100).toFixed(1)) : null, ' %')),
-    financial, fundamental.status);
-    if (verified) {
-      const window = event.start === event.end ? event.start : `${event.start} a ${event.end}`;
-      add('events', 'Resultados trimestrales', detail(`Riesgo ${event.risk}`,
-        `${event.estimated ? 'Estimación' : 'Calendario informado'} ${window}`, metric('Días hasta resultados', event.days)),
-      observations.slice(-1));
+    const { classification: clasificacion, event: evento, altman, valuation: valoracion, indicators: indicadores } = fundamental.result;
+    const eventoVerificado = ['HIGH', 'MEDIUM', 'LOW'].includes(evento?.risk);
+    const observaciones = fundamental.evidence ?? [];
+    const observacionesFinancieras = eventoVerificado ? observaciones.slice(0, -1) : observaciones;
+    agregar('fundamental', 'Viabilidad y valoración', unirDetalles(clasificacion, formatearMetrica('Altman', altman?.value),
+      altman && `Umbrales Altman ${altman.lower} y ${altman.upper}`, valoracion, formatearMetrica('P/E', indicadores?.pe),
+      formatearMetrica('Flujo de caja operativo', indicadores?.operatingCashFlow, ' USD'), formatearMetrica('Margen operativo',
+        Number.isFinite(indicadores?.operatingMargin) ? Number((indicadores.operatingMargin * 100).toFixed(1)) : null, ' %')),
+    observacionesFinancieras, fundamental.status);
+    if (eventoVerificado) {
+      const periodo = evento.start === evento.end ? evento.start : `${evento.start} a ${evento.end}`;
+      agregar('events', 'Resultados trimestrales', unirDetalles(`Riesgo ${evento.risk}`,
+        `${evento.estimated ? 'Estimación' : 'Calendario informado'} ${periodo}`,
+        formatearMetrica('Días hasta resultados', evento.days)), observaciones.slice(-1));
     }
   }
-  if (direct?.result) {
-    add('signal', 'Señales directas', detail(direct.result.signal, direct.result.rule), direct.evidence, direct.status);
+  if (senalesDirectas?.result) {
+    agregar('signal', 'Señales directas', unirDetalles(senalesDirectas.result.signal, senalesDirectas.result.rule),
+      senalesDirectas.evidence, senalesDirectas.status);
   }
   if (collar?.result) {
-    const { eligible, expiration, put, call, netPremiumPerShare, maxLoss, maxProfit, breakEven, shares } = collar.result;
-    const observations = collar.evidence ?? [];
-    add('collar', 'Collar Spread', eligible
-      ? detail(`Vencimiento ${expiration}`, metric('Piso Put', put?.strike, ' USD/acción'), metric('Techo Call', call?.strike, ' USD/acción'),
-        metric('Prima neta por pagar (negativa si es crédito)', netPremiumPerShare, ' USD/acción'), metric('Acciones cubiertas', shares),
-        metric('Pérdida máxima', maxLoss, ' USD'), metric('Ganancia máxima', maxProfit, ' USD'),
-        metric('Punto de equilibrio', breakEven, ' USD/acción'), 'Antes de comisiones')
+    const {
+      eligible: elegible, expiration: vencimiento, put, call, netPremiumPerShare: primaNetaPorAccion,
+      maxLoss: perdidaMaxima, maxProfit: gananciaMaxima, breakEven: puntoDeEquilibrio, shares: acciones,
+    } = collar.result;
+    const observaciones = collar.evidence ?? [];
+    agregar('collar', 'Collar Spread', elegible
+      ? unirDetalles(`Vencimiento ${vencimiento}`, formatearMetrica('Piso Put', put?.strike, ' USD/acción'),
+        formatearMetrica('Techo Call', call?.strike, ' USD/acción'),
+        formatearMetrica('Prima neta por pagar (negativa si es crédito)', primaNetaPorAccion, ' USD/acción'),
+        formatearMetrica('Acciones cubiertas', acciones), formatearMetrica('Pérdida máxima', perdidaMaxima, ' USD'),
+        formatearMetrica('Ganancia máxima', gananciaMaxima, ' USD'),
+        formatearMetrica('Punto de equilibrio', puntoDeEquilibrio, ' USD/acción'), 'Antes de comisiones')
       : 'La cadena evaluada no contiene un collar con liquidez y costo verificables.',
-    eligible ? [...observations.slice(-2), ...observations.slice(0, 1)] : observations, collar.status);
+    elegible ? [...observaciones.slice(-2), ...observaciones.slice(0, 1)] : observaciones, collar.status);
   }
-  if (institutional?.result) {
-    add('flow', 'Flujo de opciones', `Dirección observada en la muestra ${institutional.result.direction}`,
-      institutional.evidence, institutional.status);
+  if (institucional?.result) {
+    agregar('flow', 'Flujo de opciones', `Dirección observada en la muestra ${institucional.result.direction}`,
+      institucional.evidence, institucional.status);
   }
-  if (news?.result) {
-    add('news', 'Noticias', detail(`Sentimiento estimado ${news.result.sentiment}`,
-      metric('Noticias observadas', news.result.observed)), news.evidence, news.status);
+  if (noticias?.result) {
+    agregar('news', 'Noticias', unirDetalles(`Sentimiento estimado ${noticias.result.sentiment}`,
+      formatearMetrica('Noticias observadas', noticias.result.observed)), noticias.evidence, noticias.status);
   }
-  if (confluence?.result) {
-    const { score, signal, conflicts } = confluence.result;
-    add('confluence', 'Confluencia', detail(metric('Puntaje', score, ' / 100'), signal,
-      conflicts?.length ? 'Hay señales en conflicto' : null), confluence.evidence?.slice(0, 1), confluence.status);
+  if (confluencia?.result) {
+    const { score: puntaje, signal: senal, conflicts: conflictos } = confluencia.result;
+    agregar('confluence', 'Confluencia', unirDetalles(formatearMetrica('Puntaje', puntaje, ' / 100'), senal,
+      conflictos?.length ? 'Hay señales en conflicto' : null), confluencia.evidence?.slice(0, 1), confluencia.status);
   }
-  return evidence;
+  return evidencia;
 }
 
-function missingData(row, evidence) {
-  if (row?.exclusionType === 'INSUFFICIENT_DATA') return row.reason;
-  const event = row?.cores['002']?.result?.event;
-  if (!event || event.risk === 'UNVERIFIED') {
-    return event?.reason ?? 'No hay una fecha de resultados verificable.';
+function motivoDatosInsuficientes(fila, evidencia) {
+  if (fila?.exclusionType === 'INSUFFICIENT_DATA') return fila.reason;
+  const evento = fila?.cores['002']?.result?.event;
+  if (!evento || evento.risk === 'UNVERIFIED') {
+    return evento?.reason ?? 'No hay una fecha de resultados verificable.';
   }
-  if (!['fundamental', 'collar', 'events'].every(id => evidence.some(fact => fact.id === `${row.symbol}/${id}`))) {
+  if (!['fundamental', 'collar', 'events'].every(id => evidencia.some(dato => dato.id === `${fila.symbol}/${id}`))) {
     return 'Falta evidencia fechada para la viabilidad, el collar o el calendario de resultados.';
   }
   return null;
 }
 
-function scannerVerdict(symbol, verdict, reason, fact) {
-  return { symbol, verdict, reasons: [{ text: reason, evidenceId: fact?.id ?? null }], risks: [],
-    evidence: fact ? [fact] : [] };
+function veredictoDelEscaner(simbolo, veredicto, motivo, dato) {
+  return { symbol: simbolo, verdict: veredicto, reasons: [{ text: motivo, evidenceId: dato?.id ?? null }], risks: [],
+    evidence: dato ? [dato] : [] };
 }
 
-function checkedRecommendations(response, scope, assets) {
-  const list = response?.recommendations;
-  const invalid = () => boom.badGateway('El análisis de IA no coincide con la evidencia disponible.');
-  if (!Array.isArray(list) || (scope === 'SYMBOL' ? list.length !== 1 : list.length > 3)) throw invalid();
-  const used = new Set();
-  return list.map(item => {
-    const asset = assets.find(value => value.symbol === item?.symbol);
-    if (!asset || used.has(item.symbol) || !VERDICTS.includes(item.verdict)
-        || (scope === 'CANDIDATES' && item.verdict !== 'CONSIDER')) throw invalid();
-    used.add(item.symbol);
-    const cited = new Set();
-    const checkPoints = (points, minimum) => {
-      if (!Array.isArray(points) || points.length < minimum || points.length > 2) throw invalid();
-      return points.map(point => {
-        const text = typeof point?.text === 'string' ? point.text.trim() : '';
-        const id = point?.evidenceId;
-        if (!text || text.length > 480 || !asset.evidence.some(fact => fact.id === id)) throw invalid();
-        cited.add(id);
-        return { text, evidenceId: id };
+function validarRecomendaciones(respuesta, alcance, activos) {
+  const lista = respuesta?.recommendations;
+  const errorRespuestaInvalida = () => boom.badGateway('El análisis de IA no coincide con la evidencia disponible.');
+  if (!Array.isArray(lista) || (alcance === 'SYMBOL' ? lista.length !== 1 : lista.length > 3)) {
+    throw errorRespuestaInvalida();
+  }
+  const simbolosUsados = new Set();
+  return lista.map(recomendacion => {
+    const activo = activos.find(valor => valor.symbol === recomendacion?.symbol);
+    if (!activo || simbolosUsados.has(recomendacion.symbol) || !VEREDICTOS.includes(recomendacion.verdict)
+        || (alcance === 'CANDIDATES' && recomendacion.verdict !== 'CONSIDER')) throw errorRespuestaInvalida();
+    simbolosUsados.add(recomendacion.symbol);
+    const idsCitados = new Set();
+    const validarPuntos = (puntos, minimo) => {
+      if (!Array.isArray(puntos) || puntos.length < minimo || puntos.length > 2) throw errorRespuestaInvalida();
+      return puntos.map(punto => {
+        const texto = typeof punto?.text === 'string' ? punto.text.trim() : '';
+        const id = punto?.evidenceId;
+        if (!texto || texto.length > 480) throw errorRespuestaInvalida();
+        if (id !== null) {
+          if (!activo.evidence.some(dato => dato.id === id)) throw errorRespuestaInvalida();
+          idsCitados.add(id);
+        }
+        return { text: texto, evidenceId: id };
       });
     };
-    const reasons = checkPoints(item.reasons, 1);
-    const risks = checkPoints(item.risks, 0);
-    return { symbol: asset.symbol, verdict: item.verdict, reasons, risks,
-      evidence: asset.evidence.filter(fact => cited.has(fact.id)) };
+    const motivos = validarPuntos(recomendacion.reasons, 1);
+    const riesgos = validarPuntos(recomendacion.risks, 0);
+    return { symbol: activo.symbol, verdict: recomendacion.verdict, reasons: motivos, risks: riesgos,
+      evidence: activo.evidence.filter(dato => idsCitados.has(dato.id)) };
   });
 }
 
-export function createAiAnalysis({ run = runStrategyScreener, prepare = createAiProvider() } = {}) {
-  return async function analyze({ scope, symbol, criteria }, signal) {
-    const complete = prepare();
-    const { asOf, candidates, excluded } = await run(criteria, { symbol });
-    signal?.throwIfAborted();
-    const response = { scope, strategy: criteria.strategy, dteHorizon: criteria.dteHorizon, asOf,
+function crearAnalisisIA({ run: ejecutarEscaner = ejecutarEscanerEstrategias, prepare: prepararProveedor = crearProveedorIA() } = {}) {
+  return async function analizar({ scope: alcance, symbol: simbolo, criteria: criterios }, senalCancelacion) {
+    const consultarModelo = prepararProveedor();
+    const { asOf: fechaCorte, candidates: candidatas, excluded: excluidas } = await ejecutarEscaner(criterios, { symbol: simbolo });
+    senalCancelacion?.throwIfAborted();
+    const respuesta = { scope: alcance, strategy: criterios.strategy, dteHorizon: criterios.dteHorizon, asOf: fechaCorte,
       model: null, status: 'COMPLETE', message: null, recommendations: [] };
-    let assets;
-    if (scope === 'SYMBOL') {
-      const row = [...candidates, ...excluded].find(value => value.symbol === symbol);
-      if (!row) {
-        return { ...response, status: 'INSUFFICIENT_DATA',
-          recommendations: [scannerVerdict(symbol, 'INSUFFICIENT_DATA', 'El escáner no tiene diagnósticos para este ticker.')] };
+    let activos;
+    if (alcance === 'SYMBOL') {
+      const fila = [...candidatas, ...excluidas].find(empresa => empresa.symbol === simbolo);
+      if (!fila) {
+        return { ...respuesta, status: 'INSUFFICIENT_DATA',
+          recommendations: [veredictoDelEscaner(simbolo, 'INSUFFICIENT_DATA', 'El escáner no tiene diagnósticos para este ticker.')] };
       }
-      const evidence = evidenceFor(row);
-      if (['VIABILITY_VETO', 'NO_COLLAR'].includes(row.exclusionType)) {
-        const id = row.exclusionType === 'NO_COLLAR' ? 'collar' : 'fundamental';
-        return { ...response, recommendations: [scannerVerdict(symbol, 'AVOID', row.reason,
-          evidence.find(fact => fact.id === `${symbol}/${id}`))] };
+      const evidencia = construirEvidencia(fila);
+      if (['VIABILITY_VETO', 'NO_COLLAR'].includes(fila.exclusionType)) {
+        const id = fila.exclusionType === 'NO_COLLAR' ? 'collar' : 'fundamental';
+        return { ...respuesta, recommendations: [veredictoDelEscaner(simbolo, 'AVOID', fila.reason,
+          evidencia.find(dato => dato.id === `${simbolo}/${id}`))] };
       }
-      const missing = missingData(row, evidence);
-      if (missing) {
-        return { ...response, status: 'INSUFFICIENT_DATA',
-          recommendations: [scannerVerdict(symbol, 'INSUFFICIENT_DATA', missing)] };
+      const motivo = motivoDatosInsuficientes(fila, evidencia);
+      if (motivo) {
+        return { ...respuesta, status: 'INSUFFICIENT_DATA',
+          recommendations: [veredictoDelEscaner(simbolo, 'INSUFFICIENT_DATA', motivo)] };
       }
-      assets = [{ symbol, evidence }];
+      activos = [{ symbol: simbolo, evidence: evidencia }];
     } else {
-      assets = candidates.flatMap(row => {
-        const evidence = evidenceFor(row);
-        return missingData(row, evidence) ? [] : [{ symbol: row.symbol, evidence }];
+      activos = candidatas.flatMap(fila => {
+        const evidencia = construirEvidencia(fila);
+        return motivoDatosInsuficientes(fila, evidencia) ? [] : [{ symbol: fila.symbol, evidence: evidencia }];
       }).slice(0, 10);
-      if (!assets.length) {
-        const incomplete = candidates.length > 0 || excluded.some(row => row.exclusionType === 'INSUFFICIENT_DATA');
-        return { ...response, status: incomplete ? 'INSUFFICIENT_DATA' : 'NO_SUGGESTIONS',
-          message: incomplete ? 'No hay candidatas con evidencia suficiente para esta consulta.'
+      if (!activos.length) {
+        const datosIncompletos = candidatas.length > 0 || excluidas.some(fila => fila.exclusionType === 'INSUFFICIENT_DATA');
+        return { ...respuesta, status: datosIncompletos ? 'INSUFFICIENT_DATA' : 'NO_SUGGESTIONS',
+          message: datosIncompletos ? 'No hay candidatas con evidencia suficiente para esta consulta.'
             : 'Ninguna empresa cumple los criterios de viabilidad y liquidez para este horizonte.' };
       }
     }
 
-    const { model, result } = await complete({
-      scope, strategy: response.strategy, dteHorizon: response.dteHorizon, asOf,
-      assets: assets.map(({ symbol: ticker, evidence }) => ({
-        symbol: ticker, evidence: evidence.map(({ id, label, detail, status }) => ({ id, label, detail, status })),
+    const { model: modelo, result: resultado } = await consultarModelo({
+      scope: alcance, strategy: respuesta.strategy, dteHorizon: respuesta.dteHorizon, asOf: fechaCorte,
+      assets: activos.map(({ symbol: ticker, evidence: evidencia }) => ({
+        symbol: ticker, evidence: evidencia.map(({ id, label: etiqueta, detail: detalle, status: estado }) => ({
+          id, label: etiqueta, detail: detalle, status: estado,
+        })),
       })),
-    }, signal);
-    const recommendations = checkedRecommendations(result, scope, assets);
-    return recommendations.length ? { ...response, model, recommendations }
-      : { ...response, model, status: 'NO_SUGGESTIONS', message: 'La IA no destacó ninguna candidata con la evidencia evaluada.' };
+    }, senalCancelacion);
+    const recomendaciones = validarRecomendaciones(resultado, alcance, activos);
+    return recomendaciones.length ? { ...respuesta, model: modelo, recommendations: recomendaciones }
+      : { ...respuesta, model: modelo, status: 'NO_SUGGESTIONS', message: 'La IA no destacó ninguna candidata con la evidencia evaluada.' };
   };
 }
 
-export const runAiAnalysis = createAiAnalysis();
+const ejecutarAnalisisIA = crearAnalisisIA();
+
+export {
+  validarEntradaAnalisisIA as parseAiAnalysisInput,
+  crearAnalisisIA as createAiAnalysis,
+  ejecutarAnalisisIA as runAiAnalysis,
+};

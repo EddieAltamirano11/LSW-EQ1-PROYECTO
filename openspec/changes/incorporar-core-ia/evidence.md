@@ -29,3 +29,7 @@ Pasaron 146 pruebas de Node.js, 86 de React, el build y las validaciones de Open
 ## Primera sugerencia y explicación de riesgos
 
 Codex añadió «La que mejor califica» a la primera candidata y «Por qué podría no convenir» a las tarjetas con riesgos. Pasaron las pruebas dirigidas de ambos proveedores y las nueve pruebas del panel. Una consulta en vivo a Gemini 3.1 Flash-Lite con una empresa ficticia devolvió un motivo de espera en lenguaje cotidiano y citó la evidencia suministrada.
+
+## Contexto general del modelo
+
+Codex ajustó el prompt para que el modelo pueda complementar los datos del escáner. Pasaron 146 pruebas de Node.js y 86 de React. Se verificaron la etiqueta de contexto, la validación de citas y la regresión del ranking. Gemini 3.1 Flash-Lite aceptó el esquema actualizado y devolvió un punto sin cita en una consulta en vivo con una empresa ficticia.

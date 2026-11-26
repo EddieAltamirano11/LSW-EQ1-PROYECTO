@@ -1221,7 +1221,8 @@ paths:
       description: >
         Consulta informativa basada en el escáner de mercado. Compara hasta diez empresas
         evaluables para sugerir hasta tres candidatas de mejor a menor ajuste o evalúa un único
-        ticker. Los motivos breves y los riesgos relevantes citan observaciones del escáner.
+        ticker. Los motivos breves y los riesgos relevantes pueden citar observaciones del
+        escáner o aportar contexto general.
         La lista de riesgos puede estar vacía. Usa un límite de 12 consultas al modelo
         por minuto en cada proceso. El proveedor predeterminado es Gemini 3.1 Flash-Lite.
       security:
@@ -1510,7 +1511,7 @@ components:
         evidenceId:
           type: string
           nullable: true
-          description: Identificador de evidencia o null si el escáner informa la ausencia del dato
+          description: Identificador de evidencia o null para contexto general o una causa sin observación adjunta
     StrategyScreenerResult:
       type: object
       required: [asOf, criteria, status, candidates, excluded]

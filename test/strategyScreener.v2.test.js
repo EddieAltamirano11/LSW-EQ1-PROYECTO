@@ -87,6 +87,7 @@ test('Core de IA conserva el orden de sus sugerencias, los riesgos opcionales y 
         reasons: [{ text: 'La viabilidad es favorable.', evidenceId: `${symbol}/fundamental` }],
         risks: symbol === 'EEE' ? [] : [
           { text: 'El costo del collar afecta el resultado.', evidenceId: invalidCitation ? 'XXX/collar' : `${symbol}/collar` },
+          { text: 'Si el precio sube mucho, el collar puede limitar lo que ganas.', evidenceId: null },
         ],
       })) };
       return Response.json({
@@ -130,6 +131,8 @@ test('Core de IA conserva el orden de sus sugerencias, los riesgos opcionales y 
   assert.ok(suggestions.recommendations.every(row => row.verdict === 'CONSIDER'));
   assert.deepEqual(suggestions.recommendations[0].risks, []);
   assert.equal(suggestions.recommendations[1].risks[0].evidenceId, 'AAA/collar');
+  assert.equal(suggestions.recommendations[1].risks[1].evidenceId, null);
+  assert.deepEqual(suggestions.recommendations[1].evidence.map(fact => fact.id), ['AAA/fundamental', 'AAA/collar']);
   for (const [symbol, verdict] of [['BBB', 'INSUFFICIENT_DATA'], ['CCC', 'AVOID'], ['DDD', 'AVOID'], ['SPY', 'INSUFFICIENT_DATA']]) {
     const result = await (await post('ai-analysis', { ...selected, symbol })).json();
     assert.equal(result.model, null);
@@ -159,6 +162,8 @@ test('cliente de OpenAI usa salida estructurada, maneja errores y limita las con
       assert.equal(body.store, false);
       assert.equal(body.model, 'gpt-6-luna');
       assert.equal(body.text.format.strict, true);
+      const points = body.text.format.schema.properties.recommendations.items.properties;
+      assert.deepEqual(points.reasons.items.properties.evidenceId.type, ['string', 'null']);
       assert.deepEqual(JSON.parse(body.input), { scope: 'CANDIDATES' });
       return Response.json(fixture.data, { status: fixture.status });
     },
@@ -208,9 +213,12 @@ test('Gemini es el proveedor predeterminado y su cuota no activa llamadas a Open
         assert.match(instructions, /Collar Spread/);
         assert.match(instructions, /podría no convenir/);
         assert.match(instructions, /frase corta y cotidiana/);
+        assert.match(instructions, /Puedes usar tu conocimiento general/);
         assert.deepEqual(JSON.parse(body.contents[0].parts[0].text), input);
         assert.equal(body.generationConfig.responseMimeType, 'application/json');
         assert.deepEqual(body.generationConfig.responseJsonSchema.required, ['recommendations']);
+        const points = body.generationConfig.responseJsonSchema.properties.recommendations.items.properties;
+        assert.deepEqual(points.risks.items.properties.evidenceId.type, ['string', 'null']);
         return Response.json(responseBody, { status });
       },
     }),

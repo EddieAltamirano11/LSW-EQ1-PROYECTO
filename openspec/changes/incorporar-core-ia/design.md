@@ -13,7 +13,7 @@ El análisis interpreta los diagnósticos del escáner para un Collar Spread con
 - Una ruta autenticada dedicada devuelve la evaluación por separado. Invocarla en el flujo de `/run` agregaría latencia, dependencia y costo a cada cálculo del ranking.
 - El servicio reutiliza la misma evaluación por empresa y las lecturas temporales del escáner. La modalidad individual limita la evaluación al ticker solicitado. El backend recibe criterios, obtiene las observaciones y resuelve vetos, datos faltantes y el estado del calendario.
 - Un conjunto acotado de diagnósticos y métricas alimenta Gemini 3.1 Flash-Lite mediante `generateContent`. Es el proveedor predeterminado. OpenAI queda disponible mediante selección explícita. Cada proveedor adapta la solicitud y la respuesta al mismo esquema. Las sugerencias comparan hasta diez candidatas evaluables y muestran hasta tres. El servidor comprueba las citas por empresa y adjunta la evidencia fechada.
-- React usa la selección y los filtros vigentes. La consulta se inicia por botón y los resultados se retiran al cambiar el contexto que los produjo.
+- React usa la selección y los filtros vigentes. La consulta se inicia por botón y los resultados se retiran al cambiar el contexto que los produjo. Un punto basado en conocimiento general usa un identificador nulo y el panel lo marca como «Contexto general».
 
 ## Risks / Trade-offs
 

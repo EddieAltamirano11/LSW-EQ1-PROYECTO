@@ -135,13 +135,19 @@ describe('consulta de resultados por core', () => {
     expect(request).toHaveBeenCalledTimes(2);
   });
 
-  it('destaca a la primera candidata y explica por qué una opción podría no convenir cuando hay un riesgo', async () => {
+  it('destaca a la primera candidata y distingue el contexto general de un riesgo con fuente', async () => {
     const recommendations = [
       { symbol: 'MSFT', verdict: 'CONSIDER', reasons: [{ text: 'La protección cuesta poco.' }], risks: [], evidence: [] },
       { symbol: 'AAPL', verdict: 'CONSIDER', reasons: [{ text: 'El collar ofrece un buen margen de protección.' }],
-        risks: [{ text: 'El próximo reporte podría mover el precio.' }], evidence: [] },
+        risks: [
+          { text: 'El próximo reporte podría mover el precio.', evidenceId: 'AAPL/events' },
+          { text: 'Si la acción sube mucho, el collar puede limitar lo que ganas.', evidenceId: null },
+        ],
+        evidence: [{ id: 'AAPL/events', label: 'Calendario', detail: 'Reporte próximo', status: 'AVAILABLE',
+          sources: [{ source: 'Calendario del escáner', observedAt: '2026-11-12', reference: null }] }] },
     ];
-    const request = vi.fn(async () => respuesta({ scope: 'CANDIDATES', asOf: '2026-11-12T20:00:00Z', recommendations }));
+    const request = vi.fn(async () => respuesta({ scope: 'CANDIDATES', asOf: '2026-11-12T20:00:00Z',
+      model: 'gemini-3.1-flash-lite', recommendations }));
     vi.stubGlobal('fetch', request);
     render(<StrategyScreenerPanel {...props} />);
     fireEvent.click(screen.getByRole('button', { name: 'Sugerir empresas' }));
@@ -153,6 +159,8 @@ describe('consulta de resultados por core', () => {
     expect(within(second).getByRole('heading').textContent).toBe('AAPL');
     expect(within(second).getByText('Por qué podría no convenir')).toBeTruthy();
     expect(within(second).getByText('El próximo reporte podría mover el precio.')).toBeTruthy();
+    expect(within(second).getByText(/Calendario del escáner/)).toBeTruthy();
+    expect(within(second).getByText('Contexto general').closest('li').textContent).toContain('el collar puede limitar lo que ganas');
   });
 
   it('mantiene los resultados de los cores si falla la consulta de IA', async () => {
