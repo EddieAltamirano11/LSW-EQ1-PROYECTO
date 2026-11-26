@@ -4131,6 +4131,90 @@
           }
         },
         {
+          "name": "Core de IA · Sugerir empresas",
+          "request": {
+            "description": "Compara hasta diez candidatas evaluables para Collar Spread y devuelve hasta tres sugerencias con motivos, riesgos y evidencia.",
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenScreener}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlScreener}}/strategy-screener/ai-analysis",
+              "host": [
+                "{{baseUrlScreener}}"
+              ],
+              "path": [
+                "strategy-screener",
+                "ai-analysis"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scope\": \"CANDIDATES\",\n  \"activeCores\": [\n    \"001\",\n    \"002\",\n    \"006\"\n  ],\n  \"dteHorizon\": 45\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Core de IA · Analizar una empresa",
+          "request": {
+            "description": "Evalúa el ticker para Collar Spread y explica el veredicto con los datos disponibles. El backend usa Gemini por defecto y devuelve el modelo cuando genera un análisis.",
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenScreener}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlScreener}}/strategy-screener/ai-analysis",
+              "host": [
+                "{{baseUrlScreener}}"
+              ],
+              "path": [
+                "strategy-screener",
+                "ai-analysis"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scope\": \"SYMBOL\",\n  \"symbol\": \"AAPL\",\n  \"activeCores\": [\n    \"001\",\n    \"002\",\n    \"006\"\n  ],\n  \"dteHorizon\": 45\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
           "name": "Serie técnica del Core 001 para la gráfica",
           "request": {
             "description": "Usa el token de /auth/login en tokenScreener. Devuelve las velas diarias cerradas de dos años del símbolo con SMA200, EMA50 y EMA20, las bandas de soporte y resistencia (lower/upper), los tramos de tendencia, la proyección del Core 001 con su precisión medida, las sesiones futuras del calendario de Alpaca, la fuente y el instante de corte. No requiere evaluar los cores y guarda el resultado 90 s. Responde 400 con un símbolo inválido, 401 sin sesión y 503 con la causa si Alpaca no entrega velas suficientes; nunca entrega datos supuestos.",

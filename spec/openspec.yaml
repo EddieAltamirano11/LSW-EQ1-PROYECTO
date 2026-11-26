@@ -1208,6 +1208,53 @@ paths:
         '503':
           description: Las fuentes disponibles son insuficientes para evaluar los activos
 
+  /strategy-screener/ai-analysis:
+    servers:
+      - url: http://localhost:3050/api/v2
+        description: API v2 local
+      - url: https://lsw-eq1-proyecto.onrender.com/api/v2
+        description: API v2 de Render
+    post:
+      tags: [Screener & TradingView]
+      operationId: analyzeCollarWithAi
+      summary: Consultar oportunidades de Collar Spread con el Core de IA
+      description: >
+        Consulta informativa basada en el escáner de mercado. Compara hasta diez empresas
+        evaluables para sugerir hasta tres candidatas de mejor a menor ajuste o evalúa un único
+        ticker. Los motivos breves y los riesgos relevantes citan observaciones del escáner.
+        La lista de riesgos puede estar vacía. Usa un límite de 12 consultas al modelo
+        por minuto en cada proceso. El proveedor predeterminado es Gemini 3.1 Flash-Lite.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollarAiCriteria'
+            examples:
+              sugerencias:
+                value: { scope: CANDIDATES, activeCores: ['001', '002', '006'], dteHorizon: 45 }
+              empresa:
+                value: { scope: SYMBOL, symbol: AAPL, activeCores: ['001', '002', '006'], dteHorizon: 45 }
+      responses:
+        '200':
+          description: Veredicto, sugerencias o causa de datos insuficientes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollarAiResult'
+        '400':
+          description: Alcance, ticker, selección o filtros inválidos
+        '401':
+          description: La consulta requiere una sesión válida
+        '429':
+          description: Se alcanzó el límite temporal del servicio o la cuota del proveedor de IA
+        '502':
+          description: Respuesta del modelo incompleta, inválida o con referencias ajenas a la evidencia suministrada
+        '503':
+          description: Core de IA sin configurar o fuentes de mercado o IA indisponibles
+
   /strategy-screener/technical/{symbol}:
     servers:
       - url: http://localhost:3050/api/v2
@@ -1379,6 +1426,91 @@ components:
           type: string
           enum: [mongodb, supabase]
           description: Contexto opcional del motor de persistencia activo
+    CollarAiCriteria:
+      type: object
+      additionalProperties: false
+      required: [scope, activeCores]
+      properties:
+        scope: { type: string, enum: [CANDIDATES, SYMBOL] }
+        symbol: { type: string, pattern: '^[A-Za-z]{1,5}([.-][A-Za-z]{1,2})?$' }
+        activeCores:
+          type: array
+          minItems: 1
+          maxItems: 5
+          uniqueItems: true
+          items: { type: string, enum: ['001', '002', '003', '005', '006'] }
+        dteHorizon: { type: integer, enum: [30, 45, 60], default: 45 }
+        extraSymbols:
+          type: array
+          maxItems: 25
+          items: { type: string, pattern: '^[A-Za-z]{1,5}([.-][A-Za-z]{1,2})?$' }
+      oneOf:
+        - properties:
+            scope: { type: string, enum: [CANDIDATES] }
+          not: { required: [symbol] }
+        - properties:
+            scope: { type: string, enum: [SYMBOL] }
+          required: [symbol]
+          not: { required: [extraSymbols] }
+    CollarAiResult:
+      type: object
+      required: [scope, strategy, dteHorizon, asOf, model, status, message, recommendations]
+      properties:
+        scope: { type: string, enum: [CANDIDATES, SYMBOL] }
+        strategy: { type: string, enum: [COLLAR_SPREAD] }
+        dteHorizon: { type: integer, enum: [30, 45, 60] }
+        asOf: { type: string, format: date-time }
+        model: { type: string, nullable: true }
+        status: { type: string, enum: [COMPLETE, NO_SUGGESTIONS, INSUFFICIENT_DATA] }
+        message: { type: string, nullable: true }
+        recommendations:
+          type: array
+          maxItems: 3
+          items:
+            type: object
+            required: [symbol, verdict, reasons, risks, evidence]
+            properties:
+              symbol: { type: string, example: AAPL }
+              verdict: { type: string, enum: [CONSIDER, AVOID, WAIT, INSUFFICIENT_DATA] }
+              reasons:
+                type: array
+                minItems: 1
+                maxItems: 2
+                items:
+                  $ref: '#/components/schemas/CollarAiPoint'
+              risks:
+                type: array
+                maxItems: 2
+                items:
+                  $ref: '#/components/schemas/CollarAiPoint'
+              evidence:
+                type: array
+                items:
+                  type: object
+                  required: [id, label, detail, status, sources]
+                  properties:
+                    id: { type: string, example: AAPL/collar }
+                    label: { type: string }
+                    detail: { type: string }
+                    status: { type: string, enum: [AVAILABLE, PARTIAL] }
+                    sources:
+                      type: array
+                      items:
+                        type: object
+                        required: [source, observedAt, reference]
+                        properties:
+                          source: { type: string }
+                          observedAt: { type: string, description: Fecha o instante ISO de la observación }
+                          reference: { type: string, nullable: true }
+    CollarAiPoint:
+      type: object
+      required: [text, evidenceId]
+      properties:
+        text: { type: string }
+        evidenceId:
+          type: string
+          nullable: true
+          description: Identificador de evidencia o null si el escáner informa la ausencia del dato
     StrategyScreenerResult:
       type: object
       required: [asOf, criteria, status, candidates, excluded]

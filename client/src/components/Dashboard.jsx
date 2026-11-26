@@ -1153,6 +1153,7 @@ export default function Dashboard({ session, apiBase, onSessionChange, onSignIn 
                 limit={limit}
                 dteHorizon={dteHorizon}
                 extraSymbols={customSymbols}
+                selectedSymbol={selectedAsset.symbol}
                 onSignIn={onSignIn}
                 onEvaluatingChange={setEvaluatingCores}
                 onEvaluatingError={setCoresError}

@@ -58,12 +58,15 @@ function withRoles(cores, activeCores, strategyEvaluated) {
 
 export function createStrategyScreener({ marketData = market, edgar = sec, universe = DEFAULT_UNIVERSE, now = Date.now } = {}) {
   let snapshot;
-  return async function run(criteria) {
+  return async function run(criteria, { symbol } = {}) {
     const time = now();
     if (!snapshot || time < snapshot.asOf || time - snapshot.asOf >= 90_000) {
       snapshot = { asOf: time, values: new Map() };
     }
     const { asOf, values } = snapshot;
+    if (symbol && ETFS.has(symbol)) {
+      return { asOf: iso(asOf), criteria, status: 'COMPLETE', candidates: [], excluded: [] };
+    }
     const signal = AbortSignal.timeout(45_000);
     const use = (key, load) => {
       if (!values.has(key)) {
@@ -93,9 +96,11 @@ export function createStrategyScreener({ marketData = market, edgar = sec, unive
       : typeof criteria.extraSymbols === 'string'
       ? criteria.extraSymbols.split(',').map((s) => s.trim().toUpperCase()).filter(Boolean)
       : [];
-    const activeUniverse = [...universe];
+    const activeUniverse = symbol
+      ? [universe.find(asset => asset.symbol === symbol) ?? { symbol, companyName: symbol }]
+      : [...universe];
     for (const sym of extraList) {
-      if (!activeUniverse.some((a) => a.symbol === sym) && !ETFS.has(sym)) {
+      if (!symbol && !activeUniverse.some((a) => a.symbol === sym) && !ETFS.has(sym)) {
         activeUniverse.push({ symbol: sym, companyName: `${sym} Inc.` });
       }
     }
@@ -167,7 +172,7 @@ export function createStrategyScreener({ marketData = market, edgar = sec, unive
       return { ...row, score: confluence.score,
         incomplete: events.result.risk === 'UNVERIFIED' || criteria.activeCores.some(id => cores[id].status === 'PARTIAL') };
     });
-    if (rows.every(row => row.incomplete && row.reason)) {
+    if (!symbol && rows.every(row => row.incomplete && row.reason)) {
       const reasons = [...new Set(rows.map(row => row.reason))].slice(0, 3);
       throw boom.serverUnavailable(`Datos reales insuficientes. ${reasons.join(' ')}`);
     }

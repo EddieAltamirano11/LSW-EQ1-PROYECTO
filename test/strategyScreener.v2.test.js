@@ -8,6 +8,8 @@ import { authMiddleware } from '../src/middlewares/auth.middleware.js';
 import { errorHandler } from '../src/middlewares/errorHandler.middleware.js';
 import { strategyScreenerRoutes } from '../src/api/v2/routes/strategyScreener.routes.js';
 import { createStrategyScreener, parseScreenerInput } from '../src/api/v2/services/strategyScreener.service.js';
+import { createAiAnalysis } from '../src/api/v2/services/strategyScreener/aiAnalysis.js';
+import { createAiProvider, createGeminiProvider, createOpenAiProvider } from '../src/api/v2/services/strategyScreener/aiProvider.js';
 import { available, observation, SourceError } from '../src/api/v2/services/strategyScreener/observations.js';
 import { technicalCore, directSignalsCore } from '../src/api/v2/services/strategyScreener/technicalCore.js';
 import { eventRisk, fundamentalCore } from '../src/api/v2/services/strategyScreener/fundamentalCore.js';
@@ -49,6 +51,191 @@ function chain() {
     { ...base, symbol: 'TEST261224C00105000', type: 'call', strike: 105 },
   ] };
 }
+
+test('Core de IA conserva el orden de sus sugerencias, los riesgos opcionales y el ranking cuantitativo', async t => {
+  const universe = ['AAA', 'BBB', 'CCC', 'DDD', 'EEE'].map(symbol => ({ symbol }));
+  const statements = [];
+  const run = createStrategyScreener({
+    universe, now: () => asOf,
+    edgar: {
+      issuerIndex: async () => new Map(),
+      statements: async symbol => {
+        statements.push(symbol);
+        return financial(symbol === 'CCC' ? 'MARGINAL' : 'VIABLE');
+      },
+    },
+    marketData: {
+      obtenerSesionBursatil: async () => ({}),
+      obtenerPrecioSubyacente: async () => stock,
+      obtenerFechaResultados: async symbol => symbol === 'BBB' ? null
+        : { ...earnings, evidence: { ...observed, source: 'Calendario verificado' } },
+      obtenerCadenaOpciones: async symbol => symbol === 'DDD' ? { ...chain(), contracts: [] } : chain(),
+    },
+  });
+  const inputs = [];
+  let invalidCitation = false;
+  const prepare = createGeminiProvider({
+    apiKey: () => 'clave-gemini-de-pruebas',
+    model: () => 'gemini-3.1-flash-lite',
+    request: async (_url, options) => {
+      const requestBody = JSON.parse(options.body);
+      const input = JSON.parse(requestBody.contents[0].parts[0].text);
+      inputs.push(input);
+      const assets = input.scope === 'CANDIDATES' ? [...input.assets].reverse() : input.assets;
+      const result = { recommendations: assets.map(({ symbol }) => ({
+        symbol, verdict: input.scope === 'SYMBOL' ? 'WAIT' : 'CONSIDER',
+        reasons: [{ text: 'La viabilidad es favorable.', evidenceId: `${symbol}/fundamental` }],
+        risks: symbol === 'EEE' ? [] : [
+          { text: 'El costo del collar afecta el resultado.', evidenceId: invalidCitation ? 'XXX/collar' : `${symbol}/collar` },
+        ],
+      })) };
+      return Response.json({
+        modelVersion: 'gemini-3.1-flash-lite',
+        candidates: [{ finishReason: 'STOP', content: { parts: [{ text: JSON.stringify(result) }] } }],
+      });
+    },
+  });
+  const analyze = createAiAnalysis({ run, prepare });
+  const app = express();
+  app.use(express.json(), authMiddleware, strategyScreenerRoutes(run, undefined, analyze), errorHandler);
+  const server = app.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  t.after(() => server.close());
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const token = jwt.sign({ user: 'Identidad de prueba' }, config.JWT_SECRET, { expiresIn: '5m' });
+  const post = (path, body, auth = true) => fetch(`${base}/${path}`, { method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(auth && { Authorization: `Bearer ${token}` }) },
+    body: JSON.stringify(body) });
+  const ai = { activeCores: ['002'], dteHorizon: 60 };
+  const selected = { ...ai, scope: 'SYMBOL', symbol: 'zzz' };
+  assert.equal((await post('ai-analysis', selected, false)).status, 401);
+  assert.equal((await post('ai-analysis', { ...selected, evidence: [] })).status, 400);
+  assert.equal((await post('ai-analysis', { ...selected, symbol: 'ZZ1' })).status, 400);
+  assert.deepEqual(statements, []);
+
+  const individual = await (await post('ai-analysis', selected)).json();
+  assert.deepEqual(statements, ['ZZZ']);
+  assert.equal(individual.dteHorizon, 60);
+  assert.equal(individual.model, 'gemini-3.1-flash-lite');
+  assert.equal(individual.recommendations[0].verdict, 'WAIT');
+  assert.equal(individual.recommendations[0].evidence[0].sources[0].observedAt, observed.observedAt);
+  assert.ok(!JSON.stringify(inputs[0]).includes('Identidad de prueba'));
+
+  const baseline = { ...criteria, ...ai, limit: 25 };
+  const before = await (await post('run', baseline)).json();
+  assert.deepEqual(before.candidates.map(row => row.symbol), ['AAA', 'BBB', 'EEE']);
+  const suggestions = await (await post('ai-analysis', { ...ai, scope: 'CANDIDATES' })).json();
+  assert.deepEqual(inputs[1].assets.map(row => row.symbol), ['AAA', 'EEE']);
+  assert.deepEqual(suggestions.recommendations.map(row => row.symbol), ['EEE', 'AAA']);
+  assert.ok(suggestions.recommendations.every(row => row.verdict === 'CONSIDER'));
+  assert.deepEqual(suggestions.recommendations[0].risks, []);
+  assert.equal(suggestions.recommendations[1].risks[0].evidenceId, 'AAA/collar');
+  for (const [symbol, verdict] of [['BBB', 'INSUFFICIENT_DATA'], ['CCC', 'AVOID'], ['DDD', 'AVOID'], ['SPY', 'INSUFFICIENT_DATA']]) {
+    const result = await (await post('ai-analysis', { ...selected, symbol })).json();
+    assert.equal(result.model, null);
+    assert.equal(result.recommendations[0].verdict, verdict);
+    assert.ok(result.recommendations[0].reasons[0].text);
+  }
+  assert.equal(inputs.length, 2);
+  invalidCitation = true;
+  assert.equal((await post('ai-analysis', selected)).status, 502);
+  const after = await (await post('run', baseline)).json();
+  assert.deepEqual(after, before);
+});
+
+test('cliente de OpenAI usa salida estructurada, maneja errores y limita las consultas', async () => {
+  const matchesStatus = status => error => error.output?.statusCode === status;
+  const notConfigured = createOpenAiProvider({ apiKey: () => '' });
+  assert.throws(notConfigured, matchesStatus(503));
+  let fixture;
+  let timestamp = asOf;
+  const prepare = createOpenAiProvider({
+    apiKey: () => 'clave-de-pruebas',
+    model: () => 'gpt-6-luna',
+    now: () => timestamp,
+    request: async (url, options) => {
+      assert.equal(url, 'https://api.openai.com/v1/responses');
+      const body = JSON.parse(options.body);
+      assert.equal(body.store, false);
+      assert.equal(body.model, 'gpt-6-luna');
+      assert.equal(body.text.format.strict, true);
+      assert.deepEqual(JSON.parse(body.input), { scope: 'CANDIDATES' });
+      return Response.json(fixture.data, { status: fixture.status });
+    },
+  });
+  const complete = prepare();
+  const input = { scope: 'CANDIDATES' };
+  fixture = { status: 401, data: { error: 'Clave que no debe llegar al consumidor' } };
+  await assert.rejects(complete(input), error => matchesStatus(503)(error) && !error.message.includes('Clave'));
+  fixture = { status: 200, data: { status: 'incomplete', output: [null] } };
+  await assert.rejects(complete(input), matchesStatus(502));
+  fixture.data = { status: 'completed', output: [{ type: 'message',
+    content: [{ type: 'output_text', text: '{"recommendations":[]}' }] }] };
+  for (let i = 0; i < 10; i++) {
+    assert.deepEqual(await complete(input), { model: 'gpt-6-luna', result: { recommendations: [] } });
+  }
+  await assert.rejects(complete(input), matchesStatus(429));
+  timestamp += 60_000;
+  assert.equal((await complete(input)).model, 'gpt-6-luna');
+});
+
+test('Gemini es el proveedor predeterminado y su cuota no activa llamadas a OpenAI', async t => {
+  const previous = process.env.AI_PROVIDER;
+  delete process.env.AI_PROVIDER;
+  t.after(() => {
+    if (previous === undefined) delete process.env.AI_PROVIDER;
+    else process.env.AI_PROVIDER = previous;
+  });
+  const matchesStatus = status => error => error.output?.statusCode === status;
+  assert.throws(createGeminiProvider({ apiKey: () => '' }),
+    error => matchesStatus(503)(error) && error.message.includes('GEMINI_API_KEY'));
+
+  let status = 429;
+  let responseBody = { error: { message: 'Detalle reservado del proyecto' } };
+  let geminiCalls = 0;
+  let openaiCalls = 0;
+  const input = { scope: 'CANDIDATES' };
+  const prepare = createAiProvider({
+    gemini: createGeminiProvider({
+      apiKey: () => 'clave-gemini-de-pruebas',
+      model: () => 'gemini-3.1-flash-lite',
+      request: async (url, options) => {
+        geminiCalls++;
+        assert.equal(url, 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent');
+        assert.equal(options.headers['x-goog-api-key'], 'clave-gemini-de-pruebas');
+        const body = JSON.parse(options.body);
+        assert.ok(body.systemInstruction.parts[0].text.includes('Collar Spread'));
+        assert.deepEqual(JSON.parse(body.contents[0].parts[0].text), input);
+        assert.equal(body.generationConfig.responseMimeType, 'application/json');
+        assert.deepEqual(body.generationConfig.responseJsonSchema.required, ['recommendations']);
+        return Response.json(responseBody, { status });
+      },
+    }),
+    openai: () => async () => {
+      openaiCalls++;
+      return { model: 'gpt-6-luna', result: { recommendations: [] } };
+    },
+  });
+
+  await assert.rejects(prepare()(input), error =>
+    matchesStatus(429)(error) && error.message.includes('Gemini') && !error.message.includes('Detalle reservado'));
+  assert.equal(geminiCalls, 1);
+  assert.equal(openaiCalls, 0);
+
+  status = 200;
+  responseBody = { candidates: [{ finishReason: 'MAX_TOKENS', content: { parts: [{ text: '{"recommendations":[]}' }] } }] };
+  await assert.rejects(prepare()(input), matchesStatus(502));
+  responseBody.candidates[0].finishReason = 'STOP';
+  responseBody.candidates[0].content.parts.unshift({ thought: true, text: 'Texto fuera del análisis' });
+  assert.deepEqual(await prepare()(input), { model: 'gemini-3.1-flash-lite', result: { recommendations: [] } });
+
+  process.env.AI_PROVIDER = 'openai';
+  assert.equal((await prepare()(input)).model, 'gpt-6-luna');
+  assert.equal(openaiCalls, 1);
+  process.env.AI_PROVIDER = 'desconocido';
+  assert.throws(prepare, matchesStatus(503));
+  assert.equal(geminiCalls, 3);
+});
 
 test('001 combina temporalidades, requiere volumen en ruptura y expone la cobertura', () => {
   const trend = technicalCore(history());

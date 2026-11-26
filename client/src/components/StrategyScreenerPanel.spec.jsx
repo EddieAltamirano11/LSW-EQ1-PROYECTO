@@ -1,6 +1,6 @@
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import StrategyScreenerPanel from './StrategyScreenerPanel';
 import { screener } from '../services/__fixtures__/screener';
 
@@ -85,5 +85,90 @@ describe('consulta de resultados por core', () => {
     const collar = within(screen.getByRole('dialog'));
     expect(collar.getByText(/Put 220 \/ Call 240/)).toBeTruthy();
     expect(collar.getAllByText('Veto de viabilidad MARGINAL.').length).toBeGreaterThan(0);
+  });
+
+  it('consulta IA solo por acción explícita y muestra motivos, riesgos y fuentes fechadas', async () => {
+    const result = { asOf: '2026-11-12T20:00:00Z', model: 'gemini-3.1-flash-lite', recommendations: [{
+      symbol: 'AAPL', verdict: 'CONSIDER',
+      reasons: [{ text: 'Viabilidad favorable.', evidenceId: 'AAPL/fundamental' }],
+      risks: [{ text: 'La valoración puede reducir el atractivo.', evidenceId: 'AAPL/fundamental' }],
+      evidence: [{ id: 'AAPL/fundamental', label: 'Viabilidad', detail: 'Clasificación VIABLE', status: 'AVAILABLE',
+        sources: [{ source: 'SEC EDGAR', observedAt: '2026-09-30', reference: null }] }],
+    }] };
+    const request = vi.fn(async () => respuesta(result));
+    vi.stubGlobal('fetch', request);
+    render(<StrategyScreenerPanel {...props} selectedSymbol="AAPL" />);
+    fireEvent.click(casilla('Institucional'));
+    expect(request).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Analizar AAPL' }));
+    const [url, options] = request.mock.calls[0];
+    expect(url).toBe('http://api/api/v2/strategy-screener/ai-analysis');
+    expect(JSON.parse(options.body)).toEqual({
+      scope: 'SYMBOL', symbol: 'AAPL', dteHorizon: 45, activeCores: ['001', '002', '003', '006'],
+    });
+    expect(await screen.findByText(/AAPL · Sí/)).toBeTruthy();
+    expect(screen.getByText(/Modelo gemini-3.1-flash-lite/)).toBeTruthy();
+    expect(screen.getByText('Viabilidad favorable.')).toBeTruthy();
+    expect(screen.getByText('La valoración puede reducir el atractivo.')).toBeTruthy();
+    expect(screen.getAllByText(/SEC EDGAR/).some(element => element.closest('details')?.textContent.includes('2026-09-30'))).toBe(true);
+  });
+
+  it('descarta respuestas de un ticker anterior y permite solicitar sugerencias', async () => {
+    let resolveFirst;
+    const request = vi.fn()
+      .mockImplementationOnce(() => new Promise(resolve => { resolveFirst = resolve; }))
+      .mockResolvedValueOnce(respuesta({ asOf: '2026-11-12T20:00:00Z', recommendations: [], message: 'Sin sugerencias.' }));
+    vi.stubGlobal('fetch', request);
+    const { rerender } = render(<StrategyScreenerPanel {...props} selectedSymbol="AAPL" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Analizar AAPL' }));
+    const signal = request.mock.calls[0][1].signal;
+    rerender(<StrategyScreenerPanel {...props} selectedSymbol="MSFT" />);
+    expect(signal.aborted).toBe(true);
+    await act(async () => resolveFirst(respuesta({ message: 'Respuesta anterior' }, 503)));
+    expect(screen.queryByText('Respuesta anterior')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Analizar MSFT' }).disabled).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Sugerir empresas' }));
+    expect(JSON.parse(request.mock.calls[1][1].body)).toMatchObject({ scope: 'CANDIDATES', extraSymbols: [] });
+    expect(await screen.findByText('Sin sugerencias.')).toBeTruthy();
+    rerender(<StrategyScreenerPanel {...props} dteHorizon={30} selectedSymbol="MSFT" />);
+    expect(screen.queryByText('Sin sugerencias.')).toBeNull();
+    expect(request).toHaveBeenCalledTimes(2);
+  });
+
+  it('muestra las mejores candidatas en el orden recibido y solo presenta los riesgos informados', async () => {
+    const recommendations = [
+      { symbol: 'MSFT', verdict: 'CONSIDER', reasons: [{ text: 'La protección cuesta poco.' }], risks: [], evidence: [] },
+      { symbol: 'AAPL', verdict: 'CONSIDER', reasons: [{ text: 'El collar ofrece un buen margen de protección.' }],
+        risks: [{ text: 'El próximo reporte podría mover el precio.' }], evidence: [] },
+    ];
+    const request = vi.fn(async () => respuesta({ scope: 'CANDIDATES', asOf: '2026-11-12T20:00:00Z', recommendations }));
+    vi.stubGlobal('fetch', request);
+    render(<StrategyScreenerPanel {...props} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Sugerir empresas' }));
+    expect(await screen.findByText('Mejores candidatas')).toBeTruthy();
+    const [first, second] = within(screen.getByRole('region', { name: 'Core de IA' })).getAllByRole('article');
+    expect(within(first).getByRole('heading').textContent).toBe('MSFT');
+    expect(within(first).getByText('La protección cuesta poco.')).toBeTruthy();
+    expect(within(first).queryByText('Riesgos a considerar')).toBeNull();
+    expect(within(second).getByRole('heading').textContent).toBe('AAPL');
+    expect(within(second).getByText('Riesgos a considerar')).toBeTruthy();
+    expect(within(second).getByText('El próximo reporte podría mover el precio.')).toBeTruthy();
+  });
+
+  it('mantiene los resultados de los cores si falla la consulta de IA', async () => {
+    const request = vi.fn(async url => url.endsWith('/run') ? respuesta(screener)
+      : respuesta({ message: 'OpenAI no disponible.' }, 503));
+    const onScreenerResults = vi.fn();
+    const onEvaluatingError = vi.fn();
+    vi.stubGlobal('fetch', request);
+    render(<StrategyScreenerPanel {...props} onScreenerResults={onScreenerResults} onEvaluatingError={onEvaluatingError} />);
+    evaluar();
+    await screen.findByText(/Análisis completo/);
+    onEvaluatingError.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'Sugerir empresas' }));
+    expect((await screen.findByRole('alert')).textContent).toBe('OpenAI no disponible.');
+    expect(screen.getByText(/Análisis completo/)).toBeTruthy();
+    expect(onScreenerResults).toHaveBeenCalledTimes(1);
+    expect(onEvaluatingError).not.toHaveBeenCalled();
   });
 });

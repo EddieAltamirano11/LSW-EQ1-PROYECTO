@@ -106,6 +106,16 @@ Para probar el panel localmente, inicia la API con `npm run dev` y el cliente co
 
 La consulta de solo lectura usa `POST /api/v2/strategy-screener/run` con el token de la sesión. En Postman está en **Escáner por cores (API v2)** y usa las variables `baseUrlScreener` y `tokenScreener`.
 
+### Core de IA para Collar Spread
+
+El proveedor predeterminado es Gemini 3.1 Flash-Lite. Para probar con la cuota gratuita, crea una clave de un proyecto **Free Tier** en Google AI Studio, configúrala como `GEMINI_API_KEY` en el `.env` de la raíz y reinicia la API. [Claves de Gemini](https://aistudio.google.com/api-keys)
+
+En **Cores & Fuentes Cuantitativas**, pulsa **Sugerir empresas** o selecciona una fila y pulsa **Analizar** con su ticker. El panel usa el horizonte y los cores seleccionados para mostrar motivos, riesgos y evidencia fechada. Cuando el modelo genera el análisis, su nombre aparece junto al corte. Si se agota la cuota de Gemini, el panel muestra el error.
+
+Puedes elegir otro modelo de Gemini con salidas estructuradas mediante `GEMINI_AI_MODEL`. Para usar OpenAI, configura `AI_PROVIDER=openai` y `OPENAI_API_KEY`. Ese proveedor se cobra por uso y usa GPT-6 Luna de forma predeterminada.
+
+La ruta autenticada `POST /api/v2/strategy-screener/ai-analysis` ofrece ambas consultas como solicitudes separadas en la carpeta de Postman **Escáner por cores (API v2)**.
+
 ## Instalar Los Eddies como aplicación web
 
 Abre la URL HTTPS del cliente React en Cloudflare Pages o la ruta `/dashboard/` de una instancia de Express que sirva el build. El navegador también permite comprobar la instalación en `localhost`. Las consultas y las órdenes al broker requieren conexión. Si la aplicación instalada abre sin una sesión válida, inicia sesión desde su formulario habitual.

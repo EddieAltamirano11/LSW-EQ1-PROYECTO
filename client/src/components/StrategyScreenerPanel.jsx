@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { Eye, Layers, RefreshCw } from 'lucide-react';
+import AiAnalysisPanel from './AiAnalysisPanel';
 import CoreResultsModal from './CoreResultsModal';
 import { LABELS } from './coresResultados';
 
@@ -28,6 +29,7 @@ export default function StrategyScreenerPanel({
   limit,
   dteHorizon,
   extraSymbols = [],
+  selectedSymbol,
   onSignIn,
   onScreenerResults,
   onEvaluatingChange,
@@ -228,6 +230,16 @@ export default function StrategyScreenerPanel({
             )}
           </div>
         )}
+        <AiAnalysisPanel
+          key={JSON.stringify([apiBase, token, needsSignIn, activeCores, dteHorizon, extraSymbols])}
+          apiBase={apiBase}
+          token={token}
+          needsSignIn={needsSignIn}
+          symbol={selectedSymbol}
+          activeCores={activeCores}
+          dteHorizon={dteHorizon}
+          extraSymbols={extraSymbols}
+        />
       </div>
       {consulta && (
         <CoreResultsModal
