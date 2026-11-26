@@ -14,7 +14,7 @@ const ALTMAN = [
   },
   {
     titulo: 'No manufactura',
-    subtitulo: 'Servicios y tecnología',
+    subtitulo: 'Servicios y otros sectores',
     zonas: [
       { nombre: 'Quiebra', rango: '< 1.10', tono: 'rojo' },
       { nombre: 'Zona gris', rango: '1.10 – 2.60', tono: 'ambar' },
@@ -168,6 +168,10 @@ export default function ExplicacionCore002({ evaluado }) {
             </Tarjeta>
           ))}
         </div>
+        <p className="text-[11px] leading-snug text-[var(--ui-muted)]">
+          La variante se elige con la clasificación de la emisora: AAPL, NVDA y TSLA usan la de producción de bienes.
+          Los umbrales son cortes de decisión, no un techo: un Z alto sigue siendo zona segura.
+        </p>
         <div>
           <Badge tono="gris">Financieras: N/A (sin cálculo Z → UNKNOWN)</Badge>
         </div>

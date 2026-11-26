@@ -249,11 +249,23 @@ test('001 combina temporalidades, requiere volumen en ruptura y expone la cobert
   assert.deepEqual(technicalCore(history()), trend);
 });
 
-test('002 distingue los cuatro estados y 003 aplica confirmación y riesgo', () => {
+test('002 distingue los cuatro estados, fija el valor de Z por variante y 003 aplica confirmación y riesgo', () => {
   const event = eventRisk(earnings, asOf);
-  for (const scenario of ['VIABLE', 'MARGINAL', 'NO_VIABLE', 'UNKNOWN']) {
-    assert.equal(fundamentalCore(financial(scenario), stock, event).result.classification, scenario);
-  }
+  const evaluados = Object.fromEntries(['VIABLE', 'MARGINAL', 'NO_VIABLE', 'UNKNOWN'].map(scenario => {
+    const resultado = fundamentalCore(financial(scenario), stock, event).result;
+    assert.equal(resultado.classification, scenario);
+    return [scenario, resultado];
+  }));
+  assert.equal(evaluados.VIABLE.altman.value, 16.16);
+  assert.equal(evaluados.VIABLE.altman.variant, 'Z · manufactura pública');
+  assert.equal(evaluados.VIABLE.altman.lower, 1.81);
+  assert.equal(evaluados.VIABLE.altman.upper, 2.99);
+  assert.equal(evaluados.NO_VIABLE.altman.value, 1.6);
+  const servicios = fundamentalCore({ ...financial('VIABLE'), sic: 7370 }, stock, event).result;
+  assert.equal(servicios.altman.value, 7.21);
+  assert.equal(servicios.altman.variant, 'Z doble prima · no manufactura');
+  assert.equal(servicios.altman.lower, 1.1);
+  assert.equal(servicios.altman.upper, 2.6);
   assert.equal(directSignalsCore(technicalCore(history()), event).result.signal, 'BUY');
   assert.equal(directSignalsCore(technicalCore(history(-1)), event).result.signal, 'SELL');
   assert.equal(directSignalsCore(technicalCore(history()), available({ risk: 'HIGH' }, [observed])).result.signal, 'HOLD');

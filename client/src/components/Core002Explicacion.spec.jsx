@@ -25,6 +25,12 @@ describe('explicación visual del Core 002', () => {
       expect(screen.getByText(rango)).toBeTruthy();
     }
     expect(screen.getByText('Financieras: N/A (sin cálculo Z → UNKNOWN)')).toBeTruthy();
+    expect(document.body.textContent).toContain('Servicios y otros sectores');
+    expect(document.body.textContent).not.toContain('Servicios y tecnología');
+    expect(document.body.textContent).toContain('AAPL, NVDA y TSLA usan la de producción de bienes');
+    expect(document.body.textContent).toContain('Los umbrales son cortes de decisión, no un techo');
+    expect(document.body.textContent).toContain('un Z alto sigue siendo zona segura');
+    expect(CORES_INFO['002'].calculo).toContain('los umbrales son cortes de decisión, no un techo');
     expect(document.body.textContent).toContain('mínimo 6 datos válidos');
     expect(document.body.textContent).toContain('Aporta el');
     expect(document.body.textContent).toContain('20 %');

@@ -43,6 +43,18 @@ const PUNTO = {
 
 const porcentaje = new Intl.NumberFormat('es-MX', { maximumFractionDigits: 1 });
 
+// La zona se deriva de los umbrales informados por la API; nunca recalcula el Z.
+function altmanChip(altman) {
+  if (!Number.isFinite(altman?.value)) return null;
+  const lower = Number.isFinite(altman.lower) ? altman.lower : 1.81;
+  const upper = Number.isFinite(altman.upper) ? altman.upper : 2.99;
+  const zona = altman.value < lower ? 'Zona Quiebra' : altman.value <= upper ? 'Zona Gris' : 'Zona Segura';
+  return {
+    texto: `Altman: ${formatNumber(altman.value)} · ${zona}`,
+    titulo: `${altman.variant ?? 'Altman Z'} · umbrales ${formatNumber(lower)} / ${formatNumber(upper)}`,
+  };
+}
+
 function Badge({ tono, children, titulo }) {
   return (
     <span title={titulo} className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-1.5 py-0.5 text-[11px] font-semibold ${TONO[tono] ?? TONO.gris}`}>
@@ -52,9 +64,9 @@ function Badge({ tono, children, titulo }) {
   );
 }
 
-function Chip({ children, tenue = false }) {
+function Chip({ children, tenue = false, titulo }) {
   return (
-    <span className={`inline-flex items-center whitespace-nowrap rounded-md border px-1.5 py-0.5 text-[11px] tabular-nums ${tenue
+    <span title={titulo} className={`inline-flex items-center whitespace-nowrap rounded-md border px-1.5 py-0.5 text-[11px] tabular-nums ${tenue
       ? 'border-slate-200 bg-white text-slate-400'
       : 'border-[var(--ui-border)] bg-[var(--ui-page)] text-[var(--ui-ink)]'}`}>
       {children}
@@ -107,7 +119,7 @@ export default function TablaCore002({ data }) {
     const estado = ESTADOS[core?.status] ?? { texto: 'Sin datos', tono: 'gris' };
     const exclusion = EXCLUSIONES[empresa.exclusionType] ?? { texto: 'Datos incompletos', tono: 'gris' };
     const veredicto = r?.classification ?? 'UNKNOWN';
-    const altman = Number.isFinite(r?.altman?.value) ? formatNumber(r.altman.value) : 'N/D';
+    const altman = altmanChip(r?.altman);
     const piotroski = Number.isFinite(r?.piotroski?.passed) && Number.isFinite(r?.piotroski?.evaluated)
       ? `${r.piotroski.passed}/${r.piotroski.evaluated}` : 'N/D';
     const alerta = r?.risk === 'UNVERIFIED' ? 'Earnings N/V' : r?.risk === 'HIGH' ? 'Earnings ≤7d' : null;
@@ -153,7 +165,7 @@ export default function TablaCore002({ data }) {
           <td className="px-3 py-2">
             <div className="flex flex-wrap items-center gap-1.5">
               <Badge tono={VEREDICTOS[veredicto] ?? 'gris'}>{veredicto}</Badge>
-              <Chip tenue={altman === 'N/D'}>Altman: {altman}</Chip>
+              <Chip tenue={!altman} titulo={altman?.titulo}>{altman?.texto ?? 'Altman: N/D'}</Chip>
               <Chip tenue={piotroski === 'N/D'}>Piotroski: {piotroski}</Chip>
               {alerta && (
                 <Badge tono="ambar" titulo={r?.event?.start ?? 'Riesgo por resultados'}>

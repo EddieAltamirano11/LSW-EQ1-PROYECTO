@@ -227,6 +227,11 @@ export default function DetalleFundamental002({ diagnostic }) {
             {Number.isFinite(valorZ) ? formatNumber(valorZ) : '—'}
           </span>
           <span className={`mt-1 block text-xs font-medium ${TEXTO[zona.tono]}`}>{zona.texto}</span>
+          {Number.isFinite(valorZ) && (
+            <span className="mt-1 block text-[11px] leading-snug text-slate-500">
+              {r.altman?.variant ?? 'Altman Z'} · umbrales {formatNumber(inferior)} / {formatNumber(superior)}
+            </span>
+          )}
         </Tarjeta>
         <Tarjeta titulo="Piotroski F-Score" alineacion="derecha">
           <span className="block text-2xl font-bold tabular-nums text-slate-900">

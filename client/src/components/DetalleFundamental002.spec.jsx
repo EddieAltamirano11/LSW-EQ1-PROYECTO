@@ -27,7 +27,7 @@ function resultado() {
   return {
     classification: 'VIABLE', valuation: 'OVERVALUED', risk: 'HIGH', cik: '0000320193',
     event: { risk: 'HIGH', start: '2027-01-27', end: '2027-01-29', estimated: true },
-    altman: { value: 12.86, lower: 1.81, upper: 2.99 },
+    altman: { value: 12.86, lower: 1.81, upper: 2.99, variant: 'Z · manufactura pública' },
     piotroski: { passed: 4, evaluated: 8, tests: pruebas },
     indicators: { pe: 38.24 }, fiscalYears: ['2026-09-26', '2025-09-27'],
   };
@@ -66,6 +66,7 @@ describe('detalle individual del Core 002', () => {
     expect(within(detalle).getByText('Ventana Webull · estimada')).toBeTruthy();
     expect(within(detalle).getByText('12.86')).toBeTruthy();
     expect(within(detalle).getByText('Zona Segura')).toBeTruthy();
+    expect(within(detalle).getByText('Z · manufactura pública · umbrales 1.81 / 2.99')).toBeTruthy();
     expect(within(detalle).getByText('38.24')).toBeTruthy();
     expect(within(detalle).getByText('Múltiplo actual')).toBeTruthy();
     expect(within(detalle).getByText('2026-09-26')).toBeTruthy();

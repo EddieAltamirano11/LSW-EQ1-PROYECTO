@@ -5,13 +5,18 @@ import CoreResultsModal from './CoreResultsModal';
 
 const evidencia = [{ source: 'Prueba', observedAt: '2026-11-20T21:00:00Z', reference: 'ref', delayMinutes: 0 }];
 
-function fundamental({ classification, score, status = 'AVAILABLE', role = 'GATE', effectiveWeight, altman, passed, evaluated, risk, reason }) {
+function fundamental({ classification, score, status = 'AVAILABLE', role = 'GATE', effectiveWeight, altman, lower, upper, variant, passed, evaluated, risk, reason }) {
   return {
     status, active: role === 'CONFLUENCE', role, ...(Number.isFinite(effectiveWeight) ? { effectiveWeight } : {}),
     ...(Number.isFinite(score) ? { score } : {}), evidence: evidencia,
     result: {
       classification, risk,
-      altman: Number.isFinite(altman) ? { value: altman } : null,
+      altman: Number.isFinite(altman) ? {
+        value: altman,
+        ...(Number.isFinite(lower) ? { lower } : {}),
+        ...(Number.isFinite(upper) ? { upper } : {}),
+        ...(variant ? { variant } : {}),
+      } : null,
       piotroski: { passed, evaluated },
       indicators: { pe: 18.4 }, fiscalYears: ['2026-12-31', '2025-12-31'],
       ...(reason ? { reason } : {}),
@@ -26,18 +31,18 @@ function datos() {
     candidates: [
       {
         rank: 1, symbol: 'AAPL', companyName: 'Apple Inc.', eligibility: 'VIABLE', score: 80,
-        cores: { '002': fundamental({ classification: 'VIABLE', score: 70, role: 'CONFLUENCE', effectiveWeight: 0.25, altman: 12.86, passed: 9, evaluated: 9, risk: 'LOW' }) },
+        cores: { '002': fundamental({ classification: 'VIABLE', score: 70, role: 'CONFLUENCE', effectiveWeight: 0.25, altman: 12.86, lower: 1.81, upper: 2.99, variant: 'Z · manufactura pública', passed: 9, evaluated: 9, risk: 'LOW' }) },
       },
       {
         rank: 2, symbol: 'MSFT', companyName: 'Microsoft Corp.', eligibility: 'VIABLE', score: 72,
-        cores: { '002': fundamental({ classification: 'VIABLE', score: 95, status: 'PARTIAL', altman: 3.1, passed: 8, evaluated: 9, risk: 'HIGH' }) },
+        cores: { '002': fundamental({ classification: 'VIABLE', score: 95, status: 'PARTIAL', altman: 3.1, lower: 1.1, upper: 2.6, variant: 'Z doble prima · no manufactura', passed: 8, evaluated: 9, risk: 'HIGH' }) },
       },
     ],
     excluded: [
       {
         symbol: 'AMZN', companyName: 'Amazon.com Inc.', eligibility: 'MARGINAL', reason: 'Veto de viabilidad MARGINAL.',
         exclusionType: 'VIABILITY_VETO',
-        cores: { '002': fundamental({ classification: 'MARGINAL', score: 60, altman: 1.5, passed: 5, evaluated: 9, risk: 'UNVERIFIED', reason: 'Sin fecha de resultados.' }) },
+        cores: { '002': fundamental({ classification: 'MARGINAL', score: 60, altman: 1.5, lower: 1.81, upper: 2.99, variant: 'Z · manufactura pública', passed: 5, evaluated: 9, risk: 'UNVERIFIED', reason: 'Sin fecha de resultados.' }) },
       },
       {
         symbol: 'AMD', companyName: 'Advanced Micro Devices', eligibility: 'UNKNOWN', reason: 'Datos insuficientes.',
@@ -100,7 +105,10 @@ describe('pestaña Tabla del Core 002', () => {
     expect(screen.getAllByText('VIABLE')).toHaveLength(2);
     expect(screen.getByText('MARGINAL')).toBeTruthy();
     expect(screen.getByText('UNKNOWN')).toBeTruthy();
-    expect(screen.getByText('Altman: 12.86')).toBeTruthy();
+    expect(screen.getByText('Altman: 12.86 · Zona Segura')).toBeTruthy();
+    expect(screen.getByText('Altman: 12.86 · Zona Segura').getAttribute('title')).toBe('Z · manufactura pública · umbrales 1.81 / 2.99');
+    expect(screen.getByText('Altman: 3.1 · Zona Segura').getAttribute('title')).toBe('Z doble prima · no manufactura · umbrales 1.1 / 2.6');
+    expect(screen.getByText('Altman: 1.5 · Zona Quiebra')).toBeTruthy();
     expect(screen.getByText('Piotroski: 9/9')).toBeTruthy();
     expect(screen.getByText('Altman: N/D')).toBeTruthy();
     expect(screen.getByText('Piotroski: N/D')).toBeTruthy();

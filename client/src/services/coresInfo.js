@@ -14,7 +14,7 @@ export const CORES_INFO = {
     nombre: 'Fundamental',
     fuentes: ['SEC EDGAR (estados 10-K o 20-F en XBRL)', 'Webull (ventana de próximos resultados)'],
     ventanas: 'Los dos últimos ejercicios fiscales consecutivos.',
-    calculo: 'Altman Z mide la salud financiera y Piotroski la calidad contable (9 pruebas, mínimo 6 válidas, 20 % del puntaje). Clasifica VIABLE / MARGINAL / NO_VIABLE / UNKNOWN y reporta el riesgo por resultados sin cambiar el puntaje. La vista visual del modal detalla umbrales y pruebas.',
+    calculo: 'Altman Z mide la salud financiera (los umbrales son cortes de decisión, no un techo: un Z alto sigue siendo zona segura) y Piotroski la calidad contable (9 pruebas, mínimo 6 válidas, 20 % del puntaje). Clasifica VIABLE / MARGINAL / NO_VIABLE / UNKNOWN y reporta el riesgo por resultados sin cambiar el puntaje. La vista visual del modal detalla umbrales y pruebas.',
     peso: '20 pts base (25 % efectivo con los 5 cores activos). Solo entra a la confluencia si el checkbox está marcado.',
     participa: 'Siempre se calcula como filtro GATE: veta MARGINAL y NO_VIABLE aunque esté desmarcado y oculta su Collar; no suma puntaje.',
   },
